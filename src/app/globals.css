@@ -112,41 +112,56 @@ body {
 
 /* ==========================================================================
    Light Theme System & Component Styling Overrides
+/* ==========================================================================
+   Light Theme: Radiant White + Light Blue + Vivid Pastel Glass Architecture
    ========================================================================== */
 .light-theme {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
+  --background: #f0f8ff;
+  --foreground: #091e42;
+  background: radial-gradient(circle at 15% 15%, #ffffff 0%, #f0f9ff 35%, #e0f2fe 75%, #f8faff 100%) !important;
+  color: #091e42 !important;
 }
 
 .light-theme body {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
+  background: transparent !important;
+  color: #091e42 !important;
 }
 
-/* Backgrounds */
+/* Crisp Luminous Glass Surfaces */
+.light-theme .glass-panel,
+.light-theme .bg-slate-950\/90,
 .light-theme .bg-slate-950\/80,
 .light-theme .bg-slate-950\/75,
+.light-theme .bg-slate-950\/70,
 .light-theme .bg-slate-950\/60,
-.light-theme .bg-slate-950\/50,
 .light-theme .bg-slate-950 {
-  background-color: #f8fafc !important;
+  background-color: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+  border-color: rgba(186, 230, 253, 0.85) !important;
 }
 
+.light-theme .glass-card,
 .light-theme .bg-slate-900\/95,
 .light-theme .bg-slate-900\/90,
 .light-theme .bg-slate-900\/80,
 .light-theme .bg-slate-900\/70,
 .light-theme .bg-slate-900\/60,
 .light-theme .bg-slate-900\/50,
-.light-theme .bg-slate-900\/40,
 .light-theme .bg-slate-900 {
-  background-color: rgba(255, 255, 255, 0.78) !important;
-  backdrop-filter: blur(18px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.9) !important;
-  border-color: rgba(226, 232, 240, 0.8) !important;
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(20px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
+  border: 1px solid rgba(186, 230, 253, 0.85) !important;
+  box-shadow: 0 10px 30px -5px rgba(14, 165, 233, 0.12), 0 4px 15px -2px rgba(99, 102, 241, 0.08), inset 0 1px 0 0 #ffffff !important;
+}
+
+.light-theme .group.cursor-pointer:hover,
+.light-theme .glass-card:hover {
+  background-color: #ffffff !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.25), 0 0 0 1.5px #38bdf8, inset 0 1px 0 0 #ffffff !important;
+  transform: translateY(-3px);
 }
 
 .light-theme .bg-slate-800\/90,
@@ -154,104 +169,255 @@ body {
 .light-theme .bg-slate-800\/60,
 .light-theme .bg-slate-800\/50,
 .light-theme .bg-slate-800 {
-  background-color: #f1f5f9 !important;
+  background-color: rgba(240, 249, 255, 0.85) !important;
+  border-color: rgba(186, 230, 253, 0.7) !important;
 }
 
-/* Borders */
+/* Light Theme Borders */
 .light-theme .border-slate-800\/80,
 .light-theme .border-slate-800,
 .light-theme .border-slate-700\/70,
 .light-theme .border-slate-700\/60,
-.light-theme .border-slate-700 {
-  border-color: #e2e8f0 !important;
+.light-theme .border-slate-700,
+.light-theme .border-white\/10,
+.light-theme .border-white\/15,
+.light-theme .border-white\/20 {
+  border-color: rgba(186, 230, 253, 0.8) !important;
 }
 
-/* Typography */
+/* Deep High-Contrast Typography */
 .light-theme .text-white,
 .light-theme .text-slate-100,
 .light-theme .text-slate-200 {
-  color: #0f172a !important;
+  color: #091e42 !important;
 }
 
 .light-theme .text-slate-300 {
-  color: #334155 !important;
+  color: #1e293b !important;
 }
 
 .light-theme .text-slate-400 {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 .light-theme .text-slate-500 {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
-/* Inputs, Textareas, and Dropdowns */
+/* Header & Navigation in Light Mode */
+.light-theme header {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+  border-bottom: 1px solid rgba(186, 230, 253, 0.85) !important;
+  box-shadow: 0 4px 25px -4px rgba(56, 189, 248, 0.15) !important;
+}
+
+.light-theme header nav {
+  background: rgba(240, 249, 255, 0.8) !important;
+  border: 1px solid rgba(186, 230, 253, 0.9) !important;
+}
+
+.light-theme footer {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(186, 230, 253, 0.8) !important;
+}
+
+/* Inputs & Form Controls */
 .light-theme input,
 .light-theme textarea,
 .light-theme select {
   background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+  color: #091e42 !important;
+  border: 1.5px solid #7dd3fc !important;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.light-theme input:focus,
+.light-theme textarea:focus,
+.light-theme select:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3) !important;
 }
 
 .light-theme input::placeholder,
 .light-theme textarea::placeholder {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
-/* Header & Footer */
-.light-theme header {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+/* ==========================================================================
+   Multi-Color Pastel Bento Grid Overrides for Light Mode
+   ========================================================================== */
+/* Nexa AI & Cyan Cards (Sky Blue Harmony) */
+.light-theme [class*="border-cyan-500"] {
+  border-color: rgba(56, 189, 248, 0.7) !important;
 }
-
-.light-theme footer {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-}
-
-/* Tinted Card Backgrounds */
-.light-theme .bg-indigo-950\/40,
-.light-theme .bg-indigo-950\/30,
-.light-theme .bg-indigo-950\/20,
-.light-theme .bg-indigo-950\/10 {
-  background-color: #eef2ff !important;
-  border-color: #c7d2fe !important;
-}
-
 .light-theme .bg-cyan-950\/40,
 .light-theme .bg-cyan-950\/30,
 .light-theme .bg-cyan-950\/20,
 .light-theme .bg-cyan-950\/10 {
-  background-color: #ecfeff !important;
-  border-color: #a5f3fc !important;
+  background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 50%, #e0f2fe 100%) !important;
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  box-shadow: 0 10px 30px -5px rgba(56, 189, 248, 0.2), inset 0 1px 0 0 #ffffff !important;
+}
+.light-theme .text-cyan-400,
+.light-theme .text-cyan-300 {
+  color: #0284c7 !important;
+}
+.light-theme .bg-cyan-500\/10,
+.light-theme .bg-cyan-500\/15,
+.light-theme .bg-cyan-500\/20 {
+  background-color: rgba(224, 242, 254, 0.9) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  color: #0369a1 !important;
 }
 
+/* Study Timer & Rose/Coral Cards (Soft Blush & Rose) */
+.light-theme [class*="border-rose-500"] {
+  border-color: rgba(251, 113, 133, 0.7) !important;
+}
+.light-theme .bg-rose-950\/40,
+.light-theme .bg-rose-950\/30,
+.light-theme .bg-rose-950\/20,
+.light-theme .bg-rose-950\/10 {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffffff 50%, #ffe4e6 100%) !important;
+  border-color: rgba(251, 113, 133, 0.6) !important;
+  box-shadow: 0 10px 30px -5px rgba(251, 113, 133, 0.2), inset 0 1px 0 0 #ffffff !important;
+}
+.light-theme .text-rose-400,
+.light-theme .text-rose-300 {
+  color: #e11d48 !important;
+}
+.light-theme .bg-rose-500\/10,
+.light-theme .bg-rose-500\/15,
+.light-theme .bg-rose-500\/20 {
+  background-color: rgba(255, 228, 230, 0.9) !important;
+  border-color: rgba(251, 113, 133, 0.4) !important;
+  color: #be123c !important;
+}
+
+/* Smart Notes & Indigo/Violet Cards (Lavender & Soft Indigo) */
+.light-theme [class*="border-indigo-500"] {
+  border-color: rgba(129, 140, 248, 0.7) !important;
+}
+.light-theme .bg-indigo-950\/40,
+.light-theme .bg-indigo-950\/30,
+.light-theme .bg-indigo-950\/20,
+.light-theme .bg-indigo-950\/10 {
+  background: linear-gradient(135deg, #eef2ff 0%, #ffffff 50%, #e0e7ff 100%) !important;
+  border-color: rgba(129, 140, 248, 0.6) !important;
+  box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.2), inset 0 1px 0 0 #ffffff !important;
+}
+.light-theme .text-indigo-400,
+.light-theme .text-indigo-300 {
+  color: #4f46e5 !important;
+}
+.light-theme .bg-indigo-500\/10,
+.light-theme .bg-indigo-500\/15,
+.light-theme .bg-indigo-500\/20 {
+  background-color: rgba(224, 231, 255, 0.9) !important;
+  border-color: rgba(129, 140, 248, 0.4) !important;
+  color: #4338ca !important;
+}
+
+/* 3D Flashcards & Purple/Fuchsia Cards (Baby Pink & Magenta) */
+.light-theme [class*="border-fuchsia-500"],
+.light-theme [class*="border-purple-500"] {
+  border-color: rgba(232, 121, 249, 0.7) !important;
+}
 .light-theme .bg-purple-950\/40,
 .light-theme .bg-purple-950\/30,
 .light-theme .bg-purple-950\/20,
-.light-theme .bg-purple-950\/10 {
-  background-color: #faf5ff !important;
-  border-color: #e9d5ff !important;
+.light-theme .bg-fuchsia-950\/40,
+.light-theme .bg-fuchsia-950\/30,
+.light-theme .bg-fuchsia-950\/20 {
+  background: linear-gradient(135deg, #fdf4ff 0%, #ffffff 50%, #fae8ff 100%) !important;
+  border-color: rgba(216, 180, 254, 0.6) !important;
+  box-shadow: 0 10px 30px -5px rgba(168, 85, 247, 0.2), inset 0 1px 0 0 #ffffff !important;
+}
+.light-theme .text-purple-400,
+.light-theme .text-purple-300,
+.light-theme .text-fuchsia-400 {
+  color: #9333ea !important;
+}
+.light-theme .bg-purple-500\/10,
+.light-theme .bg-purple-500\/15,
+.light-theme .bg-purple-500\/20 {
+  background-color: rgba(243, 232, 255, 0.9) !important;
+  color: #7e22ce !important;
 }
 
-.light-theme .bg-emerald-950\/30,
-.light-theme .bg-emerald-950\/20,
-.light-theme .bg-emerald-950\/10 {
-  background-color: #ecfdf5 !important;
-  border-color: #a7f3d0 !important;
+/* AI Quiz & Amber/Gold Cards (Soft Sunbeam Amber) */
+.light-theme [class*="border-amber-500"] {
+  border-color: rgba(251, 191, 36, 0.7) !important;
 }
-
+.light-theme .bg-amber-950\/40,
 .light-theme .bg-amber-950\/30,
 .light-theme .bg-amber-950\/20,
 .light-theme .bg-amber-950\/10 {
-  background-color: #fffbeb !important;
-  border-color: #fde68a !important;
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 50%, #fef3c7 100%) !important;
+  border-color: rgba(251, 191, 36, 0.6) !important;
+  box-shadow: 0 10px 30px -5px rgba(245, 158, 11, 0.2), inset 0 1px 0 0 #ffffff !important;
+}
+.light-theme .text-amber-400,
+.light-theme .text-amber-300 {
+  color: #d97706 !important;
+}
+.light-theme .bg-amber-500\/10,
+.light-theme .bg-amber-500\/15,
+.light-theme .bg-amber-500\/20 {
+  background-color: rgba(254, 243, 199, 0.9) !important;
+  color: #b45309 !important;
 }
 
-/* Light theme selection */
+/* Timetable & Emerald/Mint Cards (Mint Tea & Seafoam) */
+.light-theme [class*="border-emerald-500"] {
+  border-color: rgba(52, 211, 153, 0.7) !important;
+}
+.light-theme .bg-emerald-950\/40,
+.light-theme .bg-emerald-950\/30,
+.light-theme .bg-emerald-950\/20,
+.light-theme .bg-emerald-950\/10 {
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 50%, #d1fae5 100%) !important;
+  border-color: rgba(52, 211, 153, 0.6) !important;
+  box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.2), inset 0 1px 0 0 #ffffff !important;
+}
+.light-theme .text-emerald-400,
+.light-theme .text-emerald-300 {
+  color: #059669 !important;
+}
+.light-theme .bg-emerald-500\/10,
+.light-theme .bg-emerald-500\/15,
+.light-theme .bg-emerald-500\/20 {
+  background-color: rgba(209, 250, 229, 0.9) !important;
+  color: #047857 !important;
+}
+
+/* Document Hub & Blue Cards (Crystal Sapphire) */
+.light-theme [class*="border-blue-500"] {
+  border-color: rgba(96, 165, 250, 0.7) !important;
+}
+.light-theme .bg-blue-950\/40,
+.light-theme .bg-blue-950\/30,
+.light-theme .bg-blue-950\/20,
+.light-theme .bg-blue-950\/10 {
+  background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #dbeafe 100%) !important;
+  border-color: rgba(96, 165, 250, 0.6) !important;
+  box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.2), inset 0 1px 0 0 #ffffff !important;
+}
+.light-theme .text-blue-400,
+.light-theme .text-blue-300 {
+  color: #2563eb !important;
+}
+.light-theme .bg-blue-500\/10,
+.light-theme .bg-blue-500\/15,
+.light-theme .bg-blue-500\/20 {
+  background-color: rgba(219, 234, 254, 0.9) !important;
+  color: #1d4ed8 !important;
+}
+
+/* Light Theme Selection */
 .light-theme *::selection {
-  background-color: #06b6d4;
+  background-color: #0284c7;
   color: #ffffff;
 }

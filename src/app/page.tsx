@@ -73,8 +73,10 @@ export default function Home() {
   return (
     <div
       className={`relative min-h-screen ${
-        theme === "light" ? "light-theme" : "dark"
-      } bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-slate-950 font-sans transition-colors duration-200`}
+        theme === "light"
+          ? "light-theme bg-gradient-to-br from-white via-sky-50/80 to-blue-50/60 text-slate-900"
+          : "dark bg-slate-950 text-slate-100"
+      } selection:bg-cyan-500 selection:text-white font-sans transition-colors duration-200`}
     >
       {/* 3D WebGL ambient background & Cursor animations */}
       <ThreeBackground />
@@ -83,10 +85,34 @@ export default function Home() {
 
       {/* Ambient Glassmorphic Color Orbs for Rich Frosted Refraction */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-cyan-500/30 via-blue-600/25 to-transparent blur-[130px] animate-orb-1" />
-        <div className="absolute top-1/4 -right-32 w-[650px] h-[650px] rounded-full bg-gradient-to-bl from-fuchsia-500/30 via-purple-600/25 to-transparent blur-[140px] animate-orb-2" />
-        <div className="absolute top-2/3 -left-20 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-emerald-500/25 via-teal-600/20 to-transparent blur-[130px] animate-orb-3" />
-        <div className="absolute -bottom-40 right-1/4 w-[700px] h-[700px] rounded-full bg-gradient-to-tl from-indigo-600/30 via-pink-500/20 to-amber-500/15 blur-[150px] animate-orb-1" />
+        <div
+          className={`absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full blur-[130px] animate-orb-1 ${
+            theme === "light"
+              ? "bg-gradient-to-tr from-sky-400/30 via-blue-400/20 to-transparent"
+              : "bg-gradient-to-tr from-cyan-500/30 via-blue-600/25 to-transparent"
+          }`}
+        />
+        <div
+          className={`absolute top-1/4 -right-32 w-[650px] h-[650px] rounded-full blur-[140px] animate-orb-2 ${
+            theme === "light"
+              ? "bg-gradient-to-bl from-purple-400/25 via-pink-400/20 to-transparent"
+              : "bg-gradient-to-bl from-fuchsia-500/30 via-purple-600/25 to-transparent"
+          }`}
+        />
+        <div
+          className={`absolute top-2/3 -left-20 w-[550px] h-[550px] rounded-full blur-[130px] animate-orb-3 ${
+            theme === "light"
+              ? "bg-gradient-to-tr from-emerald-400/25 via-teal-400/20 to-transparent"
+              : "bg-gradient-to-tr from-emerald-500/25 via-teal-600/20 to-transparent"
+          }`}
+        />
+        <div
+          className={`absolute -bottom-40 right-1/4 w-[700px] h-[700px] rounded-full blur-[150px] animate-orb-1 ${
+            theme === "light"
+              ? "bg-gradient-to-tl from-sky-400/25 via-indigo-300/20 to-amber-300/15"
+              : "bg-gradient-to-tl from-indigo-600/30 via-pink-500/20 to-amber-500/15"
+          }`}
+        />
       </div>
 
       {/* Starting Animation Splash Screen */}

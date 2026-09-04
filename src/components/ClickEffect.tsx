@@ -3,28 +3,33 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface Ripple {
+interface ClickWave {
   id: number;
   x: number;
   y: number;
+  color: string;
 }
 
 export default function ClickEffect() {
-  const [ripples, setRipples] = useState<Ripple[]>([]);
+  const [waves, setWaves] = useState<ClickWave[]>([]);
 
   useEffect(() => {
+    const colors = ["#38bdf8", "#818cf8", "#c084fc", "#34d399", "#f43f5e"];
+
     const handleClick = (e: MouseEvent) => {
-      const newRipple = {
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      const newWave: ClickWave = {
         id: Date.now() + Math.random(),
         x: e.clientX,
         y: e.clientY,
+        color: randomColor,
       };
 
-      setRipples((prev) => [...prev.slice(-6), newRipple]);
+      setWaves((prev) => [...prev.slice(-5), newWave]);
 
       setTimeout(() => {
-        setRipples((prev) => prev.filter((r) => r.id !== newRipple.id));
-      }, 700);
+        setWaves((prev) => prev.filter((w) => w.id !== newWave.id));
+      }, 750);
     };
 
     window.addEventListener("click", handleClick);
@@ -34,19 +39,37 @@ export default function ClickEffect() {
   return (
     <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
       <AnimatePresence>
-        {ripples.map((ripple) => (
-          <motion.span
-            key={ripple.id}
-            initial={{ scale: 0, opacity: 0.8 }}
-            animate={{ scale: 2.4, opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            style={{
-              left: ripple.x - 20,
-              top: ripple.y - 20,
-            }}
-            className="absolute h-10 w-10 rounded-full border border-cyan-400 bg-cyan-400/20 shadow-[0_0_15px_rgba(56,189,248,0.5)]"
-          />
+        {waves.map((wave) => (
+          <React.Fragment key={wave.id}>
+            {/* Primary Harmonic Shockwave Ring */}
+            <motion.span
+              initial={{ scale: 0.1, opacity: 0.9 }}
+              animate={{ scale: 3.2, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              style={{
+                left: wave.x - 24,
+                top: wave.y - 24,
+                borderColor: wave.color,
+                boxShadow: `0 0 20px ${wave.color}`,
+              }}
+              className="absolute h-12 w-12 rounded-full border-2 bg-transparent"
+            />
+
+            {/* Secondary Soft Ambient Wave */}
+            <motion.span
+              initial={{ scale: 0.2, opacity: 0.6 }}
+              animate={{ scale: 2.2, opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut" }}
+              style={{
+                left: wave.x - 16,
+                top: wave.y - 16,
+                backgroundColor: `${wave.color}25`,
+              }}
+              className="absolute h-8 w-8 rounded-full blur-sm"
+            />
+          </React.Fragment>
         ))}
       </AnimatePresence>
     </div>
