@@ -1,25 +1,47 @@
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 
-function getGenAIClient(customApiKey?: string) {
+const CANDIDATE_MODELS = ["qwen/qwen3.6-27b", "openai/gpt-oss-20b"];
+
+function getGroqClient(customApiKey?: string) {
   const key = (customApiKey || process.env.GEMINI_API_KEY || "").trim();
   if (key && key.length > 5) {
-    return { client: new GoogleGenAI({ apiKey: key }), key };
+    return new Groq({ apiKey: key });
   }
   return null;
 }
 
-const CANDIDATE_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
+async function callGroq(client: Groq, prompt: string, json = false): Promise<string> {
+  let lastError: any = null;
 
-export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
-  const instance = getGenAIClient(customKey);
-
-  if (!instance) {
-    throw new Error(
-      "Gemini API key is not configured. Please enter your free Google Gemini API key in the 'AI Engine' settings (top bar) or in .env to get real AI answers."
-    );
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const response = await client.chat.completions.create({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 4096,
+        ...(json ? { response_format: { type: "json_object" } } : {}),
+      });
+      const text = response.choices?.[0]?.message?.content || "";
+      if (text) return text;
+    } catch (err: any) {
+      console.warn(`Model ${model} failed:`, err?.message || err);
+      lastError = err;
+    }
   }
 
-  const { client } = instance;
+  throw new Error(
+    `AI call failed: ${lastError?.message || "Please check your Groq API key."}`
+  );
+}
+
+export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
+  const client = getGroqClient(customKey);
+
+  if (!client) {
+    throw new Error(
+      "AI API key is not configured. Please enter your free Groq API key in the 'AI Engine' settings (top bar) to get real AI answers."
+    );
+  }
 
   const fullPrompt = context
     ? `You are Nexa, the intelligent AI Academic Mentor and Doubt Solver for ScholarMate (developed by the Department of AI & ML for polytechnic and engineering students).
@@ -42,39 +64,17 @@ ${prompt}
 
 Please provide an accurate, clear, comprehensive, and well-structured answer with definitions, step-by-step explanations, formulas, and examples.`;
 
-  let lastError: any = null;
-
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: fullPrompt,
-      });
-
-      if (response.text) {
-        return response.text;
-      }
-    } catch (err: any) {
-      console.warn(`Model ${model} failed:`, err?.message || err);
-      lastError = err;
-    }
-  }
-
-  throw new Error(
-    `Google Gemini API call failed: ${lastError?.message || "Please check your Gemini API key and quota in AI Studio."}`
-  );
+  return callGroq(client, fullPrompt);
 }
 
 export async function generateAIStudyNotes(content: string, subject: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
+  const client = getGroqClient(customKey);
 
-  if (!instance) {
+  if (!client) {
     throw new Error(
-      "Gemini API key is not configured. Please enter your free Google Gemini API key in the 'AI Engine' settings (top bar) to generate real study notes."
+      "AI API key is not configured. Please enter your free Groq API key in the 'AI Engine' settings (top bar) to generate real study notes."
     );
   }
-
-  const { client } = instance;
 
   const prompt = `You are ScholarMate, an expert academic professor for polytechnic diploma students in "${subject}".
 Analyze the study material below and generate a rich, highly comprehensive revision pack for semester exams.
@@ -105,9 +105,7 @@ Required JSON format:
     "High-yield revision bullet point 9",
     "High-yield revision bullet point 10",
     "High-yield revision bullet point 11",
-    "High-yield revision bullet point 12",
-    "High-yield revision bullet point 13",
-    "High-yield revision bullet point 14"
+    "High-yield revision bullet point 12"
   ],
   "importantQuestions": [
     {
@@ -116,38 +114,13 @@ Required JSON format:
       "marks": 10
     },
     {
-      "question": "10-Mark comparison or architectural question statement?",
-      "answer": "Comprehensive model answer.",
-      "marks": 10
-    },
-    {
       "question": "5-Mark analytical or procedural question statement?",
       "answer": "Structured model answer with key bullet points.",
       "marks": 5
     },
     {
-      "question": "5-Mark algorithm or working principle question statement?",
-      "answer": "Structured model answer.",
-      "marks": 5
-    },
-    {
-      "question": "5-Mark advantages and limitations question statement?",
-      "answer": "Structured model answer.",
-      "marks": 5
-    },
-    {
       "question": "3-Mark definition question statement?",
       "answer": "Crisp model answer with formula or diagram reference.",
-      "marks": 3
-    },
-    {
-      "question": "3-Mark formula / state law question statement?",
-      "answer": "Exact law, formula, and units.",
-      "marks": 3
-    },
-    {
-      "question": "3-Mark distinction question statement?",
-      "answer": "Clear two-column or comparative model answer.",
       "marks": 3
     }
   ]
@@ -160,43 +133,19 @@ ${content.slice(0, 18000)}
 
 Return strictly valid JSON only. Do not wrap in extra prose.`;
 
-  let lastError: any = null;
-
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        },
-      });
-
-      if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
-      }
-    } catch (err: any) {
-      console.warn(`Notes generation on ${model} failed:`, err?.message || err);
-      lastError = err;
-    }
-  }
-
-  throw new Error(
-    `Failed to generate AI notes: ${lastError?.message || "Please check your Gemini API key."}`
-  );
+  const text = await callGroq(client, prompt, true);
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  return JSON.parse(cleaned);
 }
 
 export async function generateAIFlashcards(content: string, subject: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
+  const client = getGroqClient(customKey);
 
-  if (!instance) {
+  if (!client) {
     throw new Error(
-      "Gemini API key is not configured. Please enter your free Google Gemini API key in the 'AI Engine' settings to generate flashcards."
+      "AI API key is not configured. Please enter your free Groq API key in the 'AI Engine' settings to generate flashcards."
     );
   }
-
-  const { client } = instance;
 
   const prompt = `You are ScholarMate. Generate an extensive active-recall flashcard deck of 12 to 16 high-yield study cards based on this material for "${subject}".
 Include cards for:
@@ -222,43 +171,19 @@ ${content.slice(0, 15000)}
 
 Return strictly valid JSON array only.`;
 
-  let lastError: any = null;
-
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        },
-      });
-
-      if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
-      }
-    } catch (err: any) {
-      console.warn(`Flashcard generation on ${model} failed:`, err?.message || err);
-      lastError = err;
-    }
-  }
-
-  throw new Error(
-    `Failed to generate flashcards: ${lastError?.message || "Please check your Gemini API key."}`
-  );
+  const text = await callGroq(client, prompt, true);
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  return JSON.parse(cleaned);
 }
 
 export async function generateAIQuiz(content: string, subject: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
+  const client = getGroqClient(customKey);
 
-  if (!instance) {
+  if (!client) {
     throw new Error(
-      "Gemini API key is not configured. Please enter your free Google Gemini API key in the 'AI Engine' settings to generate quizzes."
+      "AI API key is not configured. Please enter your free Groq API key in the 'AI Engine' settings to generate quizzes."
     );
   }
-
-  const { client } = instance;
 
   const prompt = `You are ScholarMate. Create a comprehensive 8 to 10 question multiple choice quiz (MCQ) testing deep understanding of this material for "${subject}".
 Include a blend of:
@@ -286,31 +211,9 @@ ${content.slice(0, 15000)}
 
 Return strictly valid JSON array only.`;
 
-  let lastError: any = null;
-
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        },
-      });
-
-      if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
-      }
-    } catch (err: any) {
-      console.warn(`Quiz generation on ${model} failed:`, err?.message || err);
-      lastError = err;
-    }
-  }
-
-  throw new Error(
-    `Failed to generate quiz: ${lastError?.message || "Please check your Gemini API key."}`
-  );
+  const text = await callGroq(client, prompt, true);
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  return JSON.parse(cleaned);
 }
 
 export async function generateAISchedule(
@@ -319,15 +222,13 @@ export async function generateAISchedule(
   subjectsList: string[],
   customKey?: string
 ) {
-  const instance = getGenAIClient(customKey);
+  const client = getGroqClient(customKey);
 
-  if (!instance) {
+  if (!client) {
     throw new Error(
-      "Gemini API key is not configured. Please enter your free Google Gemini API key in the 'AI Engine' settings to generate study schedules."
+      "AI API key is not configured. Please enter your free Groq API key in the 'AI Engine' settings to generate study schedules."
     );
   }
-
-  const { client } = instance;
 
   const prompt = `Generate a realistic day-by-day revision timetable for a student preparing for "${targetExam}" scheduled on ${examDate}.
 Subjects to cover: ${subjectsList.join(", ")}.
@@ -349,29 +250,7 @@ Format strictly as a JSON array of 5 to 7 daily blocks:
 
 Return strictly valid JSON only.`;
 
-  let lastError: any = null;
-
-  for (const model of CANDIDATE_MODELS) {
-    try {
-      const response = await client.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-        },
-      });
-
-      if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
-      }
-    } catch (err: any) {
-      console.warn(`Schedule generation on ${model} failed:`, err?.message || err);
-      lastError = err;
-    }
-  }
-
-  throw new Error(
-    `Failed to generate study schedule: ${lastError?.message || "Please check your Gemini API key."}`
-  );
+  const text = await callGroq(client, prompt, true);
+  const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
+  return JSON.parse(cleaned);
 }
