@@ -46,21 +46,25 @@ export async function POST(req: Request) {
     // Update process.env in memory immediately
     process.env.GEMINI_API_KEY = trimmedKey;
 
-    // Persist into .env file
-    const envPath = path.join(process.cwd(), ".env");
-    let envContent = "";
-    if (fs.existsSync(envPath)) {
-      envContent = fs.readFileSync(envPath, "utf-8");
-      if (envContent.includes("GEMINI_API_KEY=")) {
-        envContent = envContent.replace(/GEMINI_API_KEY=.*/g, `GEMINI_API_KEY="${trimmedKey}"`);
+    // Persist into .env file if filesystem is writable (local dev)
+    try {
+      const envPath = path.join(process.cwd(), ".env");
+      let envContent = "";
+      if (fs.existsSync(envPath)) {
+        envContent = fs.readFileSync(envPath, "utf-8");
+        if (envContent.includes("GEMINI_API_KEY=")) {
+          envContent = envContent.replace(/GEMINI_API_KEY=.*/g, `GEMINI_API_KEY="${trimmedKey}"`);
+        } else {
+          envContent += `\nGEMINI_API_KEY="${trimmedKey}"\n`;
+        }
       } else {
-        envContent += `\nGEMINI_API_KEY="${trimmedKey}"\n`;
+        envContent = `DATABASE_URL="file:./dev.db"\nJWT_SECRET="scholarmate-super-secret-key-2026-aanm-vvrsr-polytechnic"\nGEMINI_API_KEY="${trimmedKey}"\n`;
       }
-    } else {
-      envContent = `DATABASE_URL="file:./dev.db"\nJWT_SECRET="scholarmate-super-secret-key-2026-aanm-vvrsr-polytechnic"\nGEMINI_API_KEY="${trimmedKey}"\n`;
+      fs.writeFileSync(envPath, envContent, "utf-8");
+    } catch (fsErr) {
+      // Gracefully ignore write errors on read-only serverless environments (Netlify/Vercel/Lambda)
+      console.warn("Filesystem is read-only (serverless), skipped writing to .env file:", fsErr);
     }
-
-    fs.writeFileSync(envPath, envContent, "utf-8");
 
     return NextResponse.json({
       success: true,
