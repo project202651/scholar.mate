@@ -48,7 +48,7 @@ export default function Navbar({
   ];
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-slate-800/80 bg-slate-950/75 backdrop-blur-md">
+    <header className="sticky top-0 z-30 w-full border-b border-white/10 bg-slate-950/60 backdrop-blur-2xl shadow-[0_4px_30px_rgba(0,0,0,0.25)]">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         {/* Logo & College Tag */}
         <div className="flex items-center gap-3">
@@ -79,7 +79,7 @@ export default function Navbar({
 
         {/* Navigation Tabs (Desktop) */}
         {user && (
-          <nav className="hidden lg:flex items-center gap-1 rounded-full bg-slate-900/80 p-1 border border-slate-800">
+          <nav className="hidden lg:flex items-center gap-1 rounded-full bg-slate-900/60 p-1 border border-white/10 backdrop-blur-xl shadow-inner">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
