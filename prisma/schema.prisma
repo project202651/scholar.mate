@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String         @id @default(cuid())
+  name         String
+  email        String         @unique
+  password     String
+  college      String         @default("AANM & VVRSR Polytechnic")
+  department   String         @default("Computer Engineering")
+  year         String         @default("Final Year (2026-2027)")
+  targetExam   String?        @default("Board / Semester Exams")
+  streakCount  Int            @default(1)
+  studyMinutes Int            @default(120)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  documents    Document[]
+  studyNotes   StudyNote[]
+  flashcards   FlashcardDeck[]
+  quizzes      Quiz[]
+  tasks        StudyTask[]
+  schedules    StudySchedule[]
+  chatMessages ChatMessage[]
+}
+
+model Document {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  subject       String          @default("General")
+  fileType      String          @default("pdf")
+  extractedText String
+  fileUrl       String?
+  createdAt     DateTime        @default(now())
+
+  studyNotes    StudyNote[]
+  flashcards    FlashcardDeck[]
+  quizzes       Quiz[]
+  chatMessages  ChatMessage[]
+}
+
+model StudyNote {
+  id                 String    @id @default(cuid())
+  userId             String
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId         String?
+  document           Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  title              String
+  subject            String    @default("General")
+  summary            String
+  bulletPoints       String    // JSON string array
+  importantQuestions String    // JSON string array of {question, answer, marks}
+  createdAt          DateTime  @default(now())
+}
+
+model FlashcardDeck {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  title      String
+  subject    String    @default("General")
+  cards      String    // JSON array of {id, front, back, mastered}
+  createdAt  DateTime  @default(now())
+}
+
+model Quiz {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId     String?
+  document       Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  title          String
+  subject        String    @default("General")
+  questions      String    // JSON array of {id, question, options, answer, explanation}
+  score          Int?
+  totalQuestions Int       @default(5)
+  completed      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+}
+
+model StudyTask {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  subject   String?  @default("General")
+  dueDate   String?
+  completed Boolean  @default(false)
+  priority  String   @default("medium") // high, medium, low
+  createdAt DateTime @default(now())
+}
+
+model StudySchedule {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetExam    String
+  examDate      String
+  daysRemaining Int
+  plan          String   // JSON array of daily tasks / time slots
+  createdAt     DateTime @default(now())
+}
+
+model ChatMessage {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documentId String?
+  document   Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  role       String    // "user" | "assistant"
+  content    String
+  createdAt  DateTime  @default(now())
+}
