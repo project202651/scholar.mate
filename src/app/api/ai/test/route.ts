@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     const ai = new GoogleGenAI({ apiKey: keyToTest });
-    const modelsToTry = ["gemini-3-flash-preview", "gemini-3.6-flash"];
+    const modelsToTry = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"];
 
     let successModel = "";
     let sampleResponse = "";

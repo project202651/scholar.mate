@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const testAi = new GoogleGenAI({ apiKey: trimmedKey });
     let verifiedModel = "";
 
-    const candidateModels = ["gemini-3-flash-preview", "gemini-3.6-flash"];
+    const candidateModels = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"];
     for (const m of candidateModels) {
       try {
         const testRes = await testAi.models.generateContent({
