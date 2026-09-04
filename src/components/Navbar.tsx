@@ -86,7 +86,7 @@ export default function Navbar({
                 onClick={() => setActiveTab(tab.id)}
                 className={`relative rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
                   activeTab === tab.id
-                    ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.5)]"
+                    ? "bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 text-white shadow-[0_0_18px_rgba(99,102,241,0.6)] font-semibold"
                     : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
                 }`}
               >

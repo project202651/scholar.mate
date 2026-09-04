@@ -81,11 +81,12 @@ export default function Home() {
       <CustomCursor />
       <ClickEffect />
 
-      {/* Ambient Glassmorphic Color Orbs for Frosted Refraction */}
+      {/* Ambient Glassmorphic Color Orbs for Rich Frosted Refraction */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-cyan-500/20 via-indigo-600/15 to-transparent blur-[120px] animate-orb-1" />
-        <div className="absolute top-1/3 -right-32 w-[600px] h-[600px] rounded-full bg-gradient-to-bl from-purple-600/20 via-indigo-600/15 to-transparent blur-[130px] animate-orb-2" />
-        <div className="absolute -bottom-40 left-1/4 w-[650px] h-[650px] rounded-full bg-gradient-to-tr from-indigo-600/20 via-cyan-500/15 to-transparent blur-[140px] animate-orb-3" />
+        <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-cyan-500/30 via-blue-600/25 to-transparent blur-[130px] animate-orb-1" />
+        <div className="absolute top-1/4 -right-32 w-[650px] h-[650px] rounded-full bg-gradient-to-bl from-fuchsia-500/30 via-purple-600/25 to-transparent blur-[140px] animate-orb-2" />
+        <div className="absolute top-2/3 -left-20 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-emerald-500/25 via-teal-600/20 to-transparent blur-[130px] animate-orb-3" />
+        <div className="absolute -bottom-40 right-1/4 w-[700px] h-[700px] rounded-full bg-gradient-to-tl from-indigo-600/30 via-pink-500/20 to-amber-500/15 blur-[150px] animate-orb-1" />
       </div>
 
       {/* Starting Animation Splash Screen */}

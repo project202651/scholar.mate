@@ -172,10 +172,10 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Exam Readiness Card */}
+            {/* Exam Readiness Card (Vibrant Indigo/Cyan) */}
             <motion.div
               whileHover={{ y: -4 }}
-              className="rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/40 to-slate-900/80 p-5 shadow-lg backdrop-blur-md"
+              className="rounded-2xl border border-indigo-500/50 bg-gradient-to-br from-indigo-950/60 via-slate-900/90 to-purple-950/40 p-5 shadow-lg shadow-indigo-500/15 backdrop-blur-md"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300">
@@ -189,19 +189,19 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
                 </span>
                 <span className="text-xs text-emerald-400 font-medium">On Track</span>
               </div>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-800/80">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-1000"
+                  className="h-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-purple-500 transition-all duration-1000 shadow-[0_0_12px_rgba(6,182,212,0.6)]"
                   style={{ width: `${stats.readinessScore}%` }}
                 />
               </div>
               <p className="mt-2 text-[11px] text-slate-400">Based on notes, quizzes & tasks</p>
             </motion.div>
 
-            {/* Study Time Card */}
+            {/* Study Time Card (Vibrant Cyan/Blue) */}
             <motion.div
               whileHover={{ y: -4 }}
-              className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-cyan-950/30 to-slate-900/80 p-5 shadow-lg backdrop-blur-md"
+              className="rounded-2xl border border-cyan-500/50 bg-gradient-to-br from-cyan-950/60 via-slate-900/90 to-blue-950/40 p-5 shadow-lg shadow-cyan-500/15 backdrop-blur-md"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-cyan-300">
@@ -220,10 +220,10 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
               </p>
             </motion.div>
 
-            {/* Quizzes & Recall */}
+            {/* Quizzes & Recall (Vibrant Purple/Pink) */}
             <motion.div
               whileHover={{ y: -4 }}
-              className="rounded-2xl border border-purple-500/30 bg-gradient-to-b from-purple-950/30 to-slate-900/80 p-5 shadow-lg backdrop-blur-md"
+              className="rounded-2xl border border-purple-500/50 bg-gradient-to-br from-purple-950/60 via-slate-900/90 to-pink-950/40 p-5 shadow-lg shadow-purple-500/15 backdrop-blur-md"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-purple-300">
@@ -242,10 +242,10 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
               </p>
             </motion.div>
 
-            {/* Daily Tasks */}
+            {/* Daily Tasks (Vibrant Emerald/Teal) */}
             <motion.div
               whileHover={{ y: -4 }}
-              className="rounded-2xl border border-emerald-500/30 bg-gradient-to-b from-emerald-950/30 to-slate-900/80 p-5 shadow-lg backdrop-blur-md"
+              className="rounded-2xl border border-emerald-500/50 bg-gradient-to-br from-emerald-950/60 via-slate-900/90 to-teal-950/40 p-5 shadow-lg shadow-emerald-500/15 backdrop-blur-md"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
@@ -274,19 +274,19 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
         <h2 className="text-lg font-bold text-white">Core AI Study Suite</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Card 1: Nexa AI Doubt Solver */}
+          {/* Card 1: Nexa AI Doubt Solver (Electric Cyan) */}
           <div
             onClick={() => setActiveTab(user ? "chat" : "dashboard")}
-            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-cyan-500/10"
+            className="group cursor-pointer rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-cyan-950/40 via-slate-900/80 to-blue-950/20 p-6 transition-all hover:border-cyan-400 hover:bg-slate-900 hover:shadow-xl hover:shadow-cyan-500/20"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
               <BrainCircuit className="h-6 w-6" />
             </div>
             <h3 className="mt-4 text-base font-bold text-white group-hover:text-cyan-400 transition-colors flex items-center gap-2">
               <span>Nexa AI Doubt Solver</span>
-              <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-300">24/7</span>
+              <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-300 border border-cyan-500/40">24/7</span>
             </h3>
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               Ask Nexa AI for step-by-step answers, 5 & 10 mark exam structures, code snippets, and intuitive derivations tailored for polytechnic exams.
             </p>
             <div className="mt-4 flex items-center text-xs font-semibold text-cyan-400 gap-1">
@@ -295,18 +295,18 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
             </div>
           </div>
 
-          {/* Card 2: Smart Notes & Summarizer */}
+          {/* Card 2: Smart Notes & Summarizer (Electric Indigo) */}
           <div
             onClick={() => setActiveTab(user ? "notes" : "dashboard")}
-            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-indigo-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-indigo-500/10"
+            className="group cursor-pointer rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-950/40 via-slate-900/80 to-purple-950/20 p-6 transition-all hover:border-indigo-400 hover:bg-slate-900 hover:shadow-xl hover:shadow-indigo-500/20"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30 group-hover:scale-110 transition-transform">
               <BookOpen className="h-6 w-6" />
             </div>
             <h3 className="mt-4 text-base font-bold text-white group-hover:text-indigo-400 transition-colors">
               Smart Notes & Summarizer
             </h3>
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               Turn long PDF chapters into concise 3-paragraph summaries, auto bullet points, and
               high-yield 5-mark & 10-mark exam questions.
             </p>
@@ -316,39 +316,39 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
             </div>
           </div>
 
-          {/* Card 3: 3D Flashcards */}
+          {/* Card 3: 3D Flashcards (Neon Magenta / Purple) */}
           <div
             onClick={() => setActiveTab(user ? "flashcards" : "dashboard")}
-            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-purple-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-purple-500/10"
+            className="group cursor-pointer rounded-2xl border border-fuchsia-500/30 bg-gradient-to-b from-fuchsia-950/40 via-slate-900/80 to-pink-950/20 p-6 transition-all hover:border-fuchsia-400 hover:bg-slate-900 hover:shadow-xl hover:shadow-fuchsia-500/20"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-fuchsia-500 to-pink-600 text-white shadow-lg shadow-fuchsia-500/30 group-hover:scale-110 transition-transform">
               <Layers className="h-6 w-6" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-white group-hover:text-purple-400 transition-colors">
+            <h3 className="mt-4 text-base font-bold text-white group-hover:text-fuchsia-400 transition-colors">
               3D Interactive Flashcards
             </h3>
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               Active recall practice with 3D animated card flips. Mark cards as mastered to lock
               formulas and definitions into long-term memory.
             </p>
-            <div className="mt-4 flex items-center text-xs font-semibold text-purple-400 gap-1">
+            <div className="mt-4 flex items-center text-xs font-semibold text-fuchsia-400 gap-1">
               <span>Practice flashcards</span>
               <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
 
-          {/* Card 4: AI Quiz Arena */}
+          {/* Card 4: AI Quiz Arena (Golden Amber) */}
           <div
             onClick={() => setActiveTab(user ? "quiz" : "dashboard")}
-            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-amber-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-amber-500/10"
+            className="group cursor-pointer rounded-2xl border border-amber-500/30 bg-gradient-to-b from-amber-950/40 via-slate-900/80 to-orange-950/20 p-6 transition-all hover:border-amber-400 hover:bg-slate-900 hover:shadow-xl hover:shadow-amber-500/20"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/30 group-hover:scale-110 transition-transform">
               <Award className="h-6 w-6" />
             </div>
             <h3 className="mt-4 text-base font-bold text-white group-hover:text-amber-400 transition-colors">
               AI Speed Quiz Arena
             </h3>
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               Auto-generate 5-question timed multiple choice quizzes from your notes. Instant answer
               evaluations and performance reports.
             </p>
@@ -358,18 +358,18 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
             </div>
           </div>
 
-          {/* Card 5: AI Timetable & Schedule */}
+          {/* Card 5: AI Timetable & Schedule (Emerald & Mint) */}
           <div
             onClick={() => setActiveTab(user ? "schedule" : "dashboard")}
-            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-emerald-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-emerald-500/10"
+            className="group cursor-pointer rounded-2xl border border-emerald-500/30 bg-gradient-to-b from-emerald-950/40 via-slate-900/80 to-teal-950/20 p-6 transition-all hover:border-emerald-400 hover:bg-slate-900 hover:shadow-xl hover:shadow-emerald-500/20"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition-transform">
               <Calendar className="h-6 w-6" />
             </div>
             <h3 className="mt-4 text-base font-bold text-white group-hover:text-emerald-400 transition-colors">
               AI Study Timetable
             </h3>
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               Input your semester exam date and subjects. AI generates a balanced day-by-day revision
               schedule so you never have to cram at the last minute.
             </p>
@@ -379,18 +379,18 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
             </div>
           </div>
 
-          {/* Card 6: Document Upload Hub */}
+          {/* Card 6: Document Upload Hub (Sapphire Blue) */}
           <div
             onClick={() => setActiveTab(user ? "docs" : "dashboard")}
-            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-blue-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-blue-500/10"
+            className="group cursor-pointer rounded-2xl border border-blue-500/30 bg-gradient-to-b from-blue-950/40 via-slate-900/80 to-cyan-950/20 p-6 transition-all hover:border-blue-400 hover:bg-slate-900 hover:shadow-xl hover:shadow-blue-500/20"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-600 text-white shadow-lg shadow-blue-500/30 group-hover:scale-110 transition-transform">
               <FileText className="h-6 w-6" />
             </div>
             <h3 className="mt-4 text-base font-bold text-white group-hover:text-blue-400 transition-colors">
               Document & Notes Hub
             </h3>
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               Upload PDF textbooks, lecture slides, syllabus copies, or handwritten notes. Your
               knowledge base for all AI study tools.
             </p>
@@ -400,22 +400,22 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
             </div>
           </div>
 
-          {/* Card 7: Student Study & Focus Timer */}
+          {/* Card 7: Student Study & Focus Timer (Coral Rose & Flame) */}
           <div
             onClick={() => setActiveTab(user ? "timer" : "dashboard")}
-            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-cyan-500/10"
+            className="group cursor-pointer rounded-2xl border border-rose-500/30 bg-gradient-to-b from-rose-950/40 via-slate-900/80 to-orange-950/20 p-6 transition-all hover:border-rose-400 hover:bg-slate-900 hover:shadow-xl hover:shadow-rose-500/20"
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 group-hover:scale-110 transition-transform">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-rose-500 to-orange-500 text-white shadow-lg shadow-rose-500/30 group-hover:scale-110 transition-transform">
               <Clock className="h-6 w-6" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-white group-hover:text-cyan-400 transition-colors flex items-center gap-2">
+            <h3 className="mt-4 text-base font-bold text-white group-hover:text-rose-400 transition-colors flex items-center gap-2">
               <span>Student Focus Timer</span>
-              <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-300">Pomodoro</span>
+              <span className="rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-500/40">Pomodoro</span>
             </h3>
-            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+            <p className="mt-2 text-xs text-slate-300 leading-relaxed">
               Scientific 25/5m Pomodoro cycles, 50m deep work sessions, exam pressure countdowns, and Web Audio focus ambience with auto progress tracking.
             </p>
-            <div className="mt-4 flex items-center text-xs font-semibold text-cyan-400 gap-1">
+            <div className="mt-4 flex items-center text-xs font-semibold text-rose-400 gap-1">
               <span>Start focus timer</span>
               <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -488,32 +488,33 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Member 1: Vastav */}
             <motion.div
-              whileHover={{ y: -4 }}
-              className="relative overflow-hidden rounded-2xl border border-cyan-500/40 bg-slate-900/90 p-5 shadow-lg flex flex-col justify-between"
+              whileHover={{ y: -5 }}
+              className="relative overflow-hidden rounded-2xl border border-cyan-500/50 bg-gradient-to-b from-cyan-950/40 via-slate-900/90 to-blue-950/30 p-5 shadow-lg shadow-cyan-500/10 hover:shadow-cyan-500/30 hover:border-cyan-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 font-mono font-bold text-sm">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30 font-mono font-bold text-sm">
                     01
                   </span>
-                  <span className="rounded-full bg-cyan-500/15 border border-cyan-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-300">
+                  <span className="rounded-full bg-cyan-500/20 border border-cyan-500/40 px-2.5 py-0.5 text-[10px] font-semibold text-cyan-300 shadow-sm">
                     Team Lead
                   </span>
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-white tracking-wide">
-                  Vastav
+                <h3 className="mt-4 text-lg font-bold text-white tracking-wide flex items-center gap-1.5">
+                  <span>Vastav</span>
+                  <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 text-[11px] font-mono font-semibold text-cyan-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-cyan-950/80 border border-cyan-500/40 px-2 py-0.5 text-[11px] font-mono font-semibold text-cyan-300">
                   <span>PIN:</span>
                   <span className="text-white">24030-AIM-026</span>
                 </div>
                 <p className="text-[11px] font-medium text-slate-400 mt-1">
                   Branch: AI & ML (2026-27)
                 </p>
-                <p className="text-xs font-semibold text-cyan-200 mt-2">
+                <p className="text-xs font-semibold text-cyan-300 mt-2">
                   AI Architecture & Full-Stack Lead
                 </p>
-                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-400">
+                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-300">
                   <li className="flex items-start gap-1.5">
                     <span className="text-cyan-400 font-bold">•</span>
                     <span>Google Gemini 3 Neural Integration</span>
@@ -528,39 +529,40 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
                   </li>
                 </ul>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-800 text-[10px] text-cyan-400/80 font-mono">
+              <div className="mt-5 pt-3 border-t border-cyan-500/20 text-[10px] text-cyan-400 font-mono">
                 AANM & VVRSR Polytechnic
               </div>
             </motion.div>
 
             {/* Member 2: Vishnu */}
             <motion.div
-              whileHover={{ y: -4 }}
-              className="relative overflow-hidden rounded-2xl border border-indigo-500/40 bg-slate-900/90 p-5 shadow-lg flex flex-col justify-between"
+              whileHover={{ y: -5 }}
+              className="relative overflow-hidden rounded-2xl border border-indigo-500/50 bg-gradient-to-b from-indigo-950/40 via-slate-900/90 to-purple-950/30 p-5 shadow-lg shadow-indigo-500/10 hover:shadow-indigo-500/30 hover:border-indigo-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 font-mono font-bold text-sm">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/30 font-mono font-bold text-sm">
                     02
                   </span>
-                  <span className="rounded-full bg-indigo-500/15 border border-indigo-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-300">
+                  <span className="rounded-full bg-indigo-500/20 border border-indigo-500/40 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-300 shadow-sm">
                     3D Graphics
                   </span>
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-white tracking-wide">
-                  Vishnu
+                <h3 className="mt-4 text-lg font-bold text-white tracking-wide flex items-center gap-1.5">
+                  <span>Vishnu</span>
+                  <span className="h-2 w-2 rounded-full bg-indigo-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-indigo-950/60 border border-indigo-500/30 px-2 py-0.5 text-[11px] font-mono font-semibold text-indigo-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-indigo-950/80 border border-indigo-500/40 px-2 py-0.5 text-[11px] font-mono font-semibold text-indigo-300">
                   <span>PIN:</span>
                   <span className="text-white">24030-AIM-020</span>
                 </div>
                 <p className="text-[11px] font-medium text-slate-400 mt-1">
                   Branch: AI & ML (2026-27)
                 </p>
-                <p className="text-xs font-semibold text-indigo-200 mt-2">
+                <p className="text-xs font-semibold text-indigo-300 mt-2">
                   Three.js 3D & UI/UX Developer
                 </p>
-                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-400">
+                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-300">
                   <li className="flex items-start gap-1.5">
                     <span className="text-indigo-400 font-bold">•</span>
                     <span>Interactive Three.js 3D Study Orb</span>
@@ -575,86 +577,88 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
                   </li>
                 </ul>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-800 text-[10px] text-indigo-400/80 font-mono">
+              <div className="mt-5 pt-3 border-t border-indigo-500/20 text-[10px] text-indigo-400 font-mono">
                 AANM & VVRSR Polytechnic
               </div>
             </motion.div>
 
             {/* Member 3: Nikhileswar */}
             <motion.div
-              whileHover={{ y: -4 }}
-              className="relative overflow-hidden rounded-2xl border border-purple-500/40 bg-slate-900/90 p-5 shadow-lg flex flex-col justify-between"
+              whileHover={{ y: -5 }}
+              className="relative overflow-hidden rounded-2xl border border-fuchsia-500/50 bg-gradient-to-b from-fuchsia-950/40 via-slate-900/90 to-purple-950/30 p-5 shadow-lg shadow-fuchsia-500/10 hover:shadow-fuchsia-500/30 hover:border-fuchsia-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 font-mono font-bold text-sm">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-fuchsia-500 to-pink-600 text-white shadow-md shadow-fuchsia-500/30 font-mono font-bold text-sm">
                     03
                   </span>
-                  <span className="rounded-full bg-purple-500/15 border border-purple-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-purple-300">
+                  <span className="rounded-full bg-fuchsia-500/20 border border-fuchsia-500/40 px-2.5 py-0.5 text-[10px] font-semibold text-fuchsia-300 shadow-sm">
                     Backend & DB
                   </span>
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-white tracking-wide">
-                  Nikhileswar
+                <h3 className="mt-4 text-lg font-bold text-white tracking-wide flex items-center gap-1.5">
+                  <span>Nikhileswar</span>
+                  <span className="h-2 w-2 rounded-full bg-fuchsia-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 text-[11px] font-mono font-semibold text-purple-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-fuchsia-950/80 border border-fuchsia-500/40 px-2 py-0.5 text-[11px] font-mono font-semibold text-fuchsia-300">
                   <span>PIN:</span>
                   <span className="text-white">24030-AIM-051</span>
                 </div>
                 <p className="text-[11px] font-medium text-slate-400 mt-1">
                   Branch: AI & ML (2026-27)
                 </p>
-                <p className="text-xs font-semibold text-purple-200 mt-2">
+                <p className="text-xs font-semibold text-fuchsia-300 mt-2">
                   Database & API Engine Architect
                 </p>
-                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-400">
+                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-300">
                   <li className="flex items-start gap-1.5">
-                    <span className="text-purple-400 font-bold">•</span>
+                    <span className="text-fuchsia-400 font-bold">•</span>
                     <span>Prisma SQLite relational models</span>
                   </li>
                   <li className="flex items-start gap-1.5">
-                    <span className="text-purple-400 font-bold">•</span>
+                    <span className="text-fuchsia-400 font-bold">•</span>
                     <span>Student JWT authentication & bcrypt</span>
                   </li>
                   <li className="flex items-start gap-1.5">
-                    <span className="text-purple-400 font-bold">•</span>
+                    <span className="text-fuchsia-400 font-bold">•</span>
                     <span>PDF parser & document storage</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-800 text-[10px] text-purple-400/80 font-mono">
+              <div className="mt-5 pt-3 border-t border-fuchsia-500/20 text-[10px] text-fuchsia-400 font-mono">
                 AANM & VVRSR Polytechnic
               </div>
             </motion.div>
 
             {/* Member 4: Sathvik */}
             <motion.div
-              whileHover={{ y: -4 }}
-              className="relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-slate-900/90 p-5 shadow-lg flex flex-col justify-between"
+              whileHover={{ y: -5 }}
+              className="relative overflow-hidden rounded-2xl border border-emerald-500/50 bg-gradient-to-b from-emerald-950/40 via-slate-900/90 to-teal-950/30 p-5 shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/30 hover:border-emerald-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-mono font-bold text-sm">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30 font-mono font-bold text-sm">
                     04
                   </span>
-                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                  <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300 shadow-sm">
                     AI Curriculum
                   </span>
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-white tracking-wide">
-                  Sathvik
+                <h3 className="mt-4 text-lg font-bold text-white tracking-wide flex items-center gap-1.5">
+                  <span>Sathvik</span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-mono font-semibold text-emerald-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 px-2 py-0.5 text-[11px] font-mono font-semibold text-emerald-300">
                   <span>PIN:</span>
                   <span className="text-white">24030-AIM-022</span>
                 </div>
                 <p className="text-[11px] font-medium text-slate-400 mt-1">
                   Branch: AI & ML (2026-27)
                 </p>
-                <p className="text-xs font-semibold text-emerald-200 mt-2">
+                <p className="text-xs font-semibold text-emerald-300 mt-2">
                   Active Recall & Quiz Engine Lead
                 </p>
-                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-400">
+                <ul className="mt-3 space-y-1.5 text-[11px] text-slate-300">
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-400 font-bold">•</span>
                     <span>3, 5 & 10-mark exam question prompts</span>
@@ -665,11 +669,11 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="text-emerald-400 font-bold">•</span>
-                    <span>AI speed quiz & timetable scheduler</span>
+                    <span>Timed MCQ generation & scoring</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-800 text-[10px] text-emerald-400/80 font-mono">
+              <div className="mt-5 pt-3 border-t border-emerald-500/20 text-[10px] text-emerald-400 font-mono">
                 AANM & VVRSR Polytechnic
               </div>
             </motion.div>

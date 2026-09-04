@@ -41,13 +41,32 @@ export default function ThreeBackground() {
       });
     }
 
+    // Vibrant multi-color palette for particles
+    const colors = new Float32Array(count * 3);
+    const colorPalette = [
+      new THREE.Color(0x06b6d4), // Vibrant cyan
+      new THREE.Color(0x818cf8), // Electric indigo
+      new THREE.Color(0xc084fc), // Neon purple
+      new THREE.Color(0xf43f5e), // Rose pink
+      new THREE.Color(0x10b981), // Emerald green
+      new THREE.Color(0xf59e0b), // Golden amber
+    ];
+
+    for (let i = 0; i < count; i++) {
+      const col = colorPalette[i % colorPalette.length];
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+    }
+
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      color: 0x6366f1,
-      size: 1.8,
+      vertexColors: true,
+      size: 2.2,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.8,
     });
 
     const particles = new THREE.Points(geometry, material);
