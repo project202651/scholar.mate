@@ -14,6 +14,7 @@ import SmartNotesView from "@/components/SmartNotesView";
 import FlashcardsView from "@/components/FlashcardsView";
 import QuizArenaView from "@/components/QuizArenaView";
 import StudyScheduleView from "@/components/StudyScheduleView";
+import StudyTimerView from "@/components/StudyTimerView";
 import DailyTasksView from "@/components/DailyTasksView";
 import DocHubView from "@/components/DocHubView";
 import { GraduationCap, Play, Sparkles } from "lucide-react";
@@ -112,6 +113,8 @@ export default function Home() {
         {activeTab === "chat" && (
           <ChatTutorView onOpenAISettings={() => setIsAISettingsOpen(true)} />
         )}
+
+        {activeTab === "timer" && <StudyTimerView />}
 
         {activeTab === "notes" && (
           <SmartNotesView onOpenAISettings={() => setIsAISettingsOpen(true)} />

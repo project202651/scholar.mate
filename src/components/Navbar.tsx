@@ -37,7 +37,8 @@ export default function Navbar({
 }: NavbarProps) {
   const tabs = [
     { id: "dashboard", label: "Dashboard" },
-    { id: "chat", label: "AI Doubt Solver" },
+    { id: "chat", label: "Nexa AI Bot" },
+    { id: "timer", label: "Study Timer" },
     { id: "notes", label: "Smart Notes" },
     { id: "flashcards", label: "3D Flashcards" },
     { id: "quiz", label: "AI Quiz Arena" },

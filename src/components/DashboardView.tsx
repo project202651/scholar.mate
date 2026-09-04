@@ -114,14 +114,21 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:brightness-110 active:scale-95 transition-all"
                   >
                     <BrainCircuit className="h-4 w-4" />
-                    <span>Ask AI Doubt Solver</span>
+                    <span>Ask Nexa AI Bot</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("timer")}
+                    className="flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-5 py-3 text-sm font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-all active:scale-95 shadow-sm"
+                  >
+                    <Clock className="h-4 w-4 text-cyan-400 animate-pulse" />
+                    <span>Focus Study Timer</span>
                   </button>
                   <button
                     onClick={() => setActiveTab("notes")}
                     className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/80 px-5 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-700/80 hover:text-white transition-all"
                   >
                     <BookOpen className="h-4 w-4 text-indigo-400" />
-                    <span>Generate Smart Notes</span>
+                    <span>Smart Notes</span>
                   </button>
                 </>
               ) : (
@@ -267,7 +274,7 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
         <h2 className="text-lg font-bold text-white">Core AI Study Suite</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Card 1: AI Chatbot */}
+          {/* Card 1: Nexa AI Doubt Solver */}
           <div
             onClick={() => setActiveTab(user ? "chat" : "dashboard")}
             className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-cyan-500/10"
@@ -275,15 +282,15 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 group-hover:scale-110 transition-transform">
               <BrainCircuit className="h-6 w-6" />
             </div>
-            <h3 className="mt-4 text-base font-bold text-white group-hover:text-cyan-400 transition-colors">
-              AI Doubt Solver Tutor
+            <h3 className="mt-4 text-base font-bold text-white group-hover:text-cyan-400 transition-colors flex items-center gap-2">
+              <span>Nexa AI Doubt Solver</span>
+              <span className="rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-300">24/7</span>
             </h3>
             <p className="mt-2 text-xs text-slate-400 leading-relaxed">
-              Get clear, step-by-step solutions for complex diploma and engineering questions.
-              Supports diagrams, formulas, and code.
+              Ask Nexa AI for step-by-step answers, 5 & 10 mark exam structures, code snippets, and intuitive derivations tailored for polytechnic exams.
             </p>
             <div className="mt-4 flex items-center text-xs font-semibold text-cyan-400 gap-1">
-              <span>Ask a question</span>
+              <span>Chat with Nexa AI</span>
               <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -389,6 +396,27 @@ export default function DashboardView({ user, setActiveTab, onOpenAuth }: Dashbo
             </p>
             <div className="mt-4 flex items-center text-xs font-semibold text-blue-400 gap-1">
               <span>Upload materials</span>
+              <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* Card 7: Student Study & Focus Timer */}
+          <div
+            onClick={() => setActiveTab(user ? "timer" : "dashboard")}
+            className="group cursor-pointer rounded-2xl border border-slate-800 bg-slate-900/80 p-6 transition-all hover:border-cyan-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-cyan-500/10"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 group-hover:scale-110 transition-transform">
+              <Clock className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 text-base font-bold text-white group-hover:text-cyan-400 transition-colors flex items-center gap-2">
+              <span>Student Focus Timer</span>
+              <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-300">Pomodoro</span>
+            </h3>
+            <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+              Scientific 25/5m Pomodoro cycles, 50m deep work sessions, exam pressure countdowns, and Web Audio focus ambience with auto progress tracking.
+            </p>
+            <div className="mt-4 flex items-center text-xs font-semibold text-cyan-400 gap-1">
+              <span>Start focus timer</span>
               <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>

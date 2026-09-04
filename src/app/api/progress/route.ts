@@ -77,3 +77,37 @@ export async function GET() {
     return NextResponse.json({ error: "Failed to calculate progress" }, { status: 500 });
   }
 }
+
+export async function POST(req: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const minutes = Math.max(1, Math.min(360, parseInt(body.minutes || "25", 10)));
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        studyMinutes: { increment: minutes },
+      },
+      select: {
+        id: true,
+        studyMinutes: true,
+        streakCount: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      addedMinutes: minutes,
+      totalStudyMinutes: updatedUser.studyMinutes,
+      studyHours: (updatedUser.studyMinutes / 60).toFixed(1),
+    });
+  } catch (err: any) {
+    console.error("Failed to record study session:", err);
+    return NextResponse.json({ error: "Failed to record study session" }, { status: 500 });
+  }
+}
