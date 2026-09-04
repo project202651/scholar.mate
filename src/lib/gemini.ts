@@ -10,6 +10,37 @@ function getGenAIClient(customApiKey?: string) {
 
 const CANDIDATE_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"];
 
+function safeJsonParse(rawText: string) {
+  const cleaned = rawText.replace(/```json/gi, "").replace(/```/gi, "").trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    try {
+      const sanitized = cleaned.replace(/\\(?![/u"bfnrt\\])/g, "\\\\");
+      return JSON.parse(sanitized);
+    } catch {
+      const firstBrace = cleaned.indexOf("{");
+      const firstBracket = cleaned.indexOf("[");
+      if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+        const lastBrace = cleaned.lastIndexOf("}");
+        if (lastBrace !== -1) {
+          const slice = cleaned.slice(firstBrace, lastBrace + 1);
+          const sanitizedSlice = slice.replace(/\\(?![/u"bfnrt\\])/g, "\\\\");
+          return JSON.parse(sanitizedSlice);
+        }
+      } else if (firstBracket !== -1) {
+        const lastBracket = cleaned.lastIndexOf("]");
+        if (lastBracket !== -1) {
+          const slice = cleaned.slice(firstBracket, lastBracket + 1);
+          const sanitizedSlice = slice.replace(/\\(?![/u"bfnrt\\])/g, "\\\\");
+          return JSON.parse(sanitizedSlice);
+        }
+      }
+      throw new Error("Unable to parse structured JSON response from Gemini");
+    }
+  }
+}
+
 export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
   const instance = getGenAIClient(customKey);
 
@@ -173,8 +204,7 @@ Return strictly valid JSON only. Do not wrap in extra prose.`;
       });
 
       if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
+        return safeJsonParse(response.text);
       }
     } catch (err: any) {
       console.warn(`Notes generation on ${model} failed:`, err?.message || err);
@@ -235,8 +265,7 @@ Return strictly valid JSON array only.`;
       });
 
       if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
+        return safeJsonParse(response.text);
       }
     } catch (err: any) {
       console.warn(`Flashcard generation on ${model} failed:`, err?.message || err);
@@ -299,8 +328,7 @@ Return strictly valid JSON array only.`;
       });
 
       if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
+        return safeJsonParse(response.text);
       }
     } catch (err: any) {
       console.warn(`Quiz generation on ${model} failed:`, err?.message || err);
@@ -362,8 +390,7 @@ Return strictly valid JSON only.`;
       });
 
       if (response.text) {
-        const cleaned = response.text.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleaned);
+        return safeJsonParse(response.text);
       }
     } catch (err: any) {
       console.warn(`Schedule generation on ${model} failed:`, err?.message || err);

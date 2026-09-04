@@ -11,11 +11,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { question, documentId } = body;
+    const questionText = body.question || body.message || "";
+    const documentId = body.documentId || null;
 
-    if (!question || question.trim().length === 0) {
+    if (!questionText || questionText.trim().length === 0) {
       return NextResponse.json({ error: "Question cannot be empty" }, { status: 400 });
     }
+    const question = questionText.trim();
 
     let docContext = "";
     if (documentId) {
