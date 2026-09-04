@@ -8,7 +8,7 @@ function getGenAIClient(customApiKey?: string) {
   return null;
 }
 
-const CANDIDATE_MODELS = ["gemini-3-flash-preview", "gemini-3.6-flash"];
+const CANDIDATE_MODELS = ["gemini-2.0-flash", "gemini-1.5-flash"];
 
 export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
   const instance = getGenAIClient(customKey);
