@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -22,36 +22,42 @@ import {
   Coffee,
   BrainCircuit,
   Zap,
+  Target,
+  ArrowRight
 } from "lucide-react";
 import confetti from "canvas-confetti";
+
+interface StudyTimerViewProps {
+  initialTopic?: string;
+  onNavigateToPractice?: (topic: string) => void;
+}
 
 type TimerMode = "pomodoro" | "deep" | "exam" | "custom";
 type SessionType = "focus" | "shortBreak" | "longBreak";
 
 const PRESET_SUBJECTS = [
-  "Artificial Intelligence & ML",
+  "Operating Systems",
   "Data Structures & Algorithms",
   "Database Management Systems",
-  "Operating Systems",
   "Computer Networks",
-  "Applied Mathematics",
-  "Final Year Project Work",
+  "Engineering Mathematics",
+  "Theory of Computation",
 ];
 
 const MOTIVATIONAL_QUOTES = [
-  "Focus is the bridge between goals and polytechnic excellence.",
-  "Small daily improvements over time lead to stunning semester results.",
-  "Deep work in AI & ML builds the skills of tomorrow.",
-  "Your future self will thank you for the focus you put in today.",
-  "One concept at a time. Master the fundamentals first.",
+  "Focus is the bridge between goals and exam excellence.",
+  "25 minutes of deep focus on your weak topic transforms your exam score.",
+  "One concept at a time. Eliminate the weakness before exam day.",
+  "Your future self will thank you for the focus you put in right now.",
+  "Master the derivations first, practice the problems second.",
   "Consistency beats intensity. Keep the study streak alive!",
 ];
 
-export default function StudyTimerView() {
-  // Timer settings
+export default function StudyTimerView({ initialTopic, onNavigateToPractice }: StudyTimerViewProps) {
   const [timerMode, setTimerMode] = useState<TimerMode>("pomodoro");
   const [sessionType, setSessionType] = useState<SessionType>("focus");
   const [selectedSubject, setSelectedSubject] = useState(PRESET_SUBJECTS[0]);
+  const [targetTopic, setTargetTopic] = useState(initialTopic || "Deadlock Banker's Algorithm");
   
   // Durations in minutes
   const [focusDuration, setFocusDuration] = useState(25);
@@ -66,16 +72,24 @@ export default function StudyTimerView() {
   const [totalFocusedMinutes, setTotalFocusedMinutes] = useState(0);
   const [isZenMode, setIsZenMode] = useState(false);
   
+  // Post-session checkpoint
+  const [showCheckpoint, setShowCheckpoint] = useState(false);
+  const [comprehensionScore, setComprehensionScore] = useState<number | null>(null);
+
   // Audio states
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [ambientSound, setAmbientSound] = useState<"none" | "white" | "binaural">("none");
   const audioContextRef = useRef<AudioContext | null>(null);
   const ambientNodeRef = useRef<any>(null);
 
-  // Motivational quote
   const [quoteIndex, setQuoteIndex] = useState(0);
 
-  // Sync timeLeft when mode changes and timer is not running
+  useEffect(() => {
+    if (initialTopic) {
+      setTargetTopic(initialTopic);
+    }
+  }, [initialTopic]);
+
   useEffect(() => {
     if (!isRunning) {
       if (sessionType === "focus") {
@@ -91,7 +105,6 @@ export default function StudyTimerView() {
     }
   }, [timerMode, sessionType, focusDuration, shortBreakDuration, longBreakDuration, examDuration, isRunning]);
 
-  // Rotate motivational quote every 2 minutes
   useEffect(() => {
     const interval = setInterval(() => {
       setQuoteIndex((prev) => (prev + 1) % MOTIVATIONAL_QUOTES.length);
@@ -99,14 +112,13 @@ export default function StudyTimerView() {
     return () => clearInterval(interval);
   }, []);
 
-  // Web Audio chime for timer finish
   const playCompletionChime = () => {
     if (!soundEnabled) return;
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
-      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+      const notes = [523.25, 659.25, 783.99, 1046.5];
       notes.forEach((freq, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -125,9 +137,7 @@ export default function StudyTimerView() {
     }
   };
 
-  // Ambient sound synthesizer using Web Audio API
   useEffect(() => {
-    // Stop any existing ambient node
     if (ambientNodeRef.current) {
       try {
         ambientNodeRef.current.stop();
@@ -150,7 +160,6 @@ export default function StudyTimerView() {
       }
 
       if (ambientSound === "white") {
-        // Generate smooth soft pink/white noise buffer
         const bufferSize = ctx.sampleRate * 2;
         const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
         const output = noiseBuffer.getChannelData(0);
@@ -160,7 +169,7 @@ export default function StudyTimerView() {
           b0 = 0.99886 * b0 + white * 0.0555179;
           b1 = 0.99332 * b1 + white * 0.0750759;
           b2 = 0.96900 * b2 + white * 0.1538520;
-          output[i] = (b0 + b1 + b2) * 0.03; // Soft soothing pink noise
+          output[i] = (b0 + b1 + b2) * 0.03;
         }
         const whiteNoise = ctx.createBufferSource();
         whiteNoise.buffer = noiseBuffer;
@@ -173,15 +182,14 @@ export default function StudyTimerView() {
         whiteNoise.start();
         ambientNodeRef.current = whiteNoise;
       } else if (ambientSound === "binaural") {
-        // Generate 10Hz Alpha Waves (focus & learning brainwave)
         const oscLeft = ctx.createOscillator();
         const oscRight = ctx.createOscillator();
         const merger = ctx.createChannelMerger(2);
         const gain = ctx.createGain();
         gain.gain.value = 0.04;
 
-        oscLeft.frequency.value = 210; // Base carrier
-        oscRight.frequency.value = 220; // 10Hz difference for Alpha state focus
+        oscLeft.frequency.value = 210;
+        oscRight.frequency.value = 220;
 
         oscLeft.connect(merger, 0, 0);
         oscRight.connect(merger, 0, 1);
@@ -215,7 +223,6 @@ export default function StudyTimerView() {
     };
   }, [ambientSound]);
 
-  // Record completed focus session to database
   const recordSession = async (minutes: number) => {
     try {
       await fetch("/api/progress", {
@@ -228,7 +235,6 @@ export default function StudyTimerView() {
     }
   };
 
-  // Main countdown timer interval
   useEffect(() => {
     let interval: any = null;
     if (isRunning && timeLeft > 0) {
@@ -236,7 +242,6 @@ export default function StudyTimerView() {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (isRunning && timeLeft <= 0) {
-      // Session finished!
       playCompletionChime();
       setIsRunning(false);
 
@@ -253,8 +258,8 @@ export default function StudyTimerView() {
         setCompletedSessions((prev) => prev + 1);
         setTotalFocusedMinutes((prev) => prev + sessionMins);
         recordSession(sessionMins);
+        setShowCheckpoint(true);
 
-        // Confetti burst on completing focus
         try {
           confetti({
             particleCount: 60,
@@ -263,7 +268,6 @@ export default function StudyTimerView() {
           });
         } catch (e) {}
 
-        // Auto switch to break
         if ((completedSessions + 1) % 4 === 0) {
           setSessionType("longBreak");
           setTimeLeft(longBreakDuration * 60);
@@ -272,7 +276,6 @@ export default function StudyTimerView() {
           setTimeLeft(shortBreakDuration * 60);
         }
       } else {
-        // Break finished, ready for focus
         setSessionType("focus");
         if (timerMode === "pomodoro") setTimeLeft(25 * 60);
         else if (timerMode === "deep") setTimeLeft(50 * 60);
@@ -284,7 +287,6 @@ export default function StudyTimerView() {
     return () => clearInterval(interval);
   }, [isRunning, timeLeft, sessionType, timerMode, completedSessions, focusDuration, shortBreakDuration, longBreakDuration, examDuration]);
 
-  // Formatting helpers
   const formatTime = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -295,7 +297,6 @@ export default function StudyTimerView() {
     return `${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
-  // Calculate percentage of timer completed
   const getTotalDurationSeconds = () => {
     if (sessionType === "focus") {
       if (timerMode === "pomodoro") return 25 * 60;
@@ -332,10 +333,6 @@ export default function StudyTimerView() {
     }
   };
 
-  const handleAddFiveMinutes = () => {
-    setTimeLeft((prev) => prev + 300);
-  };
-
   return (
     <div
       className={`space-y-6 transition-all duration-300 ${
@@ -345,68 +342,85 @@ export default function StudyTimerView() {
       }`}
     >
       {/* Top Header & Mode Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 shadow-md shadow-cyan-500/25 text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 shadow-md text-white">
               <Clock className="h-5 w-5" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-              Student Study <span className="bg-gradient-to-r from-cyan-400 to-indigo-400 bg-clip-text text-transparent">Timer & Focus</span>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Weakness-Targeted <span className="text-indigo-600 dark:text-indigo-400">Focus & Pomodoro</span>
             </h1>
-            <span className="rounded-full bg-cyan-500/15 px-2.5 py-0.5 text-xs font-semibold text-cyan-300 border border-cyan-500/30">
-              Active Recall Suite
+            <span className="rounded-full bg-cyan-100 dark:bg-cyan-950/60 px-2.5 py-0.5 text-xs font-bold text-cyan-700 dark:text-cyan-300 border border-cyan-300">
+              Exam Sprint Mode
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Boost retention with scientific Pomodoro intervals, exam simulation, and deep work intervals.
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Eliminate exam weaknesses with disciplined focus sprints, ambient white noise, and post-session retention checkpoints.
           </p>
         </div>
 
         {/* Top Control Action Buttons */}
         <div className="flex items-center gap-2">
-          {/* Sound toggle */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             title={soundEnabled ? "Chime sound enabled" : "Chime sound muted"}
-            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all cursor-pointer ${
               soundEnabled
-                ? "border-indigo-500/40 bg-indigo-500/15 text-indigo-300"
-                : "border-slate-800 bg-slate-900 text-slate-500 hover:text-slate-300"
+                ? "border-indigo-500/40 bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300"
+                : "border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-500"
             }`}
           >
-            {soundEnabled ? <Bell className="h-4 w-4 text-indigo-400" /> : <VolumeX className="h-4 w-4" />}
+            {soundEnabled ? <Bell className="h-4 w-4 text-indigo-500" /> : <VolumeX className="h-4 w-4" />}
             <span className="hidden sm:inline">Chime</span>
           </button>
 
-          {/* Zen Fullscreen Mode Toggle */}
           <button
             onClick={() => setIsZenMode(!isZenMode)}
-            title={isZenMode ? "Exit Zen Mode" : "Distraction-Free Zen Mode"}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition-all shadow-sm"
+            className="flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
           >
-            {isZenMode ? <Minimize2 className="h-4 w-4 text-cyan-400" /> : <Maximize2 className="h-4 w-4 text-cyan-400" />}
-            <span className="hidden sm:inline">{isZenMode ? "Exit Zen" : "Zen Focus"}</span>
+            {isZenMode ? <Minimize2 className="h-4 w-4 text-cyan-500" /> : <Maximize2 className="h-4 w-4 text-cyan-500" />}
+            <span className="hidden sm:inline">{isZenMode ? "Exit Zen" : "Zen Mode"}</span>
           </button>
         </div>
       </div>
 
-      {/* Timer Modes & Subject Selector Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Timer Control Card */}
-        <div className="lg:col-span-8 flex flex-col items-center justify-center rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 via-slate-950 to-slate-900/90 p-6 sm:p-10 shadow-2xl backdrop-blur-xl relative overflow-hidden">
-          {/* Ambient Glow */}
-          <div
-            className={`absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl pointer-events-none transition-colors duration-500 ${
-              sessionType === "focus" ? "bg-cyan-500/10" : "bg-emerald-500/10"
-            }`}
-          />
-          <div
-            className={`absolute -bottom-24 -right-24 h-72 w-72 rounded-full blur-3xl pointer-events-none transition-colors duration-500 ${
-              sessionType === "focus" ? "bg-indigo-500/10" : "bg-amber-500/10"
-            }`}
-          />
+      {/* Target Weakness Focus Bar */}
+      <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-cyan-50 dark:from-indigo-950/40 dark:via-purple-950/40 dark:to-cyan-950/40 p-4 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="p-2 bg-indigo-600 text-white rounded-xl shrink-0">
+            <Target className="w-4 h-4" />
+          </div>
+          <div className="flex-1">
+            <span className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 block">
+              Current Weakness Focus Objective
+            </span>
+            <input
+              type="text"
+              value={targetTopic}
+              onChange={(e) => setTargetTopic(e.target.value)}
+              placeholder="Enter specific topic or problem to conquer in this sprint..."
+              className="bg-transparent font-bold text-sm text-slate-900 dark:text-white outline-none w-full border-b border-indigo-300 dark:border-indigo-700 focus:border-indigo-600 pb-0.5"
+            />
+          </div>
+        </div>
 
+        {onNavigateToPractice && (
+          <button
+            onClick={() => onNavigateToPractice(targetTopic)}
+            className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+          >
+            <span>Practice 5/10M for this</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left: Timer Card (8 cols) */}
+        <div className="lg:col-span-8 flex flex-col items-center justify-center rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-10 shadow-sm relative overflow-hidden">
+          
           {/* Mode Tabs */}
           <div className="flex flex-wrap items-center justify-center gap-2 mb-8 relative z-10">
             <button
@@ -416,10 +430,10 @@ export default function StudyTimerView() {
                 setIsRunning(false);
                 setTimeLeft(25 * 60);
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
                 timerMode === "pomodoro"
-                  ? "bg-gradient-to-r from-cyan-500 to-indigo-600 text-white shadow-lg shadow-cyan-500/25"
-                  : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60"
+                  ? "bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
               }`}
             >
               🍅 Pomodoro (25/5m)
@@ -431,13 +445,13 @@ export default function StudyTimerView() {
                 setIsRunning(false);
                 setTimeLeft(50 * 60);
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
                 timerMode === "deep"
-                  ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg shadow-purple-500/25"
-                  : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60"
+                  ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
               }`}
             >
-              ⚡ Deep Study (50/10m)
+              ⚡ Deep Sprint (50/10m)
             </button>
             <button
               onClick={() => {
@@ -446,74 +460,50 @@ export default function StudyTimerView() {
                 setIsRunning(false);
                 setTimeLeft(examDuration * 60);
               }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all cursor-pointer ${
                 timerMode === "exam"
-                  ? "bg-gradient-to-r from-amber-500 to-rose-600 text-white shadow-lg shadow-amber-500/25"
-                  : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60"
+                  ? "bg-gradient-to-r from-amber-600 to-rose-600 text-white shadow-md"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
               }`}
             >
-              📝 Exam Simulation
-            </button>
-            <button
-              onClick={() => {
-                setTimerMode("custom");
-                setSessionType("focus");
-                setIsRunning(false);
-                setTimeLeft(focusDuration * 60);
-              }}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
-                timerMode === "custom"
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
-                  : "bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60"
-              }`}
-            >
-              ⚙️ Custom Timer
+              📝 Exam Simulation (60m)
             </button>
           </div>
 
           {/* Session Phase Tag */}
           <div className="mb-4 relative z-10 flex items-center gap-2">
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider border shadow-sm ${
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold uppercase tracking-wider ${
                 sessionType === "focus"
-                  ? "border-cyan-500/40 bg-cyan-500/15 text-cyan-300"
-                  : sessionType === "shortBreak"
-                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
-                  : "border-purple-500/40 bg-purple-500/15 text-purple-300"
+                  ? "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200"
+                  : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200"
               }`}
             >
               {sessionType === "focus" ? (
                 <>
-                  <Flame className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
-                  <span>Focus Session</span>
-                </>
-              ) : sessionType === "shortBreak" ? (
-                <>
-                  <Coffee className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Short Break (Rest Eyes)</span>
+                  <Flame className="h-3.5 w-3.5 text-cyan-600 animate-pulse" />
+                  <span>Deep Focus Block</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                  <span>Long Refreshment Break</span>
+                  <Coffee className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Rest & Refresh</span>
                 </>
               )}
             </span>
           </div>
 
-          {/* Circular SVG Ring Countdown Display */}
+          {/* Circular SVG Ring Countdown */}
           <div className="relative flex items-center justify-center my-4">
             <svg className="w-72 h-72 sm:w-80 sm:h-80 transform -rotate-90">
-              {/* Background track */}
               <circle
                 cx="50%"
                 cy="50%"
                 r={strokeRadius}
-                className="stroke-slate-800/70"
+                className="stroke-slate-100 dark:stroke-slate-800"
                 strokeWidth="12"
                 fill="transparent"
               />
-              {/* Animated progress stroke */}
               <circle
                 cx="50%"
                 cy="50%"
@@ -526,7 +516,6 @@ export default function StudyTimerView() {
                 fill="transparent"
                 className="transition-all duration-1000 ease-linear"
               />
-              {/* Gradients */}
               <defs>
                 <linearGradient id="timerGlowFocus" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#06b6d4" />
@@ -541,26 +530,26 @@ export default function StudyTimerView() {
 
             {/* Inner Clock Text */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-              <span className="text-5xl sm:text-6xl font-black text-white tracking-tighter tabular-nums drop-shadow-md">
+              <span className="text-5xl sm:text-6xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums">
                 {formatTime(timeLeft)}
               </span>
-              <span className="mt-2 text-xs font-semibold text-slate-400 max-w-[190px] truncate">
-                {selectedSubject}
+              <span className="mt-2 text-xs font-semibold text-slate-500 max-w-[190px] truncate">
+                {targetTopic}
               </span>
-              <span className="mt-1 text-[11px] text-cyan-400/90 font-medium">
-                Cycle #{completedSessions + 1}
+              <span className="mt-1 text-[11px] text-indigo-600 dark:text-indigo-400 font-bold">
+                Sprint #{completedSessions + 1}
               </span>
             </div>
           </div>
 
-          {/* Primary Interactive Controls */}
+          {/* Primary Controls */}
           <div className="flex flex-wrap items-center justify-center gap-3 mt-6 relative z-10">
             <button
               onClick={() => setIsRunning(!isRunning)}
-              className={`flex items-center gap-2.5 rounded-2xl px-8 py-4 text-sm sm:text-base font-bold text-white shadow-xl transition-all transform active:scale-95 ${
+              className={`flex items-center gap-2.5 rounded-2xl px-8 py-4 text-sm sm:text-base font-bold text-white shadow-lg transition-all transform active:scale-95 cursor-pointer ${
                 isRunning
-                  ? "bg-gradient-to-r from-amber-500 to-rose-600 shadow-amber-500/30 hover:brightness-110"
-                  : "bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 shadow-cyan-500/30 hover:brightness-110"
+                  ? "bg-rose-600 hover:bg-rose-700"
+                  : "bg-indigo-600 hover:bg-indigo-700"
               }`}
             >
               {isRunning ? (
@@ -571,7 +560,7 @@ export default function StudyTimerView() {
               ) : (
                 <>
                   <Play className="h-5 w-5 fill-white" />
-                  <span>Start Focus Session</span>
+                  <span>Start Focus Sprint</span>
                 </>
               )}
             </button>
@@ -579,104 +568,111 @@ export default function StudyTimerView() {
             <button
               onClick={handleReset}
               title="Reset Timer"
-              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
             >
               <RotateCcw className="h-5 w-5" />
             </button>
 
             <button
               onClick={handleSkip}
-              title="Skip to Next Session"
-              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 transition-all active:scale-95"
+              title="Skip Session"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition-all cursor-pointer"
             >
               <SkipForward className="h-5 w-5" />
             </button>
-
-            <button
-              onClick={handleAddFiveMinutes}
-              title="Add 5 Minutes to Clock"
-              className="flex items-center gap-1 rounded-2xl border border-indigo-500/40 bg-indigo-500/10 px-3.5 py-3 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 transition-all active:scale-95"
-            >
-              <Plus className="h-4 w-4" />
-              <span>5m</span>
-            </button>
           </div>
 
-          {/* Motivational Rotating Quote */}
-          <div className="mt-8 text-center max-w-md border-t border-slate-800/80 pt-4 relative z-10">
+          {/* Post Session Checkpoint Modal */}
+          {showCheckpoint && (
+            <div className="mt-6 p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-300 dark:border-emerald-800/60 w-full max-w-md space-y-3 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Sprint Complete! Quick Retention Check
+                </span>
+                <button 
+                  onClick={() => setShowCheckpoint(false)}
+                  className="text-xs text-slate-400 hover:text-slate-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-xs text-emerald-900 dark:text-emerald-200">
+                How well did you master <strong>{targetTopic}</strong> during this block?
+              </p>
+              <div className="flex gap-2">
+                {[
+                  { label: 'Confused', score: 1 },
+                  { label: 'Partially Understood', score: 2 },
+                  { label: 'Exam Ready', score: 3 }
+                ].map((item) => (
+                  <button
+                    key={item.score}
+                    onClick={() => {
+                      setComprehensionScore(item.score);
+                      setShowCheckpoint(false);
+                    }}
+                    className="flex-1 py-1.5 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:bg-emerald-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quote */}
+          <div className="mt-8 text-center max-w-md border-t border-slate-100 dark:border-slate-800 pt-4">
             <p className="text-xs italic text-slate-400">
               &ldquo;{MOTIVATIONAL_QUOTES[quoteIndex]}&rdquo;
             </p>
           </div>
         </div>
 
-        {/* Right Column: Settings, Subjects & Audio Suite */}
+        {/* Right: Audio Ambience & Session Stats (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Active Subject Selector */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl backdrop-blur-md space-y-3">
+          {/* Ambient Sound Suite */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <BookOpen className="h-4 w-4 text-cyan-400" />
-                <span>Subject Being Studied</span>
-              </label>
-              <span className="text-[11px] text-cyan-400 font-semibold">AI & ML Branch</span>
-            </div>
-
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800/90 px-3.5 py-2.5 text-xs text-slate-100 focus:border-cyan-500 focus:outline-none font-medium"
-            >
-              {PRESET_SUBJECTS.map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Ambient Study Audio Generator */}
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl backdrop-blur-md space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Headphones className="h-4 w-4 text-indigo-400" />
-                <span>Focus Audio Ambience</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Headphones className="h-4 w-4 text-indigo-500" />
+                <span>Ambient Noise Generator</span>
               </span>
-              <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-300">
+              <span className="rounded-full bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:text-indigo-300">
                 Web Audio
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
-              Synthesized background frequencies to drown out distractions.
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Synthesized real-time focus sound to drown out ambient noise and study distractions.
             </p>
 
             <div className="grid grid-cols-3 gap-2 pt-1">
               <button
                 onClick={() => setAmbientSound("none")}
-                className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                className={`rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer ${
                   ambientSound === "none"
-                    ? "border border-slate-700 bg-slate-800 text-white shadow-sm"
-                    : "border border-slate-800/80 bg-slate-900 text-slate-500 hover:text-slate-300"
+                    ? "border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                    : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400"
                 }`}
               >
                 Mute
               </button>
               <button
                 onClick={() => setAmbientSound("white")}
-                className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                className={`rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer ${
                   ambientSound === "white"
-                    ? "border border-cyan-500/50 bg-cyan-500/20 text-cyan-300 shadow-sm"
-                    : "border border-slate-800/80 bg-slate-900 text-slate-400 hover:text-slate-200"
+                    ? "border border-cyan-500 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300"
+                    : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400"
                 }`}
               >
                 Pink Noise
               </button>
               <button
                 onClick={() => setAmbientSound("binaural")}
-                className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
+                className={`rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer ${
                   ambientSound === "binaural"
-                    ? "border border-purple-500/50 bg-purple-500/20 text-purple-300 shadow-sm"
-                    : "border border-slate-800/80 bg-slate-900 text-slate-400 hover:text-slate-200"
+                    ? "border border-purple-500 bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300"
+                    : "border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-400"
                 }`}
               >
                 10Hz Alpha
@@ -684,90 +680,33 @@ export default function StudyTimerView() {
             </div>
           </div>
 
-          {/* Today's Study Stats Card */}
-          <div className="rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900/90 to-indigo-950/30 p-5 shadow-xl backdrop-blur-md space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Award className="h-4 w-4 text-amber-400" />
-              <span>Today's Study Session Stats</span>
+          {/* Today's Focus Stats */}
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Award className="h-4 w-4 text-amber-500" />
+              <span>Today's Study Session Metrics</span>
             </h3>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3.5 text-center">
-                <span className="text-2xl font-black text-white">{completedSessions}</span>
-                <span className="block text-[10px] uppercase tracking-wider text-slate-400 mt-0.5 font-semibold">
-                  Sessions Done
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3.5 text-center">
+                <span className="text-2xl font-black text-slate-900 dark:text-white">{completedSessions}</span>
+                <span className="block text-[10px] uppercase tracking-wider text-slate-400 mt-0.5 font-bold">
+                  Sprints Completed
                 </span>
               </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3.5 text-center">
-                <span className="text-2xl font-black text-cyan-400">{totalFocusedMinutes}m</span>
-                <span className="block text-[10px] uppercase tracking-wider text-slate-400 mt-0.5 font-semibold">
-                  Focus Time
+              <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3.5 text-center">
+                <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{totalFocusedMinutes}m</span>
+                <span className="block text-[10px] uppercase tracking-wider text-slate-400 mt-0.5 font-bold">
+                  Total Focus Time
                 </span>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-              <span>Completed focus time is automatically saved to your student profile!</span>
+            <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2 font-medium">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <span>Study minutes are logged directly into your Exam Readiness score!</span>
             </div>
           </div>
-
-          {/* Exam Simulation Preset selector (if in Exam mode) */}
-          {timerMode === "exam" && (
-            <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-5 space-y-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-                <BrainCircuit className="h-4 w-4 text-amber-400" />
-                <span>Select Exam Paper Duration</span>
-              </span>
-              <div className="grid grid-cols-3 gap-2">
-                {[45, 60, 90].map((mins) => (
-                  <button
-                    key={mins}
-                    onClick={() => {
-                      setExamDuration(mins);
-                      if (!isRunning) setTimeLeft(mins * 60);
-                    }}
-                    className={`rounded-xl py-2 text-xs font-bold transition-all ${
-                      examDuration === mins
-                        ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30"
-                        : "border border-amber-500/20 bg-slate-900/60 text-amber-200"
-                    }`}
-                  >
-                    {mins} Mins
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Custom mode slider (if in Custom mode) */}
-          {timerMode === "custom" && (
-            <div className="rounded-3xl border border-emerald-500/30 bg-slate-900/80 p-5 space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <span className="text-slate-300">Custom Focus: {focusDuration} min</span>
-                <span className="text-emerald-400">Break: {shortBreakDuration} min</span>
-              </div>
-              <input
-                type="range"
-                min="5"
-                max="120"
-                step="5"
-                value={focusDuration}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10);
-                  setFocusDuration(val);
-                  if (!isRunning && sessionType === "focus") setTimeLeft(val * 60);
-                }}
-                className="w-full accent-emerald-500 cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500">
-                <span>5m</span>
-                <span>30m</span>
-                <span>60m</span>
-                <span>120m</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

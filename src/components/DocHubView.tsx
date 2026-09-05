@@ -5,7 +5,7 @@ import { Upload, FileText, Sparkles, BookOpen, Brain, Award, CheckCircle2, Alert
 import AILoadingPulse from "./AILoadingPulse";
 
 interface DocHubViewProps {
-  setActiveTab: (tab: string) => void;
+  setActiveTab?: (tab: string) => void;
 }
 
 export default function DocHubView({ setActiveTab }: DocHubViewProps) {
@@ -224,21 +224,21 @@ export default function DocHubView({ setActiveTab }: DocHubViewProps) {
                   {/* Fast Action Buttons */}
                   <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/80">
                     <button
-                      onClick={() => setActiveTab("notes")}
+                      onClick={() => setActiveTab?.("notes")}
                       className="flex items-center gap-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 px-3 py-1.5 text-[11px] font-semibold text-indigo-300 hover:bg-indigo-500/25 transition-colors"
                     >
                       <BookOpen className="h-3 w-3" />
                       <span>Generate Notes</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab("quiz")}
+                      onClick={() => setActiveTab?.("quiz")}
                       className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/25 transition-colors"
                     >
                       <Award className="h-3 w-3" />
                       <span>Create Quiz</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab("chat")}
+                      onClick={() => setActiveTab?.("chat")}
                       className="flex items-center gap-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 px-3 py-1.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/25 transition-colors"
                     >
                       <Brain className="h-3 w-3" />
