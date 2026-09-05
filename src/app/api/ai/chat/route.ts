@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
     const body = await req.json();
-    const questionText = body.question || body.message || "";
+    const questionText = body.question || body.message || body.prompt || "";
     const documentId = body.documentId || null;
 
     if (!questionText || questionText.trim().length === 0) {
