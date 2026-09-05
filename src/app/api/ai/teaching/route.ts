@@ -6,9 +6,6 @@ import { getCachedAI, setCachedAI, hashString } from "@/lib/aiCache";
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please login." }, { status: 401 });
-    }
     const body = await req.json();
     const topic = (body.topic || "Neural Networks").trim();
     const subject = (body.subject || "AI & Machine Learning").trim();

@@ -6,10 +6,6 @@ import { askGemini } from "@/lib/gemini";
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please login." }, { status: 401 });
-    }
-
     const body = await req.json();
     const questionText = body.question || body.message || "";
     const documentId = body.documentId || null;
@@ -20,7 +16,7 @@ export async function POST(req: Request) {
     const question = questionText.trim();
 
     let docContext = "";
-    if (documentId) {
+    if (documentId && user) {
       const doc = await prisma.document.findUnique({
         where: { id: documentId, userId: user.id },
       });
@@ -29,41 +25,47 @@ export async function POST(req: Request) {
       }
     }
 
-    // Save student message in DB
-    await prisma.chatMessage.create({
-      data: {
-        userId: user.id,
-        documentId: documentId || null,
-        role: "user",
-        content: question,
-      },
-    });
+    // Save student message in DB if logged in
+    if (user) {
+      await prisma.chatMessage.create({
+        data: {
+          userId: user.id,
+          documentId: documentId || null,
+          role: "user",
+          content: question,
+        },
+      });
+    }
 
     const customKey = req.headers.get("x-gemini-key") || body.apiKey || undefined;
 
     // Get response from Gemini
     const aiAnswer = await askGemini(question, docContext, customKey);
 
-    // Save assistant response
-    const assistantMsg = await prisma.chatMessage.create({
-      data: {
-        userId: user.id,
-        documentId: documentId || null,
-        role: "assistant",
-        content: aiAnswer,
-      },
-    });
+    // Save assistant response if logged in
+    let assistantMsgId = `guest_${Date.now()}`;
+    if (user) {
+      const assistantMsg = await prisma.chatMessage.create({
+        data: {
+          userId: user.id,
+          documentId: documentId || null,
+          role: "assistant",
+          content: aiAnswer,
+        },
+      });
+      assistantMsgId = assistantMsg.id;
 
-    // Award study minutes
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { studyMinutes: { increment: 5 } },
-    });
+      // Award study minutes
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { studyMinutes: { increment: 5 } },
+      });
+    }
 
     return NextResponse.json({
       success: true,
       answer: aiAnswer,
-      messageId: assistantMsg.id,
+      messageId: assistantMsgId,
     });
   } catch (err: any) {
     console.error("AI Chat error:", err);
@@ -78,7 +80,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ messages: [] });
     }
 
     const messages = await prisma.chatMessage.findMany({

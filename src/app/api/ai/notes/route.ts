@@ -6,10 +6,6 @@ import { generateAIStudyNotes } from "@/lib/gemini";
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please login." }, { status: 401 });
-    }
-
     const body = await req.json();
     const { documentId, topic, subject, rawContent } = body;
 
@@ -17,7 +13,7 @@ export async function POST(req: Request) {
     let finalSubject = subject || "Computer Engineering";
     let finalTitle = topic || "Study Notes Unit";
 
-    if (documentId) {
+    if (documentId && user) {
       const doc = await prisma.document.findUnique({
         where: { id: documentId, userId: user.id },
       });
@@ -37,37 +33,44 @@ export async function POST(req: Request) {
     // Call AI note generator
     const aiResult = await generateAIStudyNotes(contentToAnalyze, finalSubject, customKey);
 
-    // Save study note in database
-    const savedNote = await prisma.studyNote.create({
-      data: {
-        userId: user.id,
-        documentId: documentId || null,
-        title: finalTitle,
-        subject: finalSubject,
-        summary: aiResult.summary,
-        bulletPoints: JSON.stringify(aiResult.bulletPoints || []),
-        importantQuestions: JSON.stringify(aiResult.importantQuestions || []),
-      },
-    });
+    let savedNoteId = `guest_note_${Date.now()}`;
+    let createdAt = new Date().toISOString();
 
-    // Also award study minutes
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        studyMinutes: { increment: 15 },
-      },
-    });
+    // Save study note in database if authenticated
+    if (user) {
+      const savedNote = await prisma.studyNote.create({
+        data: {
+          userId: user.id,
+          documentId: documentId || null,
+          title: finalTitle,
+          subject: finalSubject,
+          summary: aiResult.summary,
+          bulletPoints: JSON.stringify(aiResult.bulletPoints || []),
+          importantQuestions: JSON.stringify(aiResult.importantQuestions || []),
+        },
+      });
+      savedNoteId = savedNote.id;
+      createdAt = savedNote.createdAt.toISOString();
+
+      // Award study minutes
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          studyMinutes: { increment: 15 },
+        },
+      });
+    }
 
     return NextResponse.json({
       success: true,
       note: {
-        id: savedNote.id,
-        title: savedNote.title,
-        subject: savedNote.subject,
-        summary: savedNote.summary,
+        id: savedNoteId,
+        title: finalTitle,
+        subject: finalSubject,
+        summary: aiResult.summary,
         bulletPoints: aiResult.bulletPoints,
         importantQuestions: aiResult.importantQuestions,
-        createdAt: savedNote.createdAt,
+        createdAt,
       },
     });
   } catch (err: any) {
@@ -83,7 +86,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ notes: [] });
     }
 
     const notes = await prisma.studyNote.findMany({

@@ -6,10 +6,6 @@ import { generateAIFlashcards } from "@/lib/gemini";
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please login." }, { status: 401 });
-    }
-
     const body = await req.json();
     const { documentId, topic, subject } = body;
 
@@ -17,7 +13,7 @@ export async function POST(req: Request) {
     let finalSubject = subject || "Engineering Basics";
     let finalTitle = topic || "Active Recall Deck";
 
-    if (documentId) {
+    if (documentId && user) {
       const doc = await prisma.document.findUnique({
         where: { id: documentId, userId: user.id },
       });
@@ -45,35 +41,39 @@ export async function POST(req: Request) {
       mastered: false,
     }));
 
-    const deck = await prisma.flashcardDeck.create({
-      data: {
-        userId: user.id,
-        documentId: documentId || null,
-        title: finalTitle,
-        subject: finalSubject,
-        cards: JSON.stringify(cardsWithState),
-      },
-    });
+    let deckId = `guest_deck_${Date.now()}`;
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { studyMinutes: { increment: 10 } },
-    });
+    if (user) {
+      const deck = await prisma.flashcardDeck.create({
+        data: {
+          userId: user.id,
+          documentId: documentId || null,
+          title: finalTitle,
+          subject: finalSubject,
+          cards: JSON.stringify(cardsWithState),
+        },
+      });
+      deckId = deck.id;
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { studyMinutes: { increment: 10 } },
+      });
+    }
 
     return NextResponse.json({
       success: true,
       deck: {
-        id: deck.id,
-        title: deck.title,
-        subject: deck.subject,
+        id: deckId,
+        title: finalTitle,
+        subject: finalSubject,
         cards: cardsWithState,
-        createdAt: deck.createdAt,
       },
     });
   } catch (err: any) {
-    console.error("Flashcards generation error:", err);
+    console.error("AI Flashcards error:", err);
     return NextResponse.json(
-      { error: err?.message || "Failed to create flashcard deck" },
+      { error: err?.message || "Failed to generate AI flashcards" },
       { status: 400 }
     );
   }
@@ -83,7 +83,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ decks: [] });
     }
 
     const decks = await prisma.flashcardDeck.findMany({
@@ -102,30 +102,31 @@ export async function GET() {
     return NextResponse.json({ decks: formattedDecks });
   } catch (err) {
     console.error("Fetch decks error:", err);
-    return NextResponse.json({ error: "Failed to fetch decks" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to load flashcard decks" }, { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { deckId, cards } = body;
 
-    const updated = await prisma.flashcardDeck.update({
-      where: { id: deckId, userId: user.id },
-      data: {
-        cards: JSON.stringify(cards),
-      },
-    });
+    if (!deckId || !cards) {
+      return NextResponse.json({ error: "Invalid deck payload" }, { status: 400 });
+    }
 
-    return NextResponse.json({ success: true, deck: updated });
+    if (user && !deckId.startsWith("guest_")) {
+      const updated = await prisma.flashcardDeck.update({
+        where: { id: deckId, userId: user.id },
+        data: { cards: JSON.stringify(cards) },
+      });
+      return NextResponse.json({ success: true, deck: updated });
+    }
+
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Update deck error:", err);
-    return NextResponse.json({ error: "Failed to update flashcard deck" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update deck" }, { status: 500 });
   }
 }

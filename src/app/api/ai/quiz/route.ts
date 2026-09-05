@@ -6,10 +6,6 @@ import { generateAIQuiz } from "@/lib/gemini";
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please login." }, { status: 401 });
-    }
-
     const body = await req.json();
     const { documentId, topic, subject } = body;
 
@@ -17,7 +13,7 @@ export async function POST(req: Request) {
     let finalSubject = subject || "Computer Engineering";
     let finalTitle = topic || "Speed Quiz";
 
-    if (documentId) {
+    if (documentId && user) {
       const doc = await prisma.document.findUnique({
         where: { id: documentId, userId: user.id },
       });
@@ -36,33 +32,36 @@ export async function POST(req: Request) {
 
     const quizQuestions = await generateAIQuiz(contentToAnalyze, finalSubject, customKey);
 
-    const quiz = await prisma.quiz.create({
-      data: {
-        userId: user.id,
-        documentId: documentId || null,
-        title: finalTitle,
-        subject: finalSubject,
-        questions: JSON.stringify(quizQuestions),
-        totalQuestions: quizQuestions.length,
-        completed: false,
-      },
-    });
+    let quizId = `guest_quiz_${Date.now()}`;
+
+    if (user) {
+      const quiz = await prisma.quiz.create({
+        data: {
+          userId: user.id,
+          documentId: documentId || null,
+          title: finalTitle,
+          subject: finalSubject,
+          questions: JSON.stringify(quizQuestions),
+          totalQuestions: quizQuestions.length,
+          completed: false,
+        },
+      });
+      quizId = quiz.id;
+    }
 
     return NextResponse.json({
       success: true,
       quiz: {
-        id: quiz.id,
-        title: quiz.title,
-        subject: quiz.subject,
+        id: quizId,
+        title: finalTitle,
+        subject: finalSubject,
         questions: quizQuestions,
-        totalQuestions: quizQuestions.length,
-        createdAt: quiz.createdAt,
       },
     });
   } catch (err: any) {
-    console.error("Quiz generation error:", err);
+    console.error("AI Quiz generation error:", err);
     return NextResponse.json(
-      { error: err?.message || "Failed to generate quiz" },
+      { error: err?.message || "Failed to generate quiz questions" },
       { status: 400 }
     );
   }
@@ -71,36 +70,33 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const body = await req.json();
+    const { quizId, score, total } = body;
+
+    if (!quizId || score === undefined || !total) {
+      return NextResponse.json({ error: "Invalid score payload" }, { status: 400 });
     }
 
-    const body = await req.json();
-    const { quizId, score, totalQuestions } = body;
+    if (user && !quizId.startsWith("guest_")) {
+      const updated = await prisma.quiz.update({
+        where: { id: quizId, userId: user.id },
+        data: {
+          score: Number(score),
+          completed: true,
+        },
+      });
 
-    const updated = await prisma.quiz.update({
-      where: { id: quizId, userId: user.id },
-      data: {
-        score: score,
-        totalQuestions: totalQuestions || 5,
-        completed: true,
-      },
-    });
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { studyMinutes: { increment: 10 } },
+      });
 
-    // Reward study minutes & streak count
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        studyMinutes: { increment: 20 },
-      },
-    });
+      return NextResponse.json({ success: true, quiz: updated });
+    }
 
-    return NextResponse.json({
-      success: true,
-      quiz: updated,
-    });
+    return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Quiz submit error:", err);
+    console.error("Save score error:", err);
     return NextResponse.json({ error: "Failed to record quiz score" }, { status: 500 });
   }
 }
@@ -109,7 +105,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ quizzes: [] });
     }
 
     const quizzes = await prisma.quiz.findMany({
@@ -121,16 +117,15 @@ export async function GET() {
       id: q.id,
       title: q.title,
       subject: q.subject,
-      questions: JSON.parse(q.questions || "[]"),
       score: q.score,
-      totalQuestions: q.totalQuestions,
       completed: q.completed,
+      questions: JSON.parse(q.questions || "[]"),
       createdAt: q.createdAt,
     }));
 
     return NextResponse.json({ quizzes: formatted });
   } catch (err) {
-    console.error("Fetch quizzes error:", err);
+    console.error("Fetch quiz error:", err);
     return NextResponse.json({ error: "Failed to load quizzes" }, { status: 500 });
   }
 }

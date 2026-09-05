@@ -5,13 +5,10 @@ import { evaluateStudentAnswer } from "@/lib/gemini";
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized. Please login." }, { status: 401 });
-    }
     const body = await req.json();
     const question = (body.question || "").trim();
     const studentAnswer = (body.studentAnswer || body.answer || "").trim();
-    const marks = Number(body.marks || 10);
+    const marks = Number(body.marks || body.maxMarks || 10);
     const customKey = req.headers.get("x-gemini-key") || body.apiKey || undefined;
 
     if (!studentAnswer) {
