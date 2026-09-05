@@ -6,11 +6,11 @@
 
 ---
 
-## 👥 Development Team
-* **Vastav** (PIN: `24030-AIM-026`) — Project Lead & AI Architecture / Full-Stack Lead
-* **Vishnu** (PIN: `24030-AIM-020`) — Three.js 3D Graphics & UI/UX Developer
-* **Nikhileswar** (PIN: `24030-AIM-027`) — Cloud Database & Security Engineer
-* **Sathvik** (PIN: `24030-AIM-004`) — Frontend Integration & QA Testing Engineer
+## 👥 Engineering Team
+* **Vastav** — Project Lead & AI Architecture / Full-Stack Lead
+* **Vishnu** — Three.js 3D Graphics & UI/UX Developer
+* **Nikhileswar** — Cloud Database & Security Engineer
+* **Sathvik** — Frontend Integration & Active Recall Engineer
 
 ---
 

@@ -10,12 +10,121 @@ function getGenAIClient(customApiKey?: string) {
 
 const CANDIDATE_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs = 4500): Promise<T> {
+async function withTimeout<T>(promise: Promise<T>, timeoutMs = 5000): Promise<T> {
   let timeoutHandle: any;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutHandle = setTimeout(() => reject(new Error("AI request timeout")), timeoutMs);
   });
   return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutHandle));
+}
+
+async function callOpenRouter(prompt: string, isJson: boolean = false): Promise<string | null> {
+  const key = (process.env.OPENROUTER_API_KEY || "").trim();
+  if (!key) return null;
+  try {
+    const res = await withTimeout(
+      fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://scholarmate.edu",
+          "X-Title": "ScholarMate 2.0 AI Exam Coach",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash-001",
+          messages: [{ role: "user", content: prompt }],
+          temperature: isJson ? 0.2 : 0.4,
+          ...(isJson ? { response_format: { type: "json_object" } } : {})
+        }),
+      }),
+      5000
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content || null;
+  } catch {
+    return null;
+  }
+}
+
+async function callHuggingFace(prompt: string): Promise<string | null> {
+  const key = (process.env.HUGGINGFACE_API_KEY || "").trim();
+  if (!key) return null;
+  try {
+    const res = await withTimeout(
+      fetch("https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          inputs: prompt,
+          parameters: { max_new_tokens: 1000, temperature: 0.3 }
+        }),
+      }),
+      5000
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (Array.isArray(data) && data[0]?.generated_text) {
+      return data[0].generated_text.replace(prompt, "").trim();
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function executeMultiProviderPrompt(prompt: string, isJson: boolean = false, customKey?: string): Promise<string | null> {
+  // 1. If custom key is provided, try GoogleGenAI first
+  if (customKey) {
+    const instance = getGenAIClient(customKey);
+    if (instance) {
+      for (const model of CANDIDATE_MODELS) {
+        try {
+          const response = await withTimeout(
+            instance.client.models.generateContent({
+              model,
+              contents: prompt,
+              ...(isJson ? { config: { responseMimeType: "application/json" } } : {}),
+            }),
+            5000
+          );
+          if (response.text) return response.text;
+        } catch {}
+      }
+    }
+  }
+
+  // 2. Try OpenRouter
+  const openRouterResult = await callOpenRouter(prompt, isJson);
+  if (openRouterResult) return openRouterResult;
+
+  // 3. Try GoogleGenAI with server key
+  const serverInstance = getGenAIClient();
+  if (serverInstance) {
+    for (const model of CANDIDATE_MODELS) {
+      try {
+        const response = await withTimeout(
+          serverInstance.client.models.generateContent({
+            model,
+            contents: prompt,
+            ...(isJson ? { config: { responseMimeType: "application/json" } } : {}),
+          }),
+          5000
+        );
+        if (response.text) return response.text;
+      } catch {}
+    }
+  }
+
+  // 4. Try HuggingFace
+  const hfResult = await callHuggingFace(prompt);
+  if (hfResult) return hfResult;
+
+  return null;
 }
 
 export function safeJsonParse(rawText: string) {
@@ -38,40 +147,22 @@ export function safeJsonParse(rawText: string) {
         return JSON.parse(slice);
       }
     }
-    throw new Error("Unable to parse structured JSON response from Gemini");
+    throw new Error("Unable to parse structured JSON response from AI");
   }
 }
 
 export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
-  const instance = getGenAIClient(customKey);
-  if (instance) {
-    const fullPrompt = context
-      ? `You are Nexa 2.0, the AI Exam Coach for ScholarMate 2.0 (developed by the Department of AI & ML for polytechnic and engineering students). You are academically rigorous, encouraging, and format your answers with clean markdown headings, bold keywords, bullet points, and exam scoring tips.\n\nMaterial Context:\n"""\n${context}\n"""\n\nStudent Question:\n${prompt}`
-      : `You are Nexa 2.0, the AI Exam Coach for ScholarMate 2.0 (developed by the Department of AI & ML for polytechnic and engineering students). You are academically rigorous, encouraging, and format your answers with clean markdown headings, bold keywords, bullet points, and exam scoring tips.\n\nStudent Question:\n${prompt}`;
+  const fullPrompt = context
+    ? `You are Nexa 2.0, the AI Exam Coach for ScholarMate 2.0 (developed for polytechnic and engineering students). You are academically rigorous, encouraging, and format your answers with clean markdown headings, bold keywords, bullet points, and exam scoring tips.\n\nMaterial Context:\n"""\n${context}\n"""\n\nStudent Question:\n${prompt}`
+    : `You are Nexa 2.0, the AI Exam Coach for ScholarMate 2.0 (developed for polytechnic and engineering students). You are academically rigorous, encouraging, and format your answers with clean markdown headings, bold keywords, bullet points, and exam scoring tips.\n\nStudent Question:\n${prompt}`;
 
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: fullPrompt,
-          }),
-          4500
-        );
-        if (response.text) {
-          return response.text;
-        }
-      } catch (err: any) {
-        // Try next model or fallback
-      }
-    }
-  }
+  const aiRes = await executeMultiProviderPrompt(fullPrompt, false, customKey);
+  if (aiRes) return aiRes;
 
   return getHeuristicChatAnswer(prompt);
 }
 
 export async function generateExamMap(subject: string, syllabusText?: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `You are ScholarMate 2.0 Exam Blueprint Engine.
 Break down the syllabus for "${subject}" into 5 distinct academic units with topics, estimated marks weightage, difficulty, and high-frequency exam focus.
 
@@ -103,31 +194,17 @@ Format strictly as JSON:
   ]
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return getHeuristicExamMap(subject);
 }
 
 export async function generateTeachingLesson(topic: string, subject: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `You are Nexa 2.0, the AI Exam Coach. Teach "${topic}" from "${subject}" using the 8-Part ScholarMate Master Blueprint.
 Format strictly as JSON:
 {
@@ -147,31 +224,17 @@ Format strictly as JSON:
   ]
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return getHeuristicTeachingLesson(topic, subject);
 }
 
 export async function generateExamMarkAnswer(topic: string, marks: 1 | 2 | 5 | 10, subject: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `You are a Senior University Examiner for "${subject}".
 Write an ideal model answer for a ${marks}-Mark question on "${topic}" with the Examiner Marking Scheme.
 Format strictly as JSON:
@@ -191,31 +254,17 @@ Format strictly as JSON:
   "commonMistakes": ["Omitting schematic diagram", "Skipping mathematical derivation"]
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return getHeuristicMarkAnswer(topic, marks, subject);
 }
 
 export async function evaluateStudentAnswer(question: string, studentAnswer: string, marks: number, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `You are a University Examiner evaluating a student answer for a ${marks}-mark question.
 Question: "${question}"
 Student's Answer:
@@ -235,24 +284,11 @@ Format strictly as JSON:
   "improvementTip": "Draw the input/output block diagram to secure full marks."
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   const score = Math.max(1, Math.round(marks * 0.75));
@@ -272,7 +308,6 @@ Format strictly as JSON:
 }
 
 export async function generateMockExam(subject: string, units?: any[], customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `You are the Chief Exam Controller for "${subject}".
 Generate a timed university examination with Section A (Short/MCQ), Section B (5M Analytical), and Section C (10M Comprehensive).
 Format strictly as JSON:
@@ -354,31 +389,17 @@ Format strictly as JSON:
   ]
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return getHeuristicMockExam(subject);
 }
 
 export async function generateSurvivalPlan(subject: string, hoursLeft: number, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `You are ScholarMate 24-Hour Emergency Exam Coach for "${subject}".
 The student has ${hoursLeft} hours left before the exam.
 Generate an aggressive 80/20 Pareto survival plan.
@@ -399,31 +420,17 @@ Format strictly as JSON:
   "doNotWasteTimeOn": ["Obscure proofs with low historical probability", "Unnecessary long historical introductions"]
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return getHeuristicSurvivalPlan(subject, hoursLeft);
 }
 
 export async function analyzePreviousPapers(subject: string, paperTexts: string[], customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `Analyze previous question papers for "${subject}" and generate the topic heatmap and guaranteed question list.
 Format strictly as JSON:
 {
@@ -439,24 +446,11 @@ Format strictly as JSON:
   ]
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return {
@@ -476,7 +470,6 @@ Format strictly as JSON:
 }
 
 export async function generateAIStudyNotes(content: string, subject?: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `Generate comprehensive study notes for "${subject || "Engineering"}":
 Content:
 """\n${content.slice(0, 8000)}\n"""
@@ -490,24 +483,11 @@ Format strictly as JSON:
   ]
 }`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return {
@@ -526,7 +506,6 @@ Format strictly as JSON:
 }
 
 export async function generateAIFlashcards(content: string, subject?: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `Generate 12 active recall flashcards for "${subject || "Engineering"}":
 Content:
 """\n${content.slice(0, 8000)}\n"""
@@ -535,24 +514,11 @@ Format strictly as JSON array of objects:
   { "front": "Question / Concept", "back": "Clear concise answer and formula", "category": "${subject || "Core"}" }
 ]`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return [
@@ -566,7 +532,6 @@ Format strictly as JSON array of objects:
 }
 
 export async function generateAIQuiz(content: string, subject?: string, customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `Generate 5 multiple-choice quiz questions for "${subject || "Engineering"}":
 Content:
 """\n${content.slice(0, 8000)}\n"""
@@ -581,24 +546,11 @@ Format strictly as JSON array of objects:
   }
 ]`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return [
@@ -611,7 +563,6 @@ Format strictly as JSON array of objects:
 }
 
 export async function generateAISchedule(examTitle: string, examDate: string, subjects: string[], customKey?: string) {
-  const instance = getGenAIClient(customKey);
   const prompt = `Create a daily study timetable for "${examTitle}" on "${examDate}".
 Subjects: ${subjects.join(", ")}
 Format strictly as JSON array of day plans:
@@ -626,24 +577,11 @@ Format strictly as JSON array of day plans:
   }
 ]`;
 
-  if (instance) {
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await withTimeout(
-          instance.client.models.generateContent({
-            model,
-            contents: prompt,
-            config: { responseMimeType: "application/json" },
-          }),
-          4500
-        );
-        if (response.text) {
-          return safeJsonParse(response.text);
-        }
-      } catch (err) {
-        // Continue
-      }
-    }
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      return safeJsonParse(aiRes);
+    } catch {}
   }
 
   return subjects.map((sub, idx) => ({

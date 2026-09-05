@@ -189,39 +189,63 @@ export default function DashboardView({
               </div>
             </form>
 
-            {/* Core 9-View Quick Nav Pill Bar */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-              <span className="text-slate-400 font-medium">Quick Launch:</span>
-              <button
-                onClick={() => setActiveTab('exam_center')}
-                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-emerald-300 hover:bg-emerald-500/20 transition-colors font-semibold cursor-pointer"
-              >
-                🎯 Exam Center
-              </button>
-              <button
-                onClick={() => setActiveTab('nexa')}
-                className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-cyan-300 hover:bg-cyan-500/20 transition-colors font-semibold cursor-pointer"
-              >
-                🤖 Nexa Coach
-              </button>
-              <button
-                onClick={() => setActiveTab('practice')}
-                className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1 text-violet-300 hover:bg-violet-500/20 transition-colors font-semibold cursor-pointer"
-              >
-                📝 5/10M Practice
-              </button>
-              <button
-                onClick={() => setActiveTab('mock_exams')}
-                className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-blue-300 hover:bg-blue-500/20 transition-colors font-semibold cursor-pointer"
-              >
-                🧪 Mock Exams
-              </button>
-              <button
-                onClick={() => setActiveTab('progress')}
-                className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 py-1 text-purple-300 hover:bg-purple-500/20 transition-colors font-semibold cursor-pointer"
-              >
-                📊 Readiness Diagnostic
-              </button>
+            {/* 3 Primary Action Gates */}
+            <div className="pt-2">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                Primary Action Gates:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl">
+                <button
+                  onClick={() => setActiveTab('nexa')}
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-cyan-500/40 bg-gradient-to-br from-cyan-950/60 to-slate-900/80 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20 active:scale-[0.98] transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-105 transition-transform">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                      🤖 Ask Nexa
+                    </h4>
+                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                      Exam doubt resolution & concepts
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('library')}
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/60 to-slate-900/80 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98] transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 group-hover:scale-105 transition-transform">
+                    <BookOpen className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                      📚 Study Hub
+                    </h4>
+                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                      PDF upload & synthesis
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('practice')}
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-950/60 to-slate-900/80 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98] transition-all text-left cursor-pointer group"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-105 transition-transform">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                      🧪 Exam Practice
+                    </h4>
+                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                      5/10M model answers & recall
+                    </p>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -468,9 +492,9 @@ export default function DashboardView({
                   <span>Vastav</span>
                   <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 px-2.5 py-1 text-xs font-mono font-bold text-cyan-300">
-                  <span>PIN:</span>
-                  <span className="text-white">24030-AIM-026</span>
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 px-2.5 py-1 text-xs font-semibold text-cyan-300">
+                  <span>Role:</span>
+                  <span className="text-white">Lead Architect</span>
                 </div>
                 <p className="text-xs font-bold text-cyan-300 mt-3">
                   AI Architecture & Full-Stack Lead
@@ -513,9 +537,9 @@ export default function DashboardView({
                   <span>Vishnu</span>
                   <span className="h-2 w-2 rounded-full bg-indigo-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-indigo-950/80 border border-indigo-500/40 px-2.5 py-1 text-xs font-mono font-bold text-indigo-300">
-                  <span>PIN:</span>
-                  <span className="text-white">24030-AIM-020</span>
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-indigo-950/80 border border-indigo-500/40 px-2.5 py-1 text-xs font-semibold text-indigo-300">
+                  <span>Role:</span>
+                  <span className="text-white">Three.js Specialist</span>
                 </div>
                 <p className="text-xs font-bold text-indigo-300 mt-3">
                   Three.js 3D & UI/UX Developer
@@ -558,9 +582,9 @@ export default function DashboardView({
                   <span>Nikhileswar</span>
                   <span className="h-2 w-2 rounded-full bg-fuchsia-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-fuchsia-950/80 border border-fuchsia-500/40 px-2.5 py-1 text-xs font-mono font-bold text-fuchsia-300">
-                  <span>PIN:</span>
-                  <span className="text-white">24030-AIM-051</span>
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-fuchsia-950/80 border border-fuchsia-500/40 px-2.5 py-1 text-xs font-semibold text-fuchsia-300">
+                  <span>Role:</span>
+                  <span className="text-white">Backend Architect</span>
                 </div>
                 <p className="text-xs font-bold text-fuchsia-300 mt-3">
                   Database & API Engine Architect
@@ -603,9 +627,9 @@ export default function DashboardView({
                   <span>Sathvik</span>
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 text-xs font-mono font-bold text-emerald-300">
-                  <span>PIN:</span>
-                  <span className="text-white">24030-AIM-022</span>
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                  <span>Role:</span>
+                  <span className="text-white">Active Recall Lead</span>
                 </div>
                 <p className="text-xs font-bold text-emerald-300 mt-3">
                   Active Recall & Quiz Engine Lead
@@ -637,7 +661,7 @@ export default function DashboardView({
               🎓 <strong className="text-white">AANM & VVRSR Polytechnic College</strong> • Department of Artificial Intelligence & Machine Learning (AI & ML)
             </p>
             <p className="text-slate-400 mt-1">
-              Final Year Major Project (2026 - 2027) | Team: <strong className="text-cyan-300">Vastav (24030-AIM-026)</strong>, <strong className="text-indigo-300">Vishnu (24030-AIM-020)</strong>, <strong className="text-purple-300">Nikhileswar (24030-AIM-051)</strong>, <strong className="text-emerald-300">Sathvik (24030-AIM-022)</strong>.
+              Final Year Major Project (2026 - 2027) | Team: <strong className="text-cyan-300">Vastav</strong> (Lead Architect), <strong className="text-indigo-300">Vishnu</strong> (3D Graphics), <strong className="text-purple-300">Nikhileswar</strong> (Backend Architect), <strong className="text-emerald-300">Sathvik</strong> (Active Recall Lead).
             </p>
           </div>
         </div>

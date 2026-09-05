@@ -30,7 +30,7 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
-  const [showStartingAnimation, setShowStartingAnimation] = useState(true);
+  const [showStartingAnimation, setShowStartingAnimation] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Shared active focus context for inter-view transitions
@@ -39,6 +39,10 @@ export default function Home() {
 
   useEffect(() => {
     try {
+      const hasSeen = localStorage.getItem('has_seen_intro');
+      if (!hasSeen) {
+        setShowStartingAnimation(true);
+      }
       const savedTheme = localStorage.getItem('scholarmate_theme') as 'dark' | 'light' | null;
       if (savedTheme) {
         setTheme(savedTheme);
@@ -267,7 +271,7 @@ export default function Home() {
             </div>
             <span className="hidden sm:inline text-slate-400">|</span>
             <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
-              AI & ML: Vastav (026), Vishnu (020), Nikhileswar (051), Sathvik (022)
+              AI & ML: Vastav (Lead Architect), Vishnu (3D Graphics), Nikhileswar (Backend), Sathvik (Active Recall)
             </span>
           </div>
 

@@ -12,12 +12,12 @@
 ---
 
 ### **PROJECT DEVELOPMENT TEAM**
-| No. | Student Name | PIN (Student Reg. ID) | Project Role |
+| No. | Student Name | Specialization / Focus Area | Project Role |
 | :---: | :--- | :--- | :--- |
-| **01** | **Vastav** | `24030-AIM-026` | **Project Lead & AI Architecture / Full-Stack** |
-| **02** | **Vishnu** | `24030-AIM-020` | **Three.js 3D Graphics & UI/UX Developer** |
-| **03** | **Nikhileswar** | `24030-AIM-027` | **Cloud Database & Security Engineer** |
-| **04** | **Sathvik** | `24030-AIM-004` | **Frontend Integration & QA Testing Engineer** |
+| **01** | **Vastav** | AI & Full-Stack Systems | **Project Lead & AI Architecture / Full-Stack** |
+| **02** | **Vishnu** | WebGL & Spatial Interaction | **Three.js 3D Graphics & UI/UX Developer** |
+| **03** | **Nikhileswar** | Cloud DB & Distributed APIs | **Cloud Database & Security Engineer** |
+| **04** | **Sathvik** | Cognitive Science & Active Recall | **Active Recall & QA Testing Engineer** |
 
 ---
 

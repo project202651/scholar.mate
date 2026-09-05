@@ -12,6 +12,13 @@ export default function StartingAnimation({ onComplete }: StartingAnimationProps
   const [step, setStep] = useState(0);
   const [progress, setProgress] = useState(0);
 
+  const handleFinish = () => {
+    try {
+      localStorage.setItem("has_seen_intro", "true");
+    } catch {}
+    onComplete();
+  };
+
   const loadingSteps = [
     "Initializing ScholarMate Neural Engine...",
     "Loading 3D WebGL Spatial Mesh...",
@@ -25,25 +32,25 @@ export default function StartingAnimation({ onComplete }: StartingAnimationProps
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
-          setTimeout(onComplete, 600);
+          setTimeout(handleFinish, 300);
           return 100;
         }
-        const next = prev + 2;
+        const next = prev + 3;
         if (next > 75) setStep(3);
         else if (next > 50) setStep(2);
         else if (next > 25) setStep(1);
         return next;
       });
-    }, 45);
+    }, 35);
 
     return () => clearInterval(interval);
-  }, [onComplete]);
+  }, []);
 
   return (
     <motion.div
       initial={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
-      transition={{ duration: 0.7, ease: "easeInOut" }}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
       className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 px-4 text-center select-none overflow-hidden"
     >
       {/* Background radial glow */}
@@ -87,7 +94,7 @@ export default function StartingAnimation({ onComplete }: StartingAnimationProps
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300 mb-3">
             <Sparkles className="h-3.5 w-3.5 text-cyan-400 animate-spin" />
-            <span>Final Year Project (2026-2027)</span>
+            <span>Final Year Major Project (2026-2027)</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-1">
@@ -101,8 +108,8 @@ export default function StartingAnimation({ onComplete }: StartingAnimationProps
             Department of Artificial Intelligence & Machine Learning (AI & ML)
           </p>
           <div className="mt-2 inline-block rounded-full bg-indigo-500/15 border border-indigo-500/30 px-3 py-1 text-[10px] text-indigo-300">
-            <span>Dev Team: </span>
-            <strong className="text-white">Vastav</strong> (Lead) • <strong className="text-white">Vishnu</strong> • <strong className="text-white">Nikhileswar</strong> • <strong className="text-white">Sathvik</strong>
+            <span>Engineering Team: </span>
+            <strong className="text-white">Vastav</strong> (Lead) • <strong className="text-white">Vishnu</strong> (3D) • <strong className="text-white">Nikhileswar</strong> (Backend) • <strong className="text-white">Sathvik</strong> (Recall)
           </div>
         </motion.div>
 
@@ -132,8 +139,8 @@ export default function StartingAnimation({ onComplete }: StartingAnimationProps
 
         {/* Skip button */}
         <button
-          onClick={onComplete}
-          className="mt-8 text-xs text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-widest font-semibold"
+          onClick={handleFinish}
+          className="mt-8 text-xs text-slate-500 hover:text-cyan-300 transition-colors uppercase tracking-widest font-semibold cursor-pointer active:scale-95"
         >
           Skip Intro →
         </button>
