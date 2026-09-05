@@ -8,7 +8,27 @@ function getGenAIClient(customApiKey?: string) {
   return null;
 }
 
-const CANDIDATE_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+const CANDIDATE_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+
+// High-speed in-memory response cache (TTL: 30 minutes)
+const memoryCache = new Map<string, { result: string; expiresAt: number }>();
+
+function getCached(key: string): string | null {
+  const item = memoryCache.get(key);
+  if (item && item.expiresAt > Date.now()) {
+    return item.result;
+  }
+  memoryCache.delete(key);
+  return null;
+}
+
+function setCached(key: string, result: string) {
+  if (memoryCache.size > 500) {
+    const oldestKey = memoryCache.keys().next().value;
+    if (oldestKey) memoryCache.delete(oldestKey);
+  }
+  memoryCache.set(key, { result, expiresAt: Date.now() + 30 * 60 * 1000 });
+}
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs = 5000): Promise<T> {
   let timeoutHandle: any;
@@ -32,13 +52,13 @@ async function callOpenRouter(prompt: string, isJson: boolean = false): Promise<
           "X-Title": "ScholarMate 2.0 AI Exam Coach",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.0-flash-001",
+          model: "deepseek/deepseek-chat",
           messages: [{ role: "user", content: prompt }],
           temperature: isJson ? 0.2 : 0.4,
           ...(isJson ? { response_format: { type: "json_object" } } : {})
         }),
       }),
-      5000
+      7000
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -64,7 +84,7 @@ async function callHuggingFace(prompt: string): Promise<string | null> {
           parameters: { max_new_tokens: 1000, temperature: 0.3 }
         }),
       }),
-      5000
+      4000
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -78,6 +98,12 @@ async function callHuggingFace(prompt: string): Promise<string | null> {
 }
 
 export async function executeMultiProviderPrompt(prompt: string, isJson: boolean = false, customKey?: string): Promise<string | null> {
+  const cacheKey = `${isJson ? "json" : "text"}:${prompt.slice(0, 400)}`;
+  if (!customKey) {
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+  }
+
   // 1. If custom key is provided, try GoogleGenAI first
   if (customKey) {
     const instance = getGenAIClient(customKey);
@@ -98,11 +124,14 @@ export async function executeMultiProviderPrompt(prompt: string, isJson: boolean
     }
   }
 
-  // 2. Try OpenRouter
+  // 2. Primary Fast Engine: OpenRouter deepseek-chat (~1.5-3.0s)
   const openRouterResult = await callOpenRouter(prompt, isJson);
-  if (openRouterResult) return openRouterResult;
+  if (openRouterResult) {
+    setCached(cacheKey, openRouterResult);
+    return openRouterResult;
+  }
 
-  // 3. Try GoogleGenAI with server key
+  // 3. Secondary Engine: GoogleGenAI with server key
   const serverInstance = getGenAIClient();
   if (serverInstance) {
     for (const model of CANDIDATE_MODELS) {
@@ -115,14 +144,20 @@ export async function executeMultiProviderPrompt(prompt: string, isJson: boolean
           }),
           5000
         );
-        if (response.text) return response.text;
+        if (response.text) {
+          setCached(cacheKey, response.text);
+          return response.text;
+        }
       } catch {}
     }
   }
 
-  // 4. Try HuggingFace
+  // 4. Tertiary Engine: HuggingFace
   const hfResult = await callHuggingFace(prompt);
-  if (hfResult) return hfResult;
+  if (hfResult) {
+    setCached(cacheKey, hfResult);
+    return hfResult;
+  }
 
   return null;
 }
