@@ -40,6 +40,7 @@ interface DashboardViewProps {
   onOpenAuth: () => void;
   onOpenEmergencyModal?: () => void;
   onSelectTopic?: (topic: string, subject?: string) => void;
+  theme?: 'dark' | 'light';
 }
 
 export default function DashboardView({
@@ -47,7 +48,8 @@ export default function DashboardView({
   setActiveTab,
   onOpenAuth,
   onOpenEmergencyModal,
-  onSelectTopic
+  onSelectTopic,
+  theme = 'dark',
 }: DashboardViewProps) {
   const [targetExam, setTargetExam] = useState({
     title: 'Operating Systems & System Software',
@@ -252,20 +254,20 @@ export default function DashboardView({
           {/* Right Column: 3D Visual Orb & Floating Badges */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
             <div className="relative w-full flex justify-center">
-              <ThreeStudyOrb />
+              <ThreeStudyOrb theme={theme} />
 
               <motion.div
                 initial={{ y: -10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="absolute top-4 -left-4 sm:left-2 rounded-2xl border border-emerald-500/40 bg-slate-900/80 p-3 shadow-xl backdrop-blur-xl pointer-events-none hidden sm:flex items-center gap-2.5"
+                className="absolute top-4 -left-4 sm:left-2 rounded-2xl border border-emerald-500/40 bg-white/95 dark:bg-slate-900/85 p-3 shadow-xl backdrop-blur-xl pointer-events-none hidden sm:flex items-center gap-2.5"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                   <Bot className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 leading-none">Nexa AI 2.0</p>
-                  <p className="text-xs font-bold text-white mt-0.5">8-Part Teaching</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-none font-semibold">Nexa AI 2.0</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5">8-Part Teaching</p>
                 </div>
               </motion.div>
 
@@ -273,19 +275,19 @@ export default function DashboardView({
                 initial={{ y: 10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 0.4 }}
-                className="absolute -bottom-2 -right-4 sm:right-2 rounded-2xl border border-cyan-500/40 bg-slate-900/80 p-3 shadow-xl backdrop-blur-xl pointer-events-none hidden sm:flex items-center gap-2.5"
+                className="absolute -bottom-2 -right-4 sm:right-2 rounded-2xl border border-cyan-500/40 bg-white/95 dark:bg-slate-900/85 p-3 shadow-xl backdrop-blur-xl pointer-events-none hidden sm:flex items-center gap-2.5"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30">
                   <Award className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 leading-none">Exam Readiness</p>
-                  <p className="text-xs font-bold text-white mt-0.5">{readinessScore}% Probability</p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400 leading-none font-semibold">Exam Readiness</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white mt-0.5">{readinessScore}% Probability</p>
                 </div>
               </motion.div>
             </div>
-            <span className="inline-block rounded-full border border-indigo-500/30 bg-slate-900/80 px-3 py-1 text-[11px] font-medium text-slate-300 backdrop-blur-md mt-2">
-              ✨ Interactive 3D WebGL Neural Orb (Drag with Mouse)
+            <span className="inline-block rounded-full border border-indigo-500/30 bg-white/90 dark:bg-slate-900/80 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 backdrop-blur-md mt-2 shadow-sm">
+              ✨ 3D Holographic Neural Core (Drag to Orbit)
             </span>
           </div>
         </div>

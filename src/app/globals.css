@@ -207,6 +207,18 @@ body {
    ========================================================================== */
 
 /* All Headings & Primary Display Titles */
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6,
+html.light h1,
+html.light h2,
+html.light h3,
+html.light h4,
+html.light h5,
+html.light h6,
 .light-theme h1,
 .light-theme h2,
 .light-theme h3,
@@ -216,38 +228,76 @@ body {
   color: #091e42 !important;
 }
 
-/* Base Body Text */
+/* Base Body Text & Labels */
+html:not(.dark) p,
+html:not(.dark) li,
+html.light p,
+html.light li,
 .light-theme p,
 .light-theme li {
   color: #1e293b !important;
 }
 
-/* Muted / Secondary Descriptions */
-.light-theme .text-slate-100,
-.light-theme .text-slate-200 {
-  color: #091e42 !important;
-}
-
-.light-theme .text-slate-300 {
+html:not(.dark) label,
+html.light label,
+.light-theme label {
   color: #1e293b !important;
-  font-weight: 500 !important;
-}
-
-.light-theme .text-slate-400 {
-  color: #334155 !important;
   font-weight: 600 !important;
 }
 
-.light-theme .text-slate-500 {
+/* Muted / Secondary Descriptions & Slate Levels */
+html:not(.dark) .text-slate-100,
+html:not(.dark) .text-slate-200,
+html.light .text-slate-100,
+html.light .text-slate-200,
+.light-theme .text-slate-100,
+.light-theme .text-slate-200 {
+  color: #091e42 !important;
+  font-weight: 700 !important;
+}
+
+html:not(.dark) .text-slate-300,
+html.light .text-slate-300,
+.light-theme .text-slate-300 {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+}
+
+html:not(.dark) .text-slate-400,
+html.light .text-slate-400,
+.light-theme .text-slate-400,
+html:not(.dark) .text-gray-400,
+html.light .text-gray-400,
+.light-theme .text-gray-400 {
+  color: #334155 !important;
+  font-weight: 500 !important;
+}
+
+html:not(.dark) .text-slate-500,
+html.light .text-slate-500,
+.light-theme .text-slate-500,
+html:not(.dark) .text-gray-500,
+html.light .text-gray-500,
+.light-theme .text-gray-500 {
   color: #475569 !important;
 }
 
-/* In light mode, turn generic text-white into dark navy EXCEPT when inside buttons or colored gradients */
-.light-theme .text-white:not(button):not(button *):not([class*="bg-cyan-500"]):not([class*="bg-indigo-600"]):not([class*="bg-purple-600"]):not([class*="bg-rose-500"]):not([class*="bg-emerald-500"]):not([class*="bg-amber-500"]):not([class*="bg-gradient-to"]):not([class*="bg-gradient-to"] *):not(.keep-white) {
+/* In light mode, turn generic text-white into dark navy EXCEPT when inside buttons, badges, or colored gradients */
+html:not(.dark) .text-white:not(button):not(button *):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-teal-"]):not([class*="bg-violet-"]):not([class*="bg-red-"]):not([class*="bg-gradient-to"]):not([class*="bg-gradient-to"] *):not(.keep-white),
+html.light .text-white:not(button):not(button *):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-teal-"]):not([class*="bg-violet-"]):not([class*="bg-red-"]):not([class*="bg-gradient-to"]):not([class*="bg-gradient-to"] *):not(.keep-white),
+.light-theme .text-white:not(button):not(button *):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-teal-"]):not([class*="bg-violet-"]):not([class*="bg-red-"]):not([class*="bg-gradient-to"]):not([class*="bg-gradient-to"] *):not(.keep-white) {
   color: #091e42 !important;
 }
 
 /* Buttons with colorful gradients MUST KEEP razor-sharp white text */
+html:not(.dark) button[class*="bg-gradient"],
+html:not(.dark) button[class*="from-cyan-500"],
+html:not(.dark) button[class*="from-indigo-600"],
+html:not(.dark) button[class*="from-rose-500"],
+html:not(.dark) button[class*="from-emerald-500"],
+html:not(.dark) button[class*="from-amber-500"],
+html:not(.dark) button.text-white,
+html:not(.dark) button .text-white,
 .light-theme button[class*="bg-gradient"],
 .light-theme button[class*="from-cyan-500"],
 .light-theme button[class*="from-indigo-600"],
@@ -264,14 +314,17 @@ body {
 }
 
 /* Number badges (01, 02, 03, 04) and icon badges */
+html:not(.dark) [class*="bg-gradient-to-tr"],
 .light-theme [class*="bg-gradient-to-tr"] {
   color: #ffffff !important;
 }
+html:not(.dark) [class*="bg-gradient-to-tr"] svg,
 .light-theme [class*="bg-gradient-to-tr"] svg {
   color: #ffffff !important;
 }
 
 /* High-Contrast Gradient Text in Light Mode */
+html:not(.dark) .bg-clip-text,
 .light-theme .bg-clip-text {
   background-image: linear-gradient(135deg, #0284c7 0%, #3730a3 50%, #7c3aed 100%) !important;
   -webkit-background-clip: text !important;
@@ -477,6 +530,12 @@ body {
 /* ==========================================================================
    4. Form Controls, Hero Search Bar & Inputs
    ========================================================================== */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select,
+html.light input,
+html.light textarea,
+html.light select,
 .light-theme input,
 .light-theme textarea,
 .light-theme select {
@@ -486,12 +545,18 @@ body {
   box-shadow: 0 2px 10px rgba(56, 189, 248, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.02) !important;
 }
 
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder,
+html.light input::placeholder,
+html.light textarea::placeholder,
 .light-theme input::placeholder,
 .light-theme textarea::placeholder {
   color: #64748b !important;
 }
 
 /* Hero Search Bar Container & Input */
+html:not(.dark) form [class*="bg-slate-900"],
+html.light form [class*="bg-slate-900"],
 .light-theme form [class*="bg-slate-900"] {
   background-color: #ffffff !important;
   background-image: none !important;
@@ -499,6 +564,8 @@ body {
   box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2) !important;
 }
 
+html:not(.dark) form [class*="bg-slate-900"] input,
+html.light form [class*="bg-slate-900"] input,
 .light-theme form [class*="bg-slate-900"] input {
   background: transparent !important;
   color: #091e42 !important;

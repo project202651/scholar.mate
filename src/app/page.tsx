@@ -63,6 +63,23 @@ export default function Home() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      if (theme === 'light') {
+        root.classList.remove('dark');
+        root.classList.add('light');
+        root.classList.add('light-theme');
+        document.body.className = "min-h-full flex flex-col bg-slate-50 text-slate-900 light-theme";
+      } else {
+        root.classList.remove('light');
+        root.classList.remove('light-theme');
+        root.classList.add('dark');
+        document.body.className = "min-h-full flex flex-col bg-slate-950 text-slate-100 dark";
+      }
+    }
+  }, [theme]);
+
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
@@ -153,6 +170,7 @@ export default function Home() {
             onOpenAuth={() => setIsAuthOpen(true)}
             onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
             onSelectTopic={handleTopicSelect}
+            theme={theme}
           />
         )}
 
