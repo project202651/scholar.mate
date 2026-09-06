@@ -35,6 +35,17 @@ export default function Home() {
   // Shared active focus context for inter-view transitions
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
+  const [selectedDocId, setSelectedDocId] = useState<string>('');
+  const [selectedDocTitle, setSelectedDocTitle] = useState<string>('');
+
+  const handleDocumentSelect = (docId: string, title?: string, subject?: string) => {
+    setSelectedDocId(docId);
+    if (title) {
+      setSelectedDocTitle(title);
+      setSelectedTopic(title);
+    }
+    if (subject) setSelectedSubject(subject);
+  };
 
   useEffect(() => {
     try {
@@ -188,6 +199,7 @@ export default function Home() {
           <NexaCoachView
             initialTopic={selectedTopic}
             initialSubject={selectedSubject}
+            initialDocumentId={selectedDocId}
             onNavigateToPractice={(topic) => {
               setSelectedTopic(topic);
               setActiveTab('practice');
@@ -200,6 +212,9 @@ export default function Home() {
           <StudyLibraryView
             initialSubject={selectedSubject}
             initialTopic={selectedTopic}
+            initialDocId={selectedDocId}
+            onSelectDocument={handleDocumentSelect}
+            setActiveMainTab={setActiveTab}
           />
         )}
 
@@ -207,11 +222,14 @@ export default function Home() {
           <PracticeAnswerView
             initialTopic={selectedTopic}
             initialSubject={selectedSubject}
+            initialDocumentId={selectedDocId}
           />
         )}
 
         {activeTab === 'mock_exams' && (
           <MockExamSimulatorView
+            initialDocumentId={selectedDocId}
+            initialSubject={selectedSubject}
             onNavigateToNexa={(topic) => {
               setSelectedTopic(topic);
               setActiveTab('nexa');
@@ -223,7 +241,13 @@ export default function Home() {
           />
         )}
 
-        {activeTab === 'flashcards' && <FlashcardsView />}
+        {activeTab === 'flashcards' && (
+          <FlashcardsView
+            initialDocumentId={selectedDocId}
+            initialSubject={selectedSubject}
+            initialTopic={selectedTopic}
+          />
+        )}
 
         {activeTab === 'progress' && (
           <ProgressAndWeaknessView

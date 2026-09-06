@@ -13,14 +13,24 @@ export async function POST(req: Request) {
     let finalSubject = subject || "Computer Engineering";
     let finalTitle = topic || "Speed Quiz";
 
-    if (documentId && user) {
-      const doc = await prisma.document.findUnique({
-        where: { id: documentId, userId: user.id },
+    if (documentId) {
+      const doc = await prisma.document.findFirst({
+        where: user ? { id: documentId, userId: user.id } : { id: documentId },
       });
       if (doc) {
         contentToAnalyze = doc.extractedText;
-        finalSubject = doc.subject;
-        finalTitle = doc.title;
+        finalSubject = doc.subject || finalSubject;
+        finalTitle = doc.title || finalTitle;
+      }
+    } else if (user && (!topic || topic.trim().length === 0)) {
+      const latestDoc = await prisma.document.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+      });
+      if (latestDoc) {
+        contentToAnalyze = latestDoc.extractedText;
+        finalSubject = latestDoc.subject;
+        finalTitle = latestDoc.title;
       }
     }
 

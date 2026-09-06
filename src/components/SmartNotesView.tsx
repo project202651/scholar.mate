@@ -7,14 +7,15 @@ import { aiFetch } from "@/lib/clientFetch";
 
 interface SmartNotesViewProps {
   onOpenAISettings?: () => void;
+  initialDocId?: string;
 }
 
-export default function SmartNotesView({ onOpenAISettings }: SmartNotesViewProps) {
+export default function SmartNotesView({ onOpenAISettings, initialDocId }: SmartNotesViewProps) {
   const [topic, setTopic] = useState("");
   const [subject, setSubject] = useState("Artificial Intelligence & Machine Learning (AI & ML)");
   const [rawContent, setRawContent] = useState("");
   const [documents, setDocuments] = useState<any[]>([]);
-  const [selectedDocId, setSelectedDocId] = useState("");
+  const [selectedDocId, setSelectedDocId] = useState(initialDocId || "");
   const [loading, setLoading] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<"summary" | "bullets" | "questions">("summary");
   const [questionFilter, setQuestionFilter] = useState<string>("all");

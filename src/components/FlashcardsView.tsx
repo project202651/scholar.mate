@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Layers, RotateCcw, Check, Sparkles, ChevronLeft, ChevronRight, 
-  Award, Plus, Brain, Clock, Zap, CheckCircle2, AlertCircle 
+  Award, Plus, Brain, Clock, Zap, CheckCircle2, AlertCircle, BookOpen, Lightbulb, FileText 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AILoadingPulse from './AILoadingPulse';
@@ -13,6 +13,10 @@ interface Flashcard {
   id?: string;
   front: string;
   back: string;
+  humanExplanation?: string;
+  analogy?: string;
+  examinerTip?: string;
+  example?: string;
   category?: string;
   mastered?: boolean;
   intervalDays?: number;
@@ -27,15 +31,28 @@ interface FlashcardDeck {
   cards: Flashcard[];
 }
 
-export default function FlashcardsView() {
+interface FlashcardsViewProps {
+  initialDocumentId?: string;
+  initialSubject?: string;
+  initialTopic?: string;
+}
+
+export default function FlashcardsView({
+  initialDocumentId,
+  initialSubject,
+  initialTopic,
+}: FlashcardsViewProps) {
   const [decks, setDecks] = useState<FlashcardDeck[]>([]);
   const [currentDeckIndex, setCurrentDeckIndex] = useState(0);
   const [cardIndex, setCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [newTopic, setNewTopic] = useState('');
-  const [newSubject, setNewSubject] = useState('Operating Systems & Algorithms');
+  const [newTopic, setNewTopic] = useState(initialTopic || '');
+  const [newSubject, setNewSubject] = useState(initialSubject || 'Engineering & Polytechnic');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [selectedDocId, setSelectedDocId] = useState(initialDocumentId || '');
+  const [showHumanBreakdown, setShowHumanBreakdown] = useState(true);
 
   const FLASHCARD_PRESETS = [
     { topic: 'Process Scheduling & Deadlock Conditions', subject: 'Operating Systems' },
@@ -46,7 +63,33 @@ export default function FlashcardsView() {
 
   useEffect(() => {
     fetchDecks();
+    fetchDocuments();
   }, []);
+
+  useEffect(() => {
+    if (initialDocumentId) {
+      setSelectedDocId(initialDocumentId);
+    }
+    if (initialSubject) setNewSubject(initialSubject);
+    if (initialTopic) setNewTopic(initialTopic);
+  }, [initialDocumentId, initialSubject, initialTopic]);
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await fetch('/api/documents/upload');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.documents) {
+          setDocuments(data.documents);
+          if (!selectedDocId && initialDocumentId) {
+            setSelectedDocId(initialDocumentId);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchDecks = async () => {
     try {
@@ -55,9 +98,9 @@ export default function FlashcardsView() {
         const data = await res.json();
         if (data.decks && data.decks.length > 0) {
           setDecks(data.decks);
-        } else {
-          // Initialize with high-yield starter deck
-          handleCreateWithPreset(FLASHCARD_PRESETS[0].topic, FLASHCARD_PRESETS[0].subject);
+        } else if (initialDocumentId) {
+          // Auto-generate for the active textbook
+          handleCreateWithDocument(initialDocumentId, initialSubject, initialTopic);
         }
       }
     } catch (e) {
@@ -89,9 +132,12 @@ export default function FlashcardsView() {
     }
   };
 
-  const handleCreateDeck = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTopic.trim()) return;
+  const handleCreateWithDocument = async (docId?: string, docSubject?: string, docTitle?: string) => {
+    const targetDocId = docId || selectedDocId;
+    if (!targetDocId) return;
+    const doc = documents.find(d => d.id === targetDocId);
+    const title = docTitle || doc?.title || newTopic || 'Textbook Active Recall';
+    const subject = docSubject || doc?.subject || newSubject || 'Engineering';
 
     setLoading(true);
     setShowCreateModal(false);
@@ -99,8 +145,38 @@ export default function FlashcardsView() {
       const res = await aiFetch('/api/ai/flashcards', {
         method: 'POST',
         body: JSON.stringify({
-          topic: newTopic,
+          documentId: targetDocId,
+          topic: title,
+          subject: subject,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.deck) {
+        setDecks(prev => [data.deck, ...prev]);
+        setCurrentDeckIndex(0);
+        setCardIndex(0);
+        setIsFlipped(false);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateDeck = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTopic.trim() && !selectedDocId) return;
+
+    setLoading(true);
+    setShowCreateModal(false);
+    try {
+      const res = await aiFetch('/api/ai/flashcards', {
+        method: 'POST',
+        body: JSON.stringify({
+          topic: newTopic || 'Textbook Recall Deck',
           subject: newSubject,
+          documentId: selectedDocId || undefined,
         }),
       });
       const data = await res.json();
@@ -248,6 +324,57 @@ export default function FlashcardsView() {
         </div>
       </div>
 
+      {/* Active Textbook Source Selector */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 shrink-0">
+            <BookOpen className="h-5 w-5" />
+          </div>
+          <div className="flex-1 sm:flex-initial">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block leading-tight">Active Knowledge Source</span>
+            <select
+              value={selectedDocId}
+              onChange={(e) => {
+                const docId = e.target.value;
+                setSelectedDocId(docId);
+                const matched = documents.find(d => d.id === docId);
+                if (matched) {
+                  setNewSubject(matched.subject);
+                  setNewTopic(matched.title);
+                }
+              }}
+              className="mt-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none max-w-[280px] sm:max-w-[340px] truncate"
+            >
+              <option value="">-- Custom Topic (No Textbook) --</option>
+              {documents.map((doc) => (
+                <option key={doc.id} value={doc.id}>
+                  📄 {doc.title} ({doc.subject})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {selectedDocId ? (
+          <button
+            onClick={() => handleCreateWithDocument(selectedDocId)}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 px-4 py-2 text-xs font-bold text-white shadow-md cursor-pointer transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Generate Deck From Textbook</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Custom Topic Deck</span>
+          </button>
+        )}
+      </div>
+
       {/* Deck Selector Tabs */}
       {decks.length > 1 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
@@ -305,7 +432,7 @@ export default function FlashcardsView() {
           </div>
 
           {/* 3D Animated Card */}
-          <div className="relative h-[340px] sm:h-[380px] w-full [perspective:1200px]">
+          <div className="relative min-h-[380px] sm:min-h-[430px] w-full [perspective:1200px]">
             <motion.div
               onClick={handleFlip}
               className="relative h-full w-full cursor-pointer [transform-style:preserve-3d] transition-all duration-700"
@@ -313,7 +440,7 @@ export default function FlashcardsView() {
               transition={{ duration: 0.6, ease: 'easeInOut' }}
             >
               {/* FRONT OF CARD */}
-              <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-700/80 bg-gradient-to-br from-white via-slate-50 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/50 p-8 shadow-xl backdrop-blur-xl [backface-visibility:hidden]">
+              <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-700/80 bg-gradient-to-br from-white via-slate-50 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/50 p-6 sm:p-8 shadow-xl backdrop-blur-xl [backface-visibility:hidden]">
                 <div className="flex items-center justify-between">
                   <span className="rounded-full bg-purple-100 dark:bg-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
                     {currentCard.category || currentDeck.subject}
@@ -323,11 +450,11 @@ export default function FlashcardsView() {
                   </span>
                 </div>
 
-                <div className="my-auto text-center px-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 block">
-                    Concept / Exam Question
+                <div className="my-auto text-center px-2 sm:px-4 py-6">
+                  <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-2 block">
+                    Exam Concept / Active Question
                   </span>
-                  <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white leading-relaxed">
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-relaxed">
                     {currentCard.front}
                   </h3>
                 </div>
@@ -344,21 +471,72 @@ export default function FlashcardsView() {
                 </div>
               </div>
 
-              {/* BACK OF CARD (Answer & Derivation) */}
-              <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-purple-400/50 bg-gradient-to-br from-white via-purple-50 to-indigo-50/40 dark:from-slate-900 dark:via-slate-950 dark:to-purple-950/60 p-8 shadow-2xl backdrop-blur-xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
+              {/* BACK OF CARD (Answer, Human Explanation, Analogy & Tips) */}
+              <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-purple-400/50 bg-gradient-to-br from-white via-purple-50 to-indigo-50/40 dark:from-slate-900 dark:via-slate-950 dark:to-purple-950/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
                 <div className="flex items-center justify-between">
                   <span className="rounded-full bg-cyan-100 dark:bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/30">
-                    Key Answer & Model Derivation
+                    Authoritative Answer & Derivation
                   </span>
                   <span className="text-xs font-medium text-slate-400">
                     Card {cardIndex + 1} of {cards.length}
                   </span>
                 </div>
 
-                <div className="my-auto text-center px-4 overflow-y-auto max-h-[190px]">
-                  <p className="text-sm sm:text-base font-medium text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line">
-                    {currentCard.back}
-                  </p>
+                {/* Scrollable Rich Breakdown Container */}
+                <div className="my-auto text-left px-2 sm:px-4 overflow-y-auto max-h-[250px] space-y-3 no-scrollbar py-2">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 block mb-1">
+                      Core Answer & Formula:
+                    </span>
+                    <p className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line">
+                      {currentCard.back}
+                    </p>
+                  </div>
+
+                  {currentCard.humanExplanation && (
+                    <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs">
+                      <div className="flex items-center gap-1.5 font-bold text-purple-700 dark:text-purple-300 mb-1">
+                        <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <span>Plain-English Human Explanation:</span>
+                      </div>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {currentCard.humanExplanation}
+                      </p>
+                    </div>
+                  )}
+
+                  {currentCard.analogy && (
+                    <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs">
+                      <span className="font-bold text-cyan-700 dark:text-cyan-300 block mb-0.5">
+                        💭 Real-World Analogy:
+                      </span>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {currentCard.analogy}
+                      </p>
+                    </div>
+                  )}
+
+                  {currentCard.examinerTip && (
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                      <span className="font-bold text-emerald-700 dark:text-emerald-300 block mb-0.5">
+                        🎯 Examiner Scoring Tip:
+                      </span>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {currentCard.examinerTip}
+                      </p>
+                    </div>
+                  )}
+
+                  {currentCard.example && (
+                    <div className="p-2.5 rounded-xl bg-slate-500/10 border border-slate-500/20 text-xs">
+                      <span className="font-bold text-slate-700 dark:text-slate-300 block mb-0.5">
+                        🔬 Concrete Application:
+                      </span>
+                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                        {currentCard.example}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-3 text-xs text-slate-400">
@@ -466,9 +644,37 @@ export default function FlashcardsView() {
             </p>
 
             <form onSubmit={handleCreateDeck} className="space-y-4">
+              {documents.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Select From Uploaded Textbooks
+                  </label>
+                  <select
+                    value={selectedDocId}
+                    onChange={(e) => {
+                      const docId = e.target.value;
+                      setSelectedDocId(docId);
+                      const matched = documents.find(d => d.id === docId);
+                      if (matched) {
+                        setNewSubject(matched.subject);
+                        setNewTopic(matched.title);
+                      }
+                    }}
+                    className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none"
+                  >
+                    <option value="">-- Or Enter Custom Topic Below --</option>
+                    {documents.map((doc) => (
+                      <option key={doc.id} value={doc.id}>
+                        📄 {doc.title} ({doc.subject})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Topic / Chapter
+                  Topic / Chapter Name
                 </label>
                 <input
                   type="text"

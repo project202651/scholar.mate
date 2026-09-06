@@ -10,9 +10,18 @@ import DailyTasksView from './DailyTasksView';
 interface StudyLibraryViewProps {
   initialSubject?: string;
   initialTopic?: string;
+  initialDocId?: string;
+  onSelectDocument?: (docId: string, title?: string, subject?: string) => void;
+  setActiveMainTab?: (tab: string) => void;
 }
 
-export default function StudyLibraryView({ initialSubject, initialTopic }: StudyLibraryViewProps) {
+export default function StudyLibraryView({
+  initialSubject,
+  initialTopic,
+  initialDocId,
+  onSelectDocument,
+  setActiveMainTab,
+}: StudyLibraryViewProps) {
   const [activeSubTab, setActiveSubTab] = useState<'notes' | 'docs' | 'schedule' | 'tasks'>('notes');
 
   const subTabs = [
@@ -63,8 +72,16 @@ export default function StudyLibraryView({ initialSubject, initialTopic }: Study
 
       {/* Render Active Sub-View */}
       <div>
-        {activeSubTab === 'notes' && <SmartNotesView />}
-        {activeSubTab === 'docs' && <DocHubView />}
+        {activeSubTab === 'notes' && <SmartNotesView initialDocId={initialDocId} />}
+        {activeSubTab === 'docs' && (
+          <DocHubView
+            setActiveTab={setActiveMainTab}
+            onSelectDocument={(docId, title, subject) => {
+              if (onSelectDocument) onSelectDocument(docId, title, subject);
+            }}
+            onNavigateToNotes={() => setActiveSubTab('notes')}
+          />
+        )}
         {activeSubTab === 'schedule' && <StudyScheduleView />}
         {activeSubTab === 'tasks' && <DailyTasksView />}
       </div>

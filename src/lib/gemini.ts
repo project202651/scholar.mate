@@ -8,7 +8,7 @@ function getGenAIClient(customApiKey?: string) {
   return null;
 }
 
-const CANDIDATE_MODELS = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+const CANDIDATE_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite"];
 
 // High-speed in-memory response cache (TTL: 30 minutes)
 const memoryCache = new Map<string, { result: string; expiresAt: number }>();
@@ -30,12 +30,49 @@ function setCached(key: string, result: string) {
   memoryCache.set(key, { result, expiresAt: Date.now() + 30 * 60 * 1000 });
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs = 5000): Promise<T> {
+async function withTimeout<T>(promise: Promise<T>, timeoutMs = 20000): Promise<T> {
   let timeoutHandle: any;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutHandle = setTimeout(() => reject(new Error("AI request timeout")), timeoutMs);
   });
   return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutHandle));
+}
+
+async function callGeminiREST(prompt: string, isJson: boolean = false, customKey?: string): Promise<string | null> {
+  const key = (customKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || key.length < 5) return null;
+
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const payload: any = {
+        contents: [{ parts: [{ text: prompt }] }],
+      };
+      if (isJson) {
+        payload.generationConfig = { responseMimeType: "application/json" };
+      }
+
+      const res = await withTimeout(
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }),
+        18000
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text && text.trim().length > 0) {
+          return text.trim();
+        }
+      }
+    } catch {
+      // Continue to next candidate model
+    }
+  }
+  return null;
 }
 
 async function callOpenRouter(prompt: string, isJson: boolean = false): Promise<string | null> {
@@ -54,11 +91,11 @@ async function callOpenRouter(prompt: string, isJson: boolean = false): Promise<
         body: JSON.stringify({
           model: "deepseek/deepseek-chat",
           messages: [{ role: "user", content: prompt }],
-          temperature: isJson ? 0.2 : 0.4,
+          temperature: isJson ? 0.2 : 0.5,
           ...(isJson ? { response_format: { type: "json_object" } } : {})
         }),
       }),
-      7000
+      22000
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -84,7 +121,7 @@ async function callHuggingFace(prompt: string): Promise<string | null> {
           parameters: { max_new_tokens: 1000, temperature: 0.3 }
         }),
       }),
-      4000
+      8000
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -104,35 +141,22 @@ export async function executeMultiProviderPrompt(prompt: string, isJson: boolean
     if (cached) return cached;
   }
 
-  // 1. If custom key is provided, try GoogleGenAI first
-  if (customKey) {
-    const instance = getGenAIClient(customKey);
-    if (instance) {
-      for (const model of CANDIDATE_MODELS) {
-        try {
-          const response = await withTimeout(
-            instance.client.models.generateContent({
-              model,
-              contents: prompt,
-              ...(isJson ? { config: { responseMimeType: "application/json" } } : {}),
-            }),
-            5000
-          );
-          if (response.text) return response.text;
-        } catch {}
-      }
-    }
+  // 1. Primary High-Speed Engine: Google Gemini 3.6 Flash / 3.5 Flash-Lite (Direct REST, 1M context)
+  const geminiResult = await callGeminiREST(prompt, isJson, customKey);
+  if (geminiResult) {
+    setCached(cacheKey, geminiResult);
+    return geminiResult;
   }
 
-  // 2. Primary Fast Engine: OpenRouter deepseek-chat (~1.5-3.0s)
+  // 2. Secondary Reasoning Engine: OpenRouter DeepSeek V3
   const openRouterResult = await callOpenRouter(prompt, isJson);
   if (openRouterResult) {
     setCached(cacheKey, openRouterResult);
     return openRouterResult;
   }
 
-  // 3. Secondary Engine: GoogleGenAI with server key
-  const serverInstance = getGenAIClient();
+  // 3. Fallback GoogleGenAI SDK
+  const serverInstance = getGenAIClient(customKey);
   if (serverInstance) {
     for (const model of CANDIDATE_MODELS) {
       try {
@@ -142,7 +166,7 @@ export async function executeMultiProviderPrompt(prompt: string, isJson: boolean
             contents: prompt,
             ...(isJson ? { config: { responseMimeType: "application/json" } } : {}),
           }),
-          5000
+          10000
         );
         if (response.text) {
           setCached(cacheKey, response.text);
@@ -184,6 +208,17 @@ export function safeJsonParse(rawText: string) {
     }
     throw new Error("Unable to parse structured JSON response from AI");
   }
+}
+
+export function safeExtractArray(parsed: any, defaultKey?: string): any[] {
+  if (Array.isArray(parsed)) return parsed;
+  if (parsed && typeof parsed === "object") {
+    if (defaultKey && Array.isArray(parsed[defaultKey])) return parsed[defaultKey];
+    for (const key of Object.keys(parsed)) {
+      if (Array.isArray(parsed[key])) return parsed[key];
+    }
+  }
+  return [];
 }
 
 export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
@@ -269,23 +304,33 @@ Format strictly as JSON:
   return getHeuristicTeachingLesson(topic, subject);
 }
 
-export async function generateExamMarkAnswer(topic: string, marks: 1 | 2 | 5 | 10, subject: string, customKey?: string) {
+export async function generateExamMarkAnswer(
+  topic: string,
+  marks: 1 | 2 | 5 | 10,
+  subject: string,
+  customKey?: string,
+  textbookContext?: string
+) {
+  const contextBlock = textbookContext
+    ? `\nReference Material / Textbook Excerpt:\n"""\n${textbookContext.slice(0, 12000)}\n"""\nBase the explanation, definitions, formulas, and diagrams strictly on the concepts and terminology in this reference material.\n`
+    : "";
+
   const prompt = `You are a Senior University Examiner for "${subject}".
-Write an ideal model answer for a ${marks}-Mark question on "${topic}" with the Examiner Marking Scheme.
+Write an ideal model answer for a ${marks}-Mark question on "${topic}" with the Examiner Marking Scheme.${contextBlock}
 Format strictly as JSON:
 {
   "topic": "${topic}",
   "marks": ${marks},
   "subject": "${subject}",
   "question": "${marks}-Mark Exam Question on ${topic}",
-  "idealAnswer": "Complete markdown answer with introduction, principles, ASCII diagram, and derivations...",
+  "idealAnswer": "Complete comprehensive markdown answer with introduction, technical principles, clear ASCII/text schematic diagram, step-by-step mathematical working or algorithm, and real-world engineering applications...",
   "examinerChecklist": [
     { "criterion": "Definition & Principle", "marksAllocated": ${marks === 10 ? 2 : marks === 5 ? 1 : 1}, "description": "Accurately state the formal definition" },
     { "criterion": "Labeled Schematic Block", "marksAllocated": ${marks === 10 ? 3 : marks === 5 ? 2 : 0.5}, "description": "Draw labeled diagram" },
     { "criterion": "Step-by-step working / derivation", "marksAllocated": ${marks === 10 ? 3 : marks === 5 ? 1.5 : 0.5}, "description": "Show intermediate logic" },
     { "criterion": "Industrial applications & summary", "marksAllocated": ${marks === 10 ? 2 : marks === 5 ? 0.5 : 0}, "description": "Give 2 industrial use cases" }
   ],
-  "keyPoints": ["Invariance", "Deterministic State", "Throughput", "Fault Tolerance"],
+  "keyPoints": ["Core Invariance", "Deterministic State", "Throughput", "Fault Tolerance"],
   "commonMistakes": ["Omitting schematic diagram", "Skipping mathematical derivation"]
 }`;
 
@@ -342,20 +387,35 @@ Format strictly as JSON:
   };
 }
 
-export async function generateMockExam(subject: string, units?: any[], customKey?: string) {
+export async function generateMockExam(
+  subject: string,
+  units?: any[],
+  customKey?: string,
+  textbookContext?: string
+) {
+  const contextBlock = textbookContext
+    ? `\nSource Textbook / Syllabus Material:\n"""\n${textbookContext.slice(0, 15000)}\n"""\nGround all sections and questions strictly on the concepts, chapters, formulas, and problems in this source material!\n`
+    : "";
+
   const prompt = `You are the Chief Exam Controller for "${subject}".
-Generate a timed university examination with Section A (Short/MCQ), Section B (5M Analytical), and Section C (10M Comprehensive).
+Generate an authentic timed university examination with Section A (Short & MCQs - 2M), Section B (Analytical & Architectural - 5M), and Section C (Comprehensive Essay & Derivation - 10M).${contextBlock}
+Units to focus on: ${units && units.length ? JSON.stringify(units) : "Comprehensive syllabus modules"}.
+
 Format strictly as JSON:
 {
-  "examTitle": "${subject} Final Examination",
+  "examTitle": "${subject} University Examination",
   "subject": "${subject}",
   "totalMarks": 30,
   "timeLimitMinutes": 30,
-  "instructions": ["Answer all questions in Section A", "Answer all questions in Section B & C"],
+  "instructions": [
+    "Section A: Answer all compulsory short questions and MCQs (2 Marks each)",
+    "Section B: Answer analytical schematic questions with diagrams (5 Marks each)",
+    "Section C: Answer comprehensive derivation and essay questions (10 Marks each)"
+  ],
   "sections": [
     {
       "name": "Section A (Short & MCQs - 2M)",
-      "description": "Fundamental definitions and short analytical questions",
+      "description": "Fundamental definitions and core concept checks",
       "totalMarks": 6,
       "questions": [
         {
@@ -363,19 +423,19 @@ Format strictly as JSON:
           "section": "Section A",
           "marks": 2,
           "questionText": "What is the primary governing principle in ${subject}?",
-          "options": ["Conservation of State", "Non-linear Dispersion", "Stochastic Degradation", "Static Allocation"],
+          "options": ["Fundamental Axiom", "Secondary Effect", "Boundary Limit", "Static Formulation"],
           "correctOptionIndex": 0,
-          "explanation": "Conservation of state ensures computational consistency.",
+          "explanation": "Fundamental axiom defines the base mathematical property for this topic.",
           "topicTag": "Fundamentals"
         },
         {
           "id": "q2",
           "section": "Section A",
           "marks": 2,
-          "questionText": "Which algorithm is optimal for state transitions?",
-          "options": ["Greedy Algorithm", "Dynamic Programming", "Random Walk", "Exhaustive Search"],
-          "correctOptionIndex": 1,
-          "explanation": "Dynamic programming evaluates overlapping subproblems optimally.",
+          "questionText": "Which optimal method is standard in ${subject}?",
+          "options": ["Dynamic Evaluation", "Exhaustive Linear Search", "Arbitrary Allocation", "Recursive Randomization"],
+          "correctOptionIndex": 0,
+          "explanation": "Dynamic evaluation optimizes transitions across states.",
           "topicTag": "Optimization"
         }
       ]
@@ -389,7 +449,7 @@ Format strictly as JSON:
           "id": "q3",
           "section": "Section B",
           "marks": 5,
-          "questionText": "Explain the working architecture and state transitions with a neat diagram.",
+          "questionText": "Explain the working architecture and state transitions in ${subject} with a neat schematic diagram.",
           "modelAnswer": "1. Input preprocessing\\n2. Transformation engine\\n3. Error correction\\n4. Output formatting",
           "explanation": "Ensure all 4 blocks and control arrows are labeled.",
           "topicTag": "Architectures"
@@ -398,8 +458,8 @@ Format strictly as JSON:
           "id": "q4",
           "section": "Section B",
           "marks": 5,
-          "questionText": "Differentiate between synchronous and asynchronous models in ${subject}.",
-          "modelAnswer": "Comparison table covering clock distribution, throughput, latency, and power consumption.",
+          "questionText": "Differentiate between standard and optimized configurations in ${subject}.",
+          "modelAnswer": "Comparison table covering latency, throughput, implementation cost, and reliability.",
           "explanation": "State at least 4 contrast points.",
           "topicTag": "Paradigms"
         }
@@ -414,9 +474,9 @@ Format strictly as JSON:
           "id": "q5",
           "section": "Section C",
           "marks": 10,
-          "questionText": "Derive the mathematical formulation and step-by-step algorithm for ${subject}.",
-          "modelAnswer": "Step 1: System modeling\\nStep 2: State definition\\nStep 3: Loss function formulation\\nStep 4: Convergence proof",
-          "explanation": "Show all intermediate derivation steps and industrial use cases.",
+          "questionText": "Derive the mathematical formulation, governing equations, and step-by-step algorithm for ${subject}.",
+          "modelAnswer": "Step 1: System modeling & assumptions\\nStep 2: State variable definition\\nStep 3: Derivation of governing equations\\nStep 4: Real-world industrial deployment",
+          "explanation": "Show all intermediate derivation steps, diagrams, and boundary conditions.",
           "topicTag": "Mathematical Foundations"
         }
       ]
@@ -541,59 +601,233 @@ Format strictly as JSON:
 }
 
 export async function generateAIFlashcards(content: string, subject?: string, customKey?: string) {
-  const prompt = `Generate 12 active recall flashcards for "${subject || "Engineering"}":
-Content:
-"""\n${content.slice(0, 8000)}\n"""
-Format strictly as JSON array of objects:
-[
-  { "front": "Question / Concept", "back": "Clear concise answer and formula", "category": "${subject || "Core"}" }
-]`;
+  const prompt = `You are ScholarMate's Elite Academic AI Flashcard Engine.
+Generate 10 to 14 high-yield, comprehensive exam revision flashcards strictly grounded on the material below for "${subject || "Engineering & Polytechnic"}".
+
+Material / Textbook Context:
+"""
+${content.slice(0, 15000)}
+"""
+
+CRITICAL INSTRUCTIONS:
+1. Ground answers strictly on the concepts, definitions, formulas, and terminology in the provided material.
+2. DO NOT make generic or shallow cards. Every card must provide deep, memorable explanations.
+3. Every card MUST have:
+   - "front": Clear, exam-grade question or concept to test recall.
+   - "back": Direct, authoritative core answer, formula, or law.
+   - "humanExplanation": A plain-English, easy-to-understand explanation of HOW and WHY this works (as if explaining to a classmate).
+   - "analogy": A relatable real-world analogy to intuitively anchor the concept.
+   - "examinerTip": What university examiners specifically look for to award full marks (key phrases, diagrams, or common traps).
+   - "example": A concrete numerical or practical scenario.
+   - "category": Syllabus sub-topic / chapter module.
+
+Format strictly as a JSON object:
+{
+  "cards": [
+    {
+      "front": "Exam question / concept",
+      "back": "Core technical answer / formula",
+      "humanExplanation": "Human-friendly intuitive explanation",
+      "analogy": "Memorable real-world analogy",
+      "examinerTip": "Key words examiners grade on",
+      "example": "Practical example or numerical case",
+      "category": "${subject || "Core Concepts"}"
+    }
+  ]
+}`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
     try {
-      return safeJsonParse(aiRes);
+      const parsed = safeJsonParse(aiRes);
+      const list = safeExtractArray(parsed, "cards");
+      if (list && list.length > 0) return list;
     } catch {}
   }
 
+  return getDynamicSubjectFlashcards(subject || "Engineering", content);
+}
+
+export function getDynamicSubjectFlashcards(subject: string, content: string) {
+  // Context-aware academic flashcards built dynamically from student subject and content
+  const cleanSubject = subject.replace(/polytechnic|engineering|diploma/gi, "").trim() || subject;
+  
+  // Extract key snippet terms if available
+  const sentences = content
+    .split(/\n|\. /)
+    .map(s => s.trim())
+    .filter(s => s.length > 25 && s.length < 180);
+
+  const term1 = sentences[0] || `Core theoretical framework and definitions in ${cleanSubject}`;
+  const term2 = sentences[1] || `Mathematical governing equations and boundary parameters`;
+  const term3 = sentences[2] || `System architecture, block schematics, and signal flow`;
+
   return [
-    { front: `What is the primary governing principle in ${subject || "Engineering"}?`, back: "Conservation of state and bounded entropy during computational transitions.", category: subject || "Fundamentals" },
-    { front: "State the essential formula for system throughput.", back: "Throughput = Total Processed Units / Elapsed Time Interval (Units/sec).", category: subject || "Performance" },
-    { front: "What are the 4 conditions required for Deadlock?", back: "1. Mutual Exclusion, 2. Hold and Wait, 3. No Preemption, 4. Circular Wait.", category: subject || "Operating Systems" },
-    { front: "Explain the difference between 3NF and BCNF.", back: "3NF allows transitive dependencies for prime attributes; BCNF requires every determinant to be a super key (A -> B implies A is super key).", category: subject || "DBMS" },
-    { front: "What is the time complexity of QuickSort on average vs worst case?", back: "Average: O(N log N). Worst case (already sorted with bad pivot): O(N^2).", category: subject || "Algorithms" },
-    { front: "Explain the purpose of the Transport Layer in TCP/IP.", back: "Provides end-to-end communication, segment sequencing, flow control, and error recovery.", category: subject || "Networks" }
+    {
+      front: `What is the primary governing principle and formal definition of ${cleanSubject}?`,
+      back: term1,
+      humanExplanation: `In ${cleanSubject}, this foundational principle establishes the mathematical and physical boundaries within which the system operates deterministically.`,
+      analogy: `Think of this like the foundation of a building: every complex derivation in this subject relies on this rule remaining unbroken.`,
+      examinerTip: `State the standard textbook definition verbatim and underline the primary governing law to score full marks in Section A.`,
+      example: `Standard textbook problem case where boundary values are set to equilibrium.`,
+      category: "Fundamental Definitions"
+    },
+    {
+      front: `What are the essential governing formulas and quantitative relationships in ${cleanSubject}?`,
+      back: term2,
+      humanExplanation: `These equations correlate the dependent and independent variables, allowing engineers to calculate throughput, loss, or capacity under changing constraints.`,
+      analogy: `Like a speed formula (Speed = Distance / Time), changing any single input alters the resultant output predictably.`,
+      examinerTip: `Always state the SI units (e.g., Watts, Joules, Seconds, Bits/sec) alongside the final numerical result.`,
+      example: `Calculation of equilibrium points using standard input coefficients.`,
+      category: "Mathematical Formulas"
+    },
+    {
+      front: `Explain the system architecture and operational pipeline for ${cleanSubject}.`,
+      back: term3,
+      humanExplanation: `Data or signals flow through input preprocessing, transformation/computational stages, error validation, and final output generation.`,
+      analogy: `Imagine an automated assembly line: raw parts enter, each station performs a specialized transformation, and quality check validates before shipping.`,
+      examinerTip: `Draw a labeled block diagram with clear directional arrows. Examiners deduct 1-2 marks if arrows are omitted.`,
+      example: `End-to-end signal flow under normal operating load.`,
+      category: "System Architecture"
+    },
+    {
+      front: `What are the top 2 examiner traps and common mistakes students make in ${cleanSubject}?`,
+      back: `1. Confusing synchronous vs asynchronous state updates. 2. Omitting boundary condition checks in derivations.`,
+      humanExplanation: `Students frequently remember the formula but forget to verify whether the assumptions (steady state, ideal conditions) apply to the specific exam question.`,
+      analogy: `Driving with high-speed tires on ice: the mechanics work, but the assumptions of friction don't hold!`,
+      examinerTip: `Explicitly state your assumptions at the start of any 5-mark or 10-mark answer.`,
+      example: `Assuming linear behavior in non-linear operational domains.`,
+      category: "Examiner Traps"
+    },
+    {
+      front: `What is the primary trade-off between performance and reliability in ${cleanSubject}?`,
+      back: `Increasing speed/throughput generally increases thermal dissipation, complexity, or error rates, requiring defensive redundancy.`,
+      humanExplanation: `You cannot optimize speed to infinity without paying a cost in power, memory footprint, or algorithmic complexity.`,
+      analogy: `A sports car vs a semi-truck: the sports car is faster, but carries less cargo and requires more maintenance.`,
+      examinerTip: `When asked a comparative question, structure your answer in a two-column contrast table.`,
+      example: `Trade-off analysis under peak load stress.`,
+      category: "Trade-offs & Optimization"
+    },
+    {
+      front: `Give a practical real-world engineering application of ${cleanSubject}.`,
+      back: `Deployed in commercial production systems, embedded controllers, telecommunication switches, and scalable cloud backends.`,
+      humanExplanation: `This concept is not just textbook theory; it powers modern infrastructure where fault tolerance and deterministic latency are mandatory.`,
+      analogy: `Just as airplanes use triple-redundant flight computers, industrial implementations of this concept require fail-safe states.`,
+      examinerTip: `Giving a modern industry example at the end of a 10-mark question distinguishes your paper for the highest grade bracket.`,
+      example: `Deployment in mission-critical real-time processing pipelines.`,
+      category: "Industrial Applications"
+    }
   ];
 }
 
 export async function generateAIQuiz(content: string, subject?: string, customKey?: string) {
-  const prompt = `Generate 5 multiple-choice quiz questions for "${subject || "Engineering"}":
-Content:
-"""\n${content.slice(0, 8000)}\n"""
-Format strictly as JSON array of objects:
-[
-  {
-    "id": 1,
-    "question": "Question text?",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "answer": 0,
-    "explanation": "Why Option A is correct"
-  }
-]`;
+  const prompt = `You are ScholarMate's Senior Exam Question Setter.
+Generate 5 high-yield multiple choice questions for "${subject || "Engineering"}" strictly derived from the material below.
+
+Textbook / Material Context:
+"""
+${content.slice(0, 15000)}
+"""
+
+CRITICAL INSTRUCTIONS:
+1. Every question must have 4 distinct, plausible options.
+2. Provide a thorough "explanation" for the correct answer explaining *why* it is right and why the distractors are wrong.
+3. Provide an "examinerTip" highlighting the trap students usually fall into.
+
+Format strictly as a JSON object:
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Question text?",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "answer": 0,
+      "explanation": "Clear explanation of why Option A is correct and why other choices are invalid.",
+      "examinerTip": "Common exam trap"
+    }
+  ]
+}`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
     try {
-      return safeJsonParse(aiRes);
+      const parsed = safeJsonParse(aiRes);
+      const list = safeExtractArray(parsed, "questions");
+      if (list && list.length > 0) return list;
     } catch {}
   }
 
+  return getDynamicSubjectQuiz(subject || "Engineering", content);
+}
+
+export function getDynamicSubjectQuiz(subject: string, content: string) {
+  const cleanSubject = subject.replace(/polytechnic|engineering|diploma/gi, "").trim() || subject;
   return [
-    { id: 1, question: `Which algorithm achieves optimal average time complexity in ${subject || "Algorithms"}?`, options: ["Divide & Conquer (O(N log N))", "Brute Force (O(N!))", "Linear Search (O(N^2))", "Exponential Sweep (O(2^N))"], answer: 0, explanation: "Divide and conquer partitions problem spaces logarithmically." },
-    { id: 2, question: "What is the primary role of a Buffer in computer systems?", options: ["Temporary memory holding data during transmission speed mismatches", "Permanent storage for archive records", "Direct execution pipeline for instruction decode", "Power supply stabilization"], answer: 0, explanation: "Buffers compensate for speed differences between producers and consumers." },
-    { id: 3, question: "In relational normalization, which normal form eliminates multi-valued dependencies?", options: ["4NF (Fourth Normal Form)", "1NF (First Normal Form)", "2NF (Second Normal Form)", "3NF (Third Normal Form)"], answer: 0, explanation: "4NF eliminates multi-valued dependencies (A ->-> B)." },
-    { id: 4, question: "Which layer handles logical addressing and routing?", options: ["Network Layer (Layer 3)", "Physical Layer (Layer 1)", "Session Layer (Layer 5)", "Application Layer (Layer 7)"], answer: 0, explanation: "The Network Layer manages IP addressing and path routing." },
-    { id: 5, question: "What metric evaluates the proportion of successful cache lookups?", options: ["Hit Ratio", "Fault Factor", "Latency Jitter", "Parity Bit"], answer: 0, explanation: "Hit Ratio = (Hits) / (Hits + Misses)." }
+    {
+      id: 1,
+      question: `What is the primary governing criterion in ${cleanSubject}?`,
+      options: [
+        "Conservation of state and deterministic system transitions",
+        "Unbounded stochastic variability without validation",
+        "Arbitrary resource over-allocation",
+        "Static isolation without input preprocessing"
+      ],
+      answer: 0,
+      explanation: "Deterministic transitions ensure that given the same inputs, the system reaches a consistent, verified state without race conditions.",
+      examinerTip: "Remember that determinism is essential for system stability."
+    },
+    {
+      id: 2,
+      question: `Which optimization technique yields the highest efficiency in ${cleanSubject}?`,
+      options: [
+        "Dynamic evaluation and algorithmic decomposition",
+        "Brute force exhaustive search",
+        "Randomized parameter sweeps",
+        "Linear unbuffered sequential execution"
+      ],
+      answer: 0,
+      explanation: "Algorithmic decomposition breaks complex state spaces into overlapping sub-problems to achieve optimal time complexity.",
+      examinerTip: "Examiners favor answers that explain asymptotic time and space complexity."
+    },
+    {
+      id: 3,
+      question: `Why is schematic block labeling mandatory in university examinations for ${cleanSubject}?`,
+      options: [
+        "It validates understanding of data flow, interface boundaries, and control signals",
+        "It is purely decorative with no marks allocated",
+        "It replaces the need for mathematical definitions",
+        "It only applies to hardware engineering, not software"
+      ],
+      answer: 0,
+      explanation: "Labeled block schematics demonstrate that the student understands how components interface and where control signals travel.",
+      examinerTip: "Always draw control arrows indicating signal direction to get full diagram marks."
+    },
+    {
+      id: 4,
+      question: `What metric is most critical for evaluating performance in ${cleanSubject}?`,
+      options: [
+        "Throughput and response latency under bounded load",
+        "Total line count of the source specification",
+        "Arbitrary clock cycles without output validation",
+        "Number of unused peripheral states"
+      ],
+      answer: 0,
+      explanation: "Throughput (work completed per time unit) and latency (delay per operation) quantify actual system efficiency.",
+      examinerTip: "Distinguish clearly between throughput (rate) and latency (time delay)."
+    },
+    {
+      id: 5,
+      question: `How should a student conclude a 10-mark university question on ${cleanSubject}?`,
+      options: [
+        "With real-world industrial applications and architectural trade-offs",
+        "By repeating the initial definition in reverse",
+        "By leaving the page blank after formulas",
+        "With personal opinions on subject difficulty"
+      ],
+      answer: 0,
+      explanation: "University evaluation rubrics award top marks to candidates who connect theoretical derivations to modern industrial use cases.",
+      examinerTip: "Cite at least 2 real-world production use cases in your concluding remarks."
+    }
   ];
 }
 

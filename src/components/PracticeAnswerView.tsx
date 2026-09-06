@@ -9,6 +9,7 @@ import {
 interface PracticeAnswerViewProps {
   initialTopic?: string;
   initialSubject?: string;
+  initialDocumentId?: string;
 }
 
 interface ExaminerChecklistItem {
@@ -43,20 +44,57 @@ interface EvaluationResult {
   improvementTip: string;
 }
 
-export default function PracticeAnswerView({ initialTopic, initialSubject }: PracticeAnswerViewProps) {
+export default function PracticeAnswerView({
+  initialTopic,
+  initialSubject,
+  initialDocumentId,
+}: PracticeAnswerViewProps) {
   const [topic, setTopic] = useState(initialTopic || 'Database Normalization (1NF, 2NF, 3NF, BCNF)');
   const [subject, setSubject] = useState(initialSubject || 'Database Management Systems');
   const [marks, setMarks] = useState<number>(10);
   const [loadingAnswer, setLoadingAnswer] = useState(false);
   const [answerData, setAnswerData] = useState<MarkAnswerData | null>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [selectedDocId, setSelectedDocId] = useState(initialDocumentId || '');
 
   // Student Evaluation Sandbox
   const [studentAnswer, setStudentAnswer] = useState('');
   const [evaluating, setEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
 
+  React.useEffect(() => {
+    fetchDocs();
+  }, []);
+
+  React.useEffect(() => {
+    if (initialDocumentId) setSelectedDocId(initialDocumentId);
+    if (initialSubject) setSubject(initialSubject);
+    if (initialTopic) setTopic(initialTopic);
+  }, [initialDocumentId, initialSubject, initialTopic]);
+
+  const fetchDocs = async () => {
+    try {
+      const res = await fetch('/api/documents/upload');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.documents) {
+          setDocuments(data.documents);
+          if (initialDocumentId) {
+            const found = data.documents.find((d: any) => d.id === initialDocumentId);
+            if (found) {
+              if (found.subject) setSubject(found.subject);
+              if (found.title && !initialTopic) setTopic(found.title);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleGenerateQuestionAndAnswer = async () => {
-    if (!topic.trim()) return;
+    if (!topic.trim() && !selectedDocId) return;
     setLoadingAnswer(true);
     setAnswerData(null);
     setEvaluation(null);
@@ -66,7 +104,12 @@ export default function PracticeAnswerView({ initialTopic, initialSubject }: Pra
       const res = await fetch('/api/ai/practice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, subject, marks })
+        body: JSON.stringify({
+          topic,
+          subject,
+          marks,
+          documentId: selectedDocId || undefined,
+        })
       });
       const data = await res.json();
       if (data.practice) {
@@ -145,8 +188,35 @@ export default function PracticeAnswerView({ initialTopic, initialSubject }: Pra
           </div>
         </div>
 
+        {/* Textbook Selector Bar */}
+        {documents.length > 0 && (
+          <div className="mt-4 flex items-center gap-2 bg-black/20 backdrop-blur-md p-2 rounded-xl border border-white/10 text-xs">
+            <span className="font-bold text-violet-200 shrink-0">📚 Active Textbook:</span>
+            <select
+              value={selectedDocId}
+              onChange={(e) => {
+                const docId = e.target.value;
+                setSelectedDocId(docId);
+                const matched = documents.find(d => d.id === docId);
+                if (matched) {
+                  setSubject(matched.subject || matched.title);
+                  setTopic(matched.title || topic);
+                }
+              }}
+              className="bg-white/10 text-white rounded-lg px-2.5 py-1 border border-white/20 outline-none w-full sm:w-auto flex-1 text-xs truncate"
+            >
+              <option value="" className="text-slate-900">-- General Syllabus (No Textbook Selected) --</option>
+              {documents.map((doc) => (
+                <option key={doc.id} value={doc.id} className="text-slate-900">
+                  {doc.title} ({doc.subject})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Input Bar */}
-        <div className="mt-6 flex flex-col md:flex-row gap-2">
+        <div className="mt-4 flex flex-col md:flex-row gap-2">
           <input
             type="text"
             value={subject}
@@ -163,7 +233,7 @@ export default function PracticeAnswerView({ initialTopic, initialSubject }: Pra
           />
           <button
             onClick={handleGenerateQuestionAndAnswer}
-            disabled={loadingAnswer || !topic.trim()}
+            disabled={loadingAnswer || (!topic.trim() && !selectedDocId)}
             className="px-6 py-2.5 bg-white text-violet-900 hover:bg-violet-50 font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer shrink-0 disabled:opacity-50"
           >
             {loadingAnswer ? (

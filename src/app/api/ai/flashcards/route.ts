@@ -13,30 +13,44 @@ export async function POST(req: Request) {
     let finalSubject = subject || "Engineering Basics";
     let finalTitle = topic || "Active Recall Deck";
 
-    if (documentId && user) {
-      const doc = await prisma.document.findUnique({
-        where: { id: documentId, userId: user.id },
+    if (documentId) {
+      const doc = await prisma.document.findFirst({
+        where: user ? { id: documentId, userId: user.id } : { id: documentId },
       });
       if (doc) {
         contentToAnalyze = doc.extractedText;
-        finalSubject = doc.subject;
-        finalTitle = doc.title;
+        finalSubject = doc.subject || finalSubject;
+        finalTitle = doc.title || finalTitle;
+      }
+    } else if (user && (!topic || topic.trim().length === 0)) {
+      const latestDoc = await prisma.document.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: "desc" },
+      });
+      if (latestDoc) {
+        contentToAnalyze = latestDoc.extractedText;
+        finalSubject = latestDoc.subject;
+        finalTitle = latestDoc.title;
       }
     }
 
     if (!contentToAnalyze) {
-      contentToAnalyze = `Study material for ${finalTitle} under ${finalSubject}. Definitions, formulas, block diagrams, and exam concepts.`;
+      contentToAnalyze = `Study material for ${finalTitle} under ${finalSubject}. Core definitions, governing equations, system architecture, and exam patterns.`;
     }
 
     const customKey = req.headers.get("x-gemini-key") || body.apiKey || undefined;
 
     const cardsArray = await generateAIFlashcards(contentToAnalyze, finalSubject, customKey);
 
-    // Attach local IDs and mastered state
-    const cardsWithState = cardsArray.map((c: { front: string; back: string; category?: string }, idx: number) => ({
+    // Attach local IDs, rich human explanations, analogies, examiner tips, and mastered state
+    const cardsWithState = cardsArray.map((c: any, idx: number) => ({
       id: idx + 1,
       front: c.front,
       back: c.back,
+      humanExplanation: c.humanExplanation || "",
+      analogy: c.analogy || "",
+      examinerTip: c.examinerTip || "",
+      example: c.example || "",
       category: c.category || finalSubject,
       mastered: false,
     }));

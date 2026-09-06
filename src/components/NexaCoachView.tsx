@@ -9,6 +9,7 @@ import {
 interface NexaCoachViewProps {
   initialTopic?: string;
   initialSubject?: string;
+  initialDocumentId?: string;
   onNavigateToPractice?: (topic: string) => void;
   onNavigateToMock?: () => void;
 }
@@ -41,6 +42,7 @@ interface Message {
 export default function NexaCoachView({
   initialTopic,
   initialSubject,
+  initialDocumentId,
   onNavigateToPractice,
   onNavigateToMock
 }: NexaCoachViewProps) {

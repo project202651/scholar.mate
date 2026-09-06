@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 
 interface MockExamSimulatorViewProps {
+  initialDocumentId?: string;
+  initialSubject?: string;
   onNavigateToNexa?: (topic: string) => void;
   onNavigateToPractice?: (topic: string) => void;
 }
@@ -38,13 +40,17 @@ interface MockExamData {
 }
 
 export default function MockExamSimulatorView({
+  initialDocumentId,
+  initialSubject,
   onNavigateToNexa,
   onNavigateToPractice
 }: MockExamSimulatorViewProps) {
-  const [subject, setSubject] = useState('Operating Systems & System Software');
+  const [subject, setSubject] = useState(initialSubject || 'Engineering & Polytechnic Core');
   const [examType, setExamType] = useState('Midterm & Final Pattern');
   const [loading, setLoading] = useState(false);
   const [exam, setExam] = useState<MockExamData | null>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [selectedDocId, setSelectedDocId] = useState(initialDocumentId || '');
 
   // Exam Simulation State
   const [examState, setExamState] = useState<'idle' | 'running' | 'submitted'>('idle');
@@ -56,6 +62,33 @@ export default function MockExamSimulatorView({
   const [mcqAnswers, setMcqAnswers] = useState<Record<string, number>>({});
   const [writtenAnswers, setWrittenAnswers] = useState<Record<string, string>>({});
   const [flaggedQuestions, setFlaggedQuestions] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    fetchDocs();
+  }, []);
+
+  useEffect(() => {
+    if (initialDocumentId) setSelectedDocId(initialDocumentId);
+    if (initialSubject) setSubject(initialSubject);
+  }, [initialDocumentId, initialSubject]);
+
+  const fetchDocs = async () => {
+    try {
+      const res = await fetch('/api/documents/upload');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.documents) {
+          setDocuments(data.documents);
+          if (initialDocumentId) {
+            const found = data.documents.find((d: any) => d.id === initialDocumentId);
+            if (found && found.subject) setSubject(found.subject);
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Timer Effect
   useEffect(() => {
@@ -84,7 +117,8 @@ export default function MockExamSimulatorView({
         body: JSON.stringify({
           subject,
           examType,
-          topics: ['Process Synchronization', 'Deadlocks', 'Memory Management', 'Paging & Segmentation', 'File Systems']
+          documentId: selectedDocId || undefined,
+          topics: selectedDocId ? [] : ['Core Principles', 'Architectures', 'Formulas & Derivations', 'Examiner Traps']
         })
       });
       const data = await res.json();
@@ -185,6 +219,34 @@ export default function MockExamSimulatorView({
             </h2>
 
             <div className="space-y-4">
+              {documents.length > 0 && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-1.5 flex items-center justify-between">
+                    <span>Source Textbook / Notes</span>
+                    <span className="text-[10px] text-blue-500 font-semibold lowercase">Grounded on your syllabus</span>
+                  </label>
+                  <select
+                    value={selectedDocId}
+                    onChange={(e) => {
+                      const docId = e.target.value;
+                      setSelectedDocId(docId);
+                      const matched = documents.find(d => d.id === docId);
+                      if (matched) {
+                        setSubject(matched.subject || matched.title);
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 dark:text-white"
+                  >
+                    <option value="">-- General Syllabus Mode (No Textbook) --</option>
+                    {documents.map((doc) => (
+                      <option key={doc.id} value={doc.id}>
+                        📚 {doc.title} ({doc.subject})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-1.5">
                   Subject / Syllabus

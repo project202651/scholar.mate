@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Upload, FileText, Sparkles, BookOpen, Brain, Award, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, Sparkles, BookOpen, Brain, Award, CheckCircle2, AlertCircle, Layers, Zap } from "lucide-react";
 import AILoadingPulse from "./AILoadingPulse";
 
 interface DocHubViewProps {
   setActiveTab?: (tab: string) => void;
+  onSelectDocument?: (docId: string, title?: string, subject?: string) => void;
+  onNavigateToNotes?: () => void;
 }
 
-export default function DocHubView({ setActiveTab }: DocHubViewProps) {
+export default function DocHubView({ setActiveTab, onSelectDocument, onNavigateToNotes }: DocHubViewProps) {
   const [documents, setDocuments] = useState<any[]>([]);
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("DCME - Core Polytechnic");
@@ -221,28 +223,58 @@ export default function DocHubView({ setActiveTab }: DocHubViewProps) {
                     </div>
                   </div>
 
-                  {/* Fast Action Buttons */}
-                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/80">
+                  {/* Fast Action Buttons Across All Platforms */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/80">
                     <button
-                      onClick={() => setActiveTab?.("notes")}
-                      className="flex items-center gap-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 px-3 py-1.5 text-[11px] font-semibold text-indigo-300 hover:bg-indigo-500/25 transition-colors"
+                      onClick={() => {
+                        onSelectDocument?.(doc.id, doc.title, doc.subject);
+                        setActiveTab?.("flashcards");
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-[11px] font-semibold text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
                     >
-                      <BookOpen className="h-3 w-3" />
-                      <span>Generate Notes</span>
+                      <Layers className="h-3 w-3" />
+                      <span>Study Flashcards</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab?.("quiz")}
-                      className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/25 transition-colors"
+                      onClick={() => {
+                        onSelectDocument?.(doc.id, doc.title, doc.subject);
+                        setActiveTab?.("mock_exams");
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-[11px] font-semibold text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
                     >
                       <Award className="h-3 w-3" />
-                      <span>Create Quiz</span>
+                      <span>Mock University Exam</span>
                     </button>
                     <button
-                      onClick={() => setActiveTab?.("chat")}
-                      className="flex items-center gap-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 px-3 py-1.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/25 transition-colors"
+                      onClick={() => {
+                        onSelectDocument?.(doc.id, doc.title, doc.subject);
+                        setActiveTab?.("practice");
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 text-[11px] font-semibold text-purple-300 hover:bg-purple-500/25 transition-colors cursor-pointer"
+                    >
+                      <Zap className="h-3 w-3" />
+                      <span>5/10M Model Answers</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onSelectDocument?.(doc.id, doc.title, doc.subject);
+                        setActiveTab?.("nexa");
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 px-3 py-1.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/25 transition-colors cursor-pointer"
                     >
                       <Brain className="h-3 w-3" />
-                      <span>Ask AI Tutor</span>
+                      <span>Ask Nexa Tutor</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onSelectDocument?.(doc.id, doc.title, doc.subject);
+                        if (onNavigateToNotes) onNavigateToNotes();
+                        else setActiveTab?.("library");
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 px-3 py-1.5 text-[11px] font-semibold text-indigo-300 hover:bg-indigo-500/25 transition-colors cursor-pointer"
+                    >
+                      <BookOpen className="h-3 w-3" />
+                      <span>AI Revision Notes</span>
                     </button>
                   </div>
                 </div>
