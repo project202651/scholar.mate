@@ -16,12 +16,12 @@ export async function POST(req: Request) {
     const question = questionText.trim();
 
     let docContext = "";
-    if (documentId && user) {
-      const doc = await prisma.document.findUnique({
-        where: { id: documentId, userId: user.id },
+    if (documentId) {
+      const doc = await prisma.document.findFirst({
+        where: user ? { id: documentId, userId: user.id } : { id: documentId },
       });
       if (doc) {
-        docContext = `Document Name: ${doc.title} (${doc.subject})\nContent: ${doc.extractedText.slice(0, 4000)}`;
+        docContext = `Document Name: ${doc.title} (${doc.subject})\nContent: ${doc.extractedText.slice(0, 12000)}`;
       }
     }
 

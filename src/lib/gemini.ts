@@ -222,9 +222,19 @@ export function safeExtractArray(parsed: any, defaultKey?: string): any[] {
 }
 
 export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
+  const systemInstructions = `You are Nexa 2.0, the elite Academic AI Exam Coach and Senior Engineering Professor for ScholarMate 2.0.
+Your mission is to provide deep, exhaustive, yet crystal-clear human-understandable explanations.
+When answering student queries:
+1. Provide a direct, plain-English intuitive explanation so complex concepts become effortless to grasp.
+2. Structure your response with clean Markdown headings (###), bold keywords, and organized bullet points.
+3. Include relevant governing formulas, mathematical proofs, or ASCII block schematics whenever appropriate.
+4. Give a memorable real-world analogy.
+5. Provide high-yield Examiner Scoring Tips (what key terms evaluators award marks for, and traps to avoid).
+6. Ground all explanations deeply in the provided textbook/syllabus material if available.`;
+
   const fullPrompt = context
-    ? `You are Nexa 2.0, the AI Exam Coach for ScholarMate 2.0 (developed for polytechnic and engineering students). You are academically rigorous, encouraging, and format your answers with clean markdown headings, bold keywords, bullet points, and exam scoring tips.\n\nMaterial Context:\n"""\n${context}\n"""\n\nStudent Question:\n${prompt}`
-    : `You are Nexa 2.0, the AI Exam Coach for ScholarMate 2.0 (developed for polytechnic and engineering students). You are academically rigorous, encouraging, and format your answers with clean markdown headings, bold keywords, bullet points, and exam scoring tips.\n\nStudent Question:\n${prompt}`;
+    ? `${systemInstructions}\n\nMaterial Context:\n"""\n${context}\n"""\n\nStudent Question:\n${prompt}`
+    : `${systemInstructions}\n\nStudent Question:\n${prompt}`;
 
   const aiRes = await executeMultiProviderPrompt(fullPrompt, false, customKey);
   if (aiRes) return aiRes;
@@ -565,52 +575,163 @@ Format strictly as JSON:
 }
 
 export async function generateAIStudyNotes(content: string, subject?: string, customKey?: string) {
-  const prompt = `Generate comprehensive study notes for "${subject || "Engineering"}":
-Content:
-"""\n${content.slice(0, 8000)}\n"""
+  const prompt = `You are ScholarMate 2.0's Senior University Exam Architect and Academic Data Analyst.
+Generate an EXHAUSTIVE, high-yield academic study dossier and deep data analysis for "${subject || "Engineering & Polytechnic"}".
+
+Reference Material / Context:
+"""
+${content.slice(0, 16000)}
+"""
+
+CRITICAL REQUIREMENTS:
+1. Provide a comprehensive multi-paragraph overview in "summary".
+2. Provide EXACTLY 10 distinct deep analytical sections in "summarySections" covering the full theoretical, architectural, and mathematical spectrum.
+3. Provide AT LEAST 15 to 20 detailed, exam-focused key bullet points in "bulletPoints" with bold keywords.
+4. Provide AT LEAST 6 authentic university exam questions (mix of 2-Mark short checks, 5-Mark analytical, and 10-Mark comprehensive derivations) in "importantQuestions".
+
 Format strictly as JSON:
 {
-  "summary": "Executive multi-paragraph overview...",
-  "bulletPoints": ["Key point 1", "Key point 2", "Key point 3", "Key point 4"],
+  "summary": "Exhaustive multi-paragraph executive overview covering foundational axioms, computational pipelines, mathematical relationships, and exam priorities...",
+  "summarySections": [
+    { "sectionTitle": "1. Executive Synthesis & Core Scope", "content": "Detailed breakdown of the core subject scope, operational boundaries, and theoretical framework..." },
+    { "sectionTitle": "2. Theoretical Foundations & Governing Laws", "content": "Primary laws, fundamental axioms, and academic definitions required by university syllabi..." },
+    { "sectionTitle": "3. Mathematical Modeling & State Equations", "content": "Governing mathematical formulas, dimensional units, variable mappings, and analytical derivations..." },
+    { "sectionTitle": "4. System Architecture & Block Diagram Logic", "content": "Input preprocessing, transformation controllers, memory/buffer stages, and output formatting..." },
+    { "sectionTitle": "5. Step-by-Step Operational Workflow", "content": "Chronological lifecycle from system initialization to steady-state execution and error termination..." },
+    { "sectionTitle": "6. Comparative Performance & Bottleneck Analysis", "content": "Throughput vs latency trade-offs, space vs time complexities, and paradigm comparisons..." },
+    { "sectionTitle": "7. High-Yield University Exam Weightage & Historical Trends", "content": "Analysis of repeated semester question patterns, anticipated marks distribution, and compulsory modules..." },
+    { "sectionTitle": "8. Examiner Traps & Common Student Pitfalls", "content": "Specific calculation errors, diagram omissions, and ambiguous definitions that result in mark deductions..." },
+    { "sectionTitle": "9. Real-World Engineering & Industrial Applications", "content": "Modern production deployments in robotics, automotive ECUs, telecommunications, and cloud scale..." },
+    { "sectionTitle": "10. Rapid 60-Second Revision Digest", "content": "High-density mnemonics, quick formulas, and final checklist for revision 10 minutes before entering the exam hall..." }
+  ],
+  "bulletPoints": [
+    "Point 1: Detailed high-yield analytical fact with bold keywords...",
+    "Point 2...",
+    "Point 3...",
+    "Point 4...",
+    "Point 5...",
+    "Point 6...",
+    "Point 7...",
+    "Point 8...",
+    "Point 9...",
+    "Point 10...",
+    "Point 11...",
+    "Point 12...",
+    "Point 13...",
+    "Point 14...",
+    "Point 15...",
+    "Point 16...",
+    "Point 17...",
+    "Point 18..."
+  ],
   "importantQuestions": [
-    { "marks": 5, "question": "Question 1?", "answer": "Answer 1" },
-    { "marks": 10, "question": "Question 2?", "answer": "Answer 2" }
+    { "marks": 2, "question": "Define the primary governing principle of this topic.", "answer": "Concise formal definition with SI unit and equilibrium conditions." },
+    { "marks": 2, "question": "State the key mathematical formula and define all symbols.", "answer": "Standard formula with variables, units, and constants." },
+    { "marks": 5, "question": "Explain the operational block architecture with a labeled schematic.", "answer": "Complete 4-stage breakdown: Input filter, Computation engine, Error check, Output buffer." },
+    { "marks": 5, "question": "Differentiate between standard and optimized configurations in this subject.", "answer": "Structured 4-point comparison table covering latency, throughput, complexity, and power." },
+    { "marks": 10, "question": "Derive the governing mathematical formulation and explain step-by-step algorithm.", "answer": "Comprehensive 6-part model answer with boundary conditions, intermediate steps, and asymptotic bounds." },
+    { "marks": 10, "question": "Describe in detail the complete end-to-end industrial deployment and fault-tolerance mechanisms.", "answer": "Detailed architectural layout, failover states, telemetry feedback loops, and production case studies." }
   ]
 }`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
     try {
-      return safeJsonParse(aiRes);
+      const parsed = safeJsonParse(aiRes);
+      if (parsed && (parsed.summary || parsed.bulletPoints)) {
+        return parsed;
+      }
     } catch {}
   }
 
+  const cleanSubject = (subject || "Engineering").replace(/polytechnic|engineering|diploma/gi, "").trim() || subject || "Engineering";
+
   return {
-    summary: `Comprehensive syllabus analysis for ${subject || "Engineering"}. Covers fundamental principles, architectural block diagrams, governing laws, and performance optimization techniques for academic excellence.`,
+    summary: `Comprehensive academic dossier and data analysis for ${cleanSubject}. This module structures theoretical principles, architectural schematics, governing laws, and performance optimization methods required for high-scoring university examinations. It highlights state-space preservation, deterministic input-output relationships, and examiner-tested derivations.`,
+    summarySections: [
+      {
+        sectionTitle: "1. Executive Synthesis & Core Scope",
+        content: `${cleanSubject} forms a core foundational pillar of the engineering syllabus. The domain establishes formal methodologies to process input data vectors, compute state transformations deterministically, and generate verified outputs while maintaining mathematical equilibrium.`
+      },
+      {
+        sectionTitle: "2. Theoretical Foundations & Governing Laws",
+        content: `Governed by fundamental conservation principles and deterministic state logic. All subsystem components must respect physical boundary limits, invariant constraints, and equilibrium stability criteria during runtime operations.`
+      },
+      {
+        sectionTitle: "3. Mathematical Modeling & State Equations",
+        content: `The mathematical state progression is formulated as: S_{t+1} = Transformation(S_t, I_t) - ErrorCorrection(e_t). Parameter sensitivities and boundary limits are evaluated at steady state (t -> inf) to ensure asymptotic stability.`
+      },
+      {
+        sectionTitle: "4. System Architecture & Block Diagram Logic",
+        content: `The architecture consists of four cascaded stages: 1) Input Conditioning & Normalization, 2) Central Processing & Transformation Controller, 3) Parity Verification & Error Check Subsystem, and 4) Output Driver Stage.`
+      },
+      {
+        sectionTitle: "5. Step-by-Step Operational Workflow",
+        content: `1. Initialization: Registers and state variables are zeroed.\n2. Ingestion: Raw input signals are filtered against noise thresholds.\n3. Processing: Matrix transformations and algorithmic iterations execute.\n4. Validation: Checksums and invariants are verified.\n5. Dispatch: Output signals are latched to memory buses.`
+      },
+      {
+        sectionTitle: "6. Comparative Performance & Bottleneck Analysis",
+        content: `Trade-offs balance throughput (operations/sec) against latency (propagation delay). High-speed pipelining increases clock frequencies by 35% but requires proportional register buffering to prevent pipeline stalls.`
+      },
+      {
+        sectionTitle: "7. High-Yield University Exam Weightage & Historical Trends",
+        content: `Historical semester analysis demonstrates an average weightage of 22-28 marks for this topic. Compulsory questions consistently target the 10-mark architectural derivation and 5-mark comparative contrast tables.`
+      },
+      {
+        sectionTitle: "8. Examiner Traps & Common Student Pitfalls",
+        content: `Examiners frequently penalize candidates who omit directional signal arrows in block diagrams, confuse synchronous and asynchronous state clocks, or jump straight to final formulas without stating boundary assumptions.`
+      },
+      {
+        sectionTitle: "9. Real-World Engineering & Industrial Applications",
+        content: `Deployed widely across safety-critical automotive ECUs, autonomous drone flight telemetry, telecommunications switching fabrics, and distributed low-latency database engines.`
+      },
+      {
+        sectionTitle: "10. Rapid 60-Second Revision Digest",
+        content: `Key Memory Anchors: 1) Invariant state law, 2) Four-stage block architecture, 3) S_{t+1} transition equation, 4) Directional arrows in diagrams, 5) Real-world automotive/cloud use cases.`
+      }
+    ],
     bulletPoints: [
-      "Fundamental state preservation and deterministic transitions.",
-      "Input preprocessing, core computation, and error validation pipeline.",
-      "High-throughput architecture with minimal latency bottlenecks.",
-      "Essential mathematical formulas and proof foundations."
+      `1. **Governing Law**: Operates under strict conservation of system state and deterministic transitions.`,
+      `2. **Input Normalization**: Preprocessing filters raw input vectors to eliminate anomalous transient spikes.`,
+      `3. **Core Computation Engine**: Executes matrix arithmetic and non-linear transformations with bounded time complexity.`,
+      `4. **Signal Flow Direction**: Data travels unidirectionally from input staging to transformation units to output buffers.`,
+      `5. **Mathematical State Equation**: Modeled by S_{t+1} = Transformation(S_t, I_t) with convergence criteria ||S_{t+1} - S_t|| < epsilon.`,
+      `6. **Throughput Optimization**: Subdividing execution stages through pipelining increases operational throughput by up to 40%.`,
+      `7. **Latency Trade-off**: Minimizing propagation delay requires dedicated hardware registers, incurring higher area overhead.`,
+      `8. **Memory Hierarchy Alignment**: Locality of reference ensures 90%+ cache hit rates during core algorithmic loops.`,
+      `9. **Error Detection & Parity**: Real-time parity bits and checksum matrices prevent corrupted state propagation.`,
+      `10. **Synchronous vs Asynchronous**: Synchronous modes provide predictable timing; asynchronous modes reduce standby power dissipation.`,
+      `11. **Boundary Condition Testing**: Numerical stability holds strictly when input amplitudes remain within [-V_max, +V_max].`,
+      `12. **Examiner Trap #1**: Forgetting to state initial conditions (t=0) deductions cost up to 2 marks in Section C.`,
+      `13. **Examiner Trap #2**: Omitting labeled control arrows in block diagrams is the single most common student error.`,
+      `14. **Scoring Keyword #1**: Always include the phrase "deterministic state progression" in formal definitions.`,
+      `15. **Scoring Keyword #2**: Emphasize "asymptotic convergence" when deriving mathematical limits.`,
+      `16. **Industrial Deployment**: Utilized in flight-control redundant computers where mean time between failures (MTBF) exceeds 100,000 hours.`,
+      `17. **Telecommunications Integration**: Serves as the high-speed packet routing logic in fiber-optic multiplexers.`,
+      `18. **Final Exam Strategy**: Dedicate 12 minutes to the 10-mark question, ensuring 4 minutes are spent on a pristine diagram.`
     ],
     importantQuestions: [
-      { marks: 5, question: `Explain the working principle of ${subject || "this topic"} with a neat schematic.`, answer: "1. Definition, 2. Core blocks, 3. Governing formula, 4. Applications." },
-      { marks: 10, question: `Describe in detail the complete architecture, derivations, and use cases for ${subject || "this topic"}.`, answer: "Comprehensive 6-part model answer including introduction, diagrams, step-by-step proof, and real-world deployment." }
+      { marks: 2, question: `Define ${cleanSubject} and state its primary engineering objective.`, answer: "Formal technical definition stating deterministic state preservation, error bounds, and predictable transformation of input signals." },
+      { marks: 2, question: `Write the standard governing equation for ${cleanSubject} and state all variables.`, answer: "S_{t+1} = Transformation(S_t, I_t) - ErrorCorrection(e_t), where S represents state, I represents input, and e is residual error." },
+      { marks: 5, question: `Explain the system architecture of ${cleanSubject} with a labeled block diagram.`, answer: "1. Input stage, 2. Controller & computation unit, 3. Parity checker, 4. Output buffer. Includes signal flow and control bus." },
+      { marks: 5, question: `Compare synchronous and asynchronous configurations in ${cleanSubject}.`, answer: "4-column comparative matrix detailing clocking overhead, latency, power consumption, and metastability risks." },
+      { marks: 10, question: `Derive the complete mathematical formulation, governing equations, and step-by-step proof for ${cleanSubject}.`, answer: "Full 6-step derivation: Assumptions -> Boundary setup -> Transformation matrix -> Error convergence proof -> Industrial validation." },
+      { marks: 10, question: `Discuss in detail the working principle, failure modes, and real-world industrial applications of ${cleanSubject}.`, answer: "End-to-end essay covering operational stages, failover redundancy protocols, and production deployments in automotive and telecommunications." }
     ]
   };
 }
 
 export async function generateAIFlashcards(content: string, subject?: string, customKey?: string) {
   const prompt = `You are ScholarMate's Elite Academic AI Flashcard Engine.
-Generate 10 to 14 high-yield, comprehensive exam revision flashcards strictly grounded on the material below for "${subject || "Engineering & Polytechnic"}".
+Generate 20 to 25 EXHAUSTIVE, high-yield, comprehensive exam revision flashcards strictly grounded on the material below for "${subject || "Engineering & Polytechnic"}".
 
 Material / Textbook Context:
 """
-${content.slice(0, 15000)}
+${content.slice(0, 16000)}
 """
 
 CRITICAL INSTRUCTIONS:
-1. Ground answers strictly on the concepts, definitions, formulas, and terminology in the provided material.
+1. Generate between 20 and 25 exhaustive cards covering every single chapter concept, definition, derivation step, block diagram component, formula, examiner trap, and real-world case study.
 2. DO NOT make generic or shallow cards. Every card must provide deep, memorable explanations.
 3. Every card MUST have:
    - "front": Clear, exam-grade question or concept to test recall.
@@ -634,14 +755,15 @@ Format strictly as a JSON object:
       "category": "${subject || "Core Concepts"}"
     }
   ]
-}`;
+}
+Ensure exactly 20 to 25 complete card objects in the "cards" array!`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
     try {
       const parsed = safeJsonParse(aiRes);
       const list = safeExtractArray(parsed, "cards");
-      if (list && list.length > 0) return list;
+      if (list && list.length >= 8) return list;
     } catch {}
   }
 
@@ -656,11 +778,13 @@ export function getDynamicSubjectFlashcards(subject: string, content: string) {
   const sentences = content
     .split(/\n|\. /)
     .map(s => s.trim())
-    .filter(s => s.length > 25 && s.length < 180);
+    .filter(s => s.length > 20 && s.length < 200);
 
   const term1 = sentences[0] || `Core theoretical framework and definitions in ${cleanSubject}`;
   const term2 = sentences[1] || `Mathematical governing equations and boundary parameters`;
   const term3 = sentences[2] || `System architecture, block schematics, and signal flow`;
+  const term4 = sentences[3] || `State progression and operational execution pipeline`;
+  const term5 = sentences[4] || `Performance optimization, throughput scaling, and latency reduction`;
 
   return [
     {
@@ -691,8 +815,17 @@ export function getDynamicSubjectFlashcards(subject: string, content: string) {
       category: "System Architecture"
     },
     {
+      front: `How does state transition progress during the operational cycle of ${cleanSubject}?`,
+      back: term4,
+      humanExplanation: `The system transitions through discrete sequential states triggered by clock pulses or input thresholds, ensuring deterministic behavior.`,
+      analogy: `Like traffic signals changing smoothly from Green to Yellow to Red; each state has a strict predecessor and successor.`,
+      examinerTip: `Draw a finite state machine (FSM) bubble diagram with labeled transition conditions.`,
+      example: `Transition from Idle state to Processing state upon receiving an interrupt signal.`,
+      category: "Operational Workflow"
+    },
+    {
       front: `What are the top 2 examiner traps and common mistakes students make in ${cleanSubject}?`,
-      back: `1. Confusing synchronous vs asynchronous state updates. 2. Omitting boundary condition checks in derivations.`,
+      back: `1. Confusing synchronous vs asynchronous state updates.\n2. Omitting initial boundary condition checks in mathematical derivations.`,
       humanExplanation: `Students frequently remember the formula but forget to verify whether the assumptions (steady state, ideal conditions) apply to the specific exam question.`,
       analogy: `Driving with high-speed tires on ice: the mechanics work, but the assumptions of friction don't hold!`,
       examinerTip: `Explicitly state your assumptions at the start of any 5-mark or 10-mark answer.`,
@@ -701,7 +834,7 @@ export function getDynamicSubjectFlashcards(subject: string, content: string) {
     },
     {
       front: `What is the primary trade-off between performance and reliability in ${cleanSubject}?`,
-      back: `Increasing speed/throughput generally increases thermal dissipation, complexity, or error rates, requiring defensive redundancy.`,
+      back: term5,
       humanExplanation: `You cannot optimize speed to infinity without paying a cost in power, memory footprint, or algorithmic complexity.`,
       analogy: `A sports car vs a semi-truck: the sports car is faster, but carries less cargo and requires more maintenance.`,
       examinerTip: `When asked a comparative question, structure your answer in a two-column contrast table.`,
@@ -709,13 +842,130 @@ export function getDynamicSubjectFlashcards(subject: string, content: string) {
       category: "Trade-offs & Optimization"
     },
     {
-      front: `Give a practical real-world engineering application of ${cleanSubject}.`,
-      back: `Deployed in commercial production systems, embedded controllers, telecommunication switches, and scalable cloud backends.`,
-      humanExplanation: `This concept is not just textbook theory; it powers modern infrastructure where fault tolerance and deterministic latency are mandatory.`,
-      analogy: `Just as airplanes use triple-redundant flight computers, industrial implementations of this concept require fail-safe states.`,
-      examinerTip: `Giving a modern industry example at the end of a 10-mark question distinguishes your paper for the highest grade bracket.`,
-      example: `Deployment in mission-critical real-time processing pipelines.`,
+      front: `What asymptotic time and space complexity governs ${cleanSubject}?`,
+      back: `Time Complexity: O(N log N) for optimal divide-and-conquer processing; Space Complexity: O(N) auxiliary buffer space.`,
+      humanExplanation: `As the size of the input data N grows, the time required scales efficiently rather than exploding exponentially.`,
+      analogy: `Searching a word in a sorted dictionary (fast) versus checking every single page from start to finish (slow).`,
+      examinerTip: `State both the worst-case Big-O complexity and the best-case Omega complexity for full marks.`,
+      example: `Processing a batch of 10,000 input samples in 14 iterations.`,
+      category: "Complexity Analysis"
+    },
+    {
+      front: `How are boundary conditions evaluated in derivations for ${cleanSubject}?`,
+      back: `Evaluate at t=0 (initial state), t->inf (steady state), and intermediate transition thresholds.`,
+      humanExplanation: `Checking the extremes ensures your formula works at the very beginning, during normal operation, and after infinite time without diverging.`,
+      analogy: `Testing an elevator with zero weight, maximum rated weight, and overload conditions.`,
+      examinerTip: `Always write "At t = 0, initial state S_0 = 0" as Step 1 of your derivation.`,
+      example: `Setting input voltage V_in = 0 to determine quiescent offset current.`,
+      category: "Mathematical Proofs"
+    },
+    {
+      front: `What error detection and fault tolerance mechanisms are mandatory in ${cleanSubject}?`,
+      back: `Cyclic Redundancy Checks (CRC), parity bits, and watchdog timer resets maintain fault containment.`,
+      humanExplanation: `When transmission noise flips a bit, parity matrices catch the mismatch and trigger an automatic retransmission.`,
+      analogy: `A bank check verification code: if a number is forged or altered, the checksum fails immediately.`,
+      examinerTip: `Mention that error detection introduces minimal parity overhead while guaranteeing data integrity.`,
+      example: `Detecting a single-bit burst error in a 64-bit payload register.`,
+      category: "Fault Tolerance"
+    },
+    {
+      front: `Differentiate between Synchronous and Asynchronous operations in ${cleanSubject}.`,
+      back: `Synchronous: Driven by a global master clock, predictable timing, higher dynamic power.\nAsynchronous: Event-driven by handshake signals, zero idle clock power, higher circuit complexity.`,
+      humanExplanation: `Synchronous is like an orchestra playing to a conductor's baton; asynchronous is like runners passing a relay baton when ready.`,
+      analogy: `Scheduled city bus (Synchronous) vs on-demand ride hail (Asynchronous).`,
+      examinerTip: `Present this as a 4-point comparison table covering Clocking, Latency, Power, and Hardware Cost.`,
+      example: `Synchronous pipeline clocking at 1 GHz vs asynchronous handshake signals.`,
+      category: "Comparative Paradigms"
+    },
+    {
+      front: `What hardware buffer constraints and overflow protections exist in ${cleanSubject}?`,
+      back: `Circular ring buffers with FIFO queuing, watermark thresholds, and flow-control backpressure.`,
+      humanExplanation: `If incoming data arrives faster than the processor can consume it, buffers temporarily hold data and signal the sender to pause.`,
+      analogy: `A kitchen sink: if water fills faster than the drain drains, the basin prevents floor flooding until flow balances.`,
+      examinerTip: `Explain what happens when buffer occupancy hits 90% (high-watermark interrupt).`,
+      example: `A 4KB FIFO buffer preventing packet drops during network burst spikes.`,
+      category: "Hardware & Buffering"
+    },
+    {
+      front: `What are the invariant properties that must never be violated in ${cleanSubject}?`,
+      back: `Conservation of energy/state, non-negative probability distributions, and bounded bounded-input bounded-output (BIBO) stability.`,
+      humanExplanation: `Invariants are universal rules that must remain true at every millisecond of execution; if an invariant is violated, the system crashes.`,
+      analogy: `The total money in a bank ledger must always balance: debit must equal credit at all times.`,
+      examinerTip: `Define BIBO stability mathematically: if |x(t)| <= M_x < inf, then |y(t)| <= M_y < inf.`,
+      example: `Verifying that output signal amplitude never exceeds supply rails.`,
+      category: "System Invariants"
+    },
+    {
+      front: `How should a student correctly sketch the 10-mark schematic diagram for ${cleanSubject}?`,
+      back: `1. Input Stage (Left)\n2. Processing Controller (Center)\n3. Feedback & Parity Loop (Bottom)\n4. Output Stage (Right)\nAll connected with directional arrows and control labels.`,
+      humanExplanation: `A neat block schematic shows examiners you understand how signals interface between physical subsystems.`,
+      analogy: `A clear architectural blueprint: builders cannot construct walls without seeing plumbing and electrical pathways.`,
+      examinerTip: `Label every block name inside the rectangle, and label the signals (Data, Clock, Enable) on the connecting arrows.`,
+      example: `Drawing the 4 core functional blocks with clear control and data bus lines.`,
+      category: "Exam Diagram Skills"
+    },
+    {
+      front: `What are the top 3 high-yield scoring keywords examiners look for in ${cleanSubject}?`,
+      back: `1. Deterministic State Progression\n2. Bounded Asymptotic Convergence\n3. Fault-Tolerant Throughput Optimization`,
+      humanExplanation: `University evaluators scan answer sheets for authoritative technical terminology rather than conversational filler.`,
+      analogy: `Key medical terms on a doctor's chart: precise words convey exact expertise in seconds.`,
+      examinerTip: `Underline these 3 phrases in your answer with a pencil so the examiner spots them immediately.`,
+      example: `Using "deterministic state progression" in the opening thesis sentence of a 10-mark essay.`,
+      category: "Scoring Keywords"
+    },
+    {
+      front: `What is the step-by-step procedure to solve numerical problems in ${cleanSubject}?`,
+      back: `Step 1: Write given values with SI units.\nStep 2: State governing formula.\nStep 3: Substitute parameters.\nStep 4: Calculate final value with unit.\nStep 5: Box the final answer.`,
+      humanExplanation: `Examiners award partial step-marking even if a minor arithmetic slip occurs at the very end.`,
+      analogy: `A court of law: showing the exact chain of evidence step-by-step guarantees your case holds up.`,
+      examinerTip: `Never skip writing the raw algebraic formula before substituting numbers.`,
+      example: `Calculating efficiency: given Work=80J, Heat=100J -> Efficiency = 80/100 * 100% = 80%.`,
+      category: "Numerical Problem Strategy"
+    },
+    {
+      front: `Give a real-world industrial application of ${cleanSubject} in autonomous or robotics systems.`,
+      back: `Real-time sensor fusion and actuation controllers in self-driving vehicles and robotic arms.`,
+      humanExplanation: `Sensors collect millions of data points every second; this mechanism processes them within a hard 5-millisecond deadline to steer safely.`,
+      analogy: `Human nervous system reflex: touching a hot stove causes an immediate withdrawal reflex before the brain even feels pain.`,
+      examinerTip: `Citing a concrete industrial use case in your answer conclusion distinguishes your paper for the highest grade.`,
+      example: `LiDAR point-cloud transformation running on vehicle ECUs.`,
       category: "Industrial Applications"
+    },
+    {
+      front: `How does ${cleanSubject} scale under high-concurrency or cloud distributed environments?`,
+      back: `Via horizontal partitioning, stateless microservices, and asynchronous event streaming.`,
+      humanExplanation: `Instead of building one massive supercomputer, you distribute the workload across dozens of small servers that share the task.`,
+      analogy: `Opening 10 checkout lines in a supermarket on black Friday rather than making everyone queue at one cashier.`,
+      examinerTip: `Mention horizontal scaling vs vertical scaling to score full marks in system design questions.`,
+      example: `Handling 50,000 requests/sec with an auto-scaling cluster.`,
+      category: "Scalability & Distributed Systems"
+    },
+    {
+      front: `What optimization techniques eliminate computational bottlenecks in ${cleanSubject}?`,
+      back: `Instruction-level pipelining, caching frequently accessed operands, and vector SIMD parallel processing.`,
+      humanExplanation: `By overlapping instructions, multiple operations are performed simultaneously instead of waiting for each one to finish before starting the next.`,
+      analogy: `Doing laundry: washing batch 2 while batch 1 is in the dryer, rather than waiting for everything to dry before washing the next load.`,
+      examinerTip: `State the theoretical speedup factor using Amdahl's Law: Speedup = 1 / ((1 - P) + P / S).`,
+      example: `Achieving 3.2x speedup by pipelining a 4-stage arithmetic unit.`,
+      category: "Optimization Techniques"
+    },
+    {
+      front: `What typical 5-mark distinction question frequently appears on ${cleanSubject}?`,
+      back: `Compare and contrast the primary mechanism of ${cleanSubject} against its historical legacy counterpart.`,
+      humanExplanation: `Examiners test whether you understand why modern engineering adopted this paradigm over older, slower alternatives.`,
+      analogy: `Comparing modern solid-state drives (SSDs) to spinning magnetic hard drives (HDDs).`,
+      examinerTip: `Always use a 4-row contrast table: 1) Mechanism, 2) Speed, 3) Reliability, 4) Use Case.`,
+      example: `Comparing dynamic scheduling against static compile-time scheduling.`,
+      category: "Frequent Exam Questions"
+    },
+    {
+      front: `Rapid 60-Second Memory Digest: What are the 5 non-negotiable points to remember for ${cleanSubject}?`,
+      back: `1. Definition: Deterministic state transformation.\n2. Formula: S_{t+1} = Trans(S_t, I_t).\n3. Diagram: 4 blocks with directional arrows.\n4. Traps: State initial conditions at t=0.\n5. Application: Industrial real-time telemetry.`,
+      humanExplanation: `These 5 core pillars form the skeleton of any 2-mark, 5-mark, or 10-mark exam question in this subject.`,
+      analogy: `The five fingers on a hand: together they form an unbreakable grip on the subject syllabus.`,
+      examinerTip: `Review these 5 points in the 10 minutes right before you enter the exam hall!`,
+      example: `Recalling all 5 points in sequence to answer a surprise Section C essay question.`,
+      category: "60-Second Digest"
     }
   ];
 }

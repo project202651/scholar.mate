@@ -345,28 +345,62 @@ export default function SmartNotesView({ onOpenAISettings, initialDocId }: Smart
                 </div>
               </div>
 
-              {/* Tab 1: Summary */}
+              {/* Tab 1: Deep Data Analysis & Summary */}
               {activeSubTab === "summary" && (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      Concise 3-Paragraph Summary
+                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+                      <span>Deep Data Analysis & 10-Part Comprehensive Summary</span>
                     </span>
                     <button
                       onClick={() => copyToClipboard(currentNote.summary, "summary")}
-                      className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300"
+                      className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-semibold cursor-pointer"
                     >
                       {copiedSection === "summary" ? (
                         <Check className="h-3.5 w-3.5 text-emerald-400" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
-                      <span>{copiedSection === "summary" ? "Copied!" : "Copy Summary"}</span>
+                      <span>{copiedSection === "summary" ? "Copied!" : "Copy Full Analysis"}</span>
                     </button>
                   </div>
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+
+                  {/* Executive Overview Card */}
+                  <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-950/30 via-slate-950/60 to-slate-900/60 p-5 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap shadow-sm">
+                    <div className="text-xs font-bold uppercase tracking-wider text-indigo-300 mb-2 flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>Executive Overview</span>
+                    </div>
                     {currentNote.summary}
                   </div>
+
+                  {/* 10 Structured Analytical Sections if available */}
+                  {currentNote.summarySections && currentNote.summarySections.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                        10-Point Data Breakdown & Chapter Synthesis
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {currentNote.summarySections.map((sec: any, sIdx: number) => (
+                          <div
+                            key={sIdx}
+                            className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-1.5 hover:border-indigo-500/30 transition-all"
+                          >
+                            <h4 className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-[10px] font-bold text-indigo-400">
+                                {sIdx + 1}
+                              </span>
+                              <span>{sec.sectionTitle}</span>
+                            </h4>
+                            <p className="text-xs text-slate-300 leading-relaxed pl-6 whitespace-pre-line">
+                              {sec.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

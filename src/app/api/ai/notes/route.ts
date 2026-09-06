@@ -37,6 +37,10 @@ export async function POST(req: Request) {
     let createdAt = new Date().toISOString();
 
     // Save study note in database if authenticated
+    const combinedSummary = aiResult.summarySections && aiResult.summarySections.length > 0
+      ? `${aiResult.summary}\n\n` + aiResult.summarySections.map((s: any) => `### ${s.sectionTitle}\n${s.content}`).join("\n\n")
+      : aiResult.summary;
+
     if (user) {
       const savedNote = await prisma.studyNote.create({
         data: {
@@ -44,7 +48,7 @@ export async function POST(req: Request) {
           documentId: documentId || null,
           title: finalTitle,
           subject: finalSubject,
-          summary: aiResult.summary,
+          summary: combinedSummary,
           bulletPoints: JSON.stringify(aiResult.bulletPoints || []),
           importantQuestions: JSON.stringify(aiResult.importantQuestions || []),
         },
@@ -68,6 +72,7 @@ export async function POST(req: Request) {
         title: finalTitle,
         subject: finalSubject,
         summary: aiResult.summary,
+        summarySections: aiResult.summarySections || [],
         bulletPoints: aiResult.bulletPoints,
         importantQuestions: aiResult.importantQuestions,
         createdAt,

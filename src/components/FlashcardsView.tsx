@@ -3,14 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Layers, RotateCcw, Check, Sparkles, ChevronLeft, ChevronRight, 
-  Award, Plus, Brain, Clock, Zap, CheckCircle2, AlertCircle, BookOpen, Lightbulb, FileText 
+  Award, Plus, Brain, Clock, Zap, CheckCircle2, AlertCircle, BookOpen, Lightbulb, FileText,
+  Maximize2, Eye, ListFilter, Copy, X, Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AILoadingPulse from './AILoadingPulse';
 import { aiFetch } from '@/lib/clientFetch';
 
 interface Flashcard {
-  id?: string;
+  id?: string | number;
   front: string;
   back: string;
   humanExplanation?: string;
@@ -53,6 +54,10 @@ export default function FlashcardsView({
   const [documents, setDocuments] = useState<any[]>([]);
   const [selectedDocId, setSelectedDocId] = useState(initialDocumentId || '');
   const [showHumanBreakdown, setShowHumanBreakdown] = useState(true);
+  const [viewMode, setViewMode] = useState<'flip' | 'list'>('flip');
+  const [expandedModalCard, setExpandedModalCard] = useState<Flashcard | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [copiedKey, setCopiedKey] = useState<string | number | null>(null);
 
   const FLASHCARD_PRESETS = [
     { topic: 'Process Scheduling & Deadlock Conditions', subject: 'Operating Systems' },
@@ -270,6 +275,35 @@ export default function FlashcardsView({
     handleNext();
   };
 
+  // Keyboard shortcut listener for active recall efficiency
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (showCreateModal || expandedModalCard) return;
+
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault();
+        handleFlip();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === '1') {
+        handleRateCard('again');
+      } else if (e.key === '2') {
+        handleRateCard('hard');
+      } else if (e.key === '3') {
+        handleRateCard('good');
+      } else if (e.key === '4') {
+        handleRateCard('easy');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFlipped, cardIndex, cards, currentDeck, showCreateModal, expandedModalCard]);
+
   const masteredCount = cards.filter((c: any) => c.mastered).length;
   const progressPercent = cards.length > 0 ? Math.round((masteredCount / cards.length) * 100) : 0;
 
@@ -404,11 +438,11 @@ export default function FlashcardsView({
         </div>
       ) : currentCard ? (
         <div className="space-y-6">
-          {/* Progress bar & Retention Metric */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-4 shadow-sm backdrop-blur-md flex items-center justify-between gap-4">
-            <div className="flex-1">
+          {/* Progress bar & Retention Metric & View Switcher */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 p-4 shadow-sm backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex-1 w-full">
               <div className="flex items-center justify-between text-xs font-semibold mb-1.5">
-                <span className="text-slate-700 dark:text-slate-300">
+                <span className="text-slate-800 dark:text-slate-200 font-bold">
                   Deck Mastery: {masteredCount} of {cards.length} Cards Mastered
                 </span>
                 <span className="text-purple-600 dark:text-purple-400 font-bold">{progressPercent}%</span>
@@ -421,203 +455,400 @@ export default function FlashcardsView({
               </div>
             </div>
 
-            {currentCard.intervalDays !== undefined && (
-              <div className="shrink-0 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 px-3 py-1.5 rounded-xl text-center">
-                <span className="text-[10px] text-purple-600 dark:text-purple-300 uppercase font-bold block">Next Review</span>
-                <span className="text-xs font-black text-purple-700 dark:text-purple-200">
-                  {currentCard.intervalDays === 0 ? 'Today' : `in ${currentCard.intervalDays}d`}
-                </span>
+            {/* View Mode Toggle & Next Review */}
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
+              {currentCard.intervalDays !== undefined && (
+                <div className="shrink-0 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 px-3 py-1.5 rounded-xl text-center">
+                  <span className="text-[10px] text-purple-600 dark:text-purple-300 uppercase font-bold block">Next Review</span>
+                  <span className="text-xs font-black text-purple-700 dark:text-purple-200">
+                    {currentCard.intervalDays === 0 ? 'Today' : `in ${currentCard.intervalDays}d`}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('flip')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'flip'
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>3D Flip</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === 'list'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  <span>Full Sheet ({cards.length})</span>
+                </button>
               </div>
-            )}
+            </div>
           </div>
 
-          {/* 3D Animated Card */}
-          <div className="relative min-h-[380px] sm:min-h-[430px] w-full [perspective:1200px]">
-            <motion.div
-              onClick={handleFlip}
-              className="relative h-full w-full cursor-pointer [transform-style:preserve-3d] transition-all duration-700"
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ duration: 0.6, ease: 'easeInOut' }}
-            >
-              {/* FRONT OF CARD */}
-              <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-700/80 bg-gradient-to-br from-white via-slate-50 to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/50 p-6 sm:p-8 shadow-xl backdrop-blur-xl [backface-visibility:hidden]">
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-purple-100 dark:bg-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
-                    {currentCard.category || currentDeck.subject}
-                  </span>
-                  <span className="text-xs font-medium text-slate-400">
-                    Card {cardIndex + 1} of {cards.length}
-                  </span>
-                </div>
+          {/* VIEW MODE 1: INTERACTIVE 3D FLIP MODE */}
+          {viewMode === 'flip' ? (
+            <div className="space-y-6">
+              {/* 3D Animated Card with EXPLICIT non-collapsing fixed height */}
+              <div className="relative h-[560px] sm:h-[620px] w-full [perspective:1400px]">
+                <motion.div
+                  onClick={handleFlip}
+                  className="relative h-full w-full cursor-pointer [transform-style:preserve-3d] transition-all duration-700"
+                  animate={{ rotateY: isFlipped ? 180 : 0 }}
+                  transition={{ duration: 0.6, ease: 'easeInOut' }}
+                >
+                  {/* FRONT OF CARD */}
+                  <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-slate-200 dark:border-slate-700/80 bg-gradient-to-br from-white via-slate-50 to-indigo-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/50 p-6 sm:p-8 shadow-xl backdrop-blur-xl [backface-visibility:hidden]">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-full bg-purple-100 dark:bg-purple-500/20 px-3 py-1 text-xs font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+                        {currentCard.category || currentDeck.subject}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedModalCard(currentCard);
+                          }}
+                          className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors cursor-pointer"
+                        >
+                          <Maximize2 className="h-3 w-3" />
+                          <span>Full View</span>
+                        </button>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          Card {cardIndex + 1} of {cards.length}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="my-auto text-center px-2 sm:px-4 py-6">
-                  <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-2 block">
-                    Exam Concept / Active Question
-                  </span>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-relaxed">
-                    {currentCard.front}
-                  </h3>
-                </div>
+                    <div className="my-auto text-center px-4 sm:px-8 py-6">
+                      <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-3 block">
+                        Exam Concept / Active Question
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-relaxed">
+                        {currentCard.front}
+                      </h3>
+                      <p className="mt-4 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        Try to recall the formula, derivation steps, and examiner trap before flipping.
+                      </p>
+                    </div>
 
-                <div className="flex items-center justify-between text-xs text-slate-400 border-t border-slate-100 dark:border-slate-800/80 pt-4">
-                  <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400 font-semibold">
-                    <RotateCcw className="h-3.5 w-3.5" /> Click anywhere to flip & see answer
-                  </span>
-                  {currentCard.mastered && (
-                    <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Mastered
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* BACK OF CARD (Answer, Human Explanation, Analogy & Tips) */}
-              <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-purple-400/50 bg-gradient-to-br from-white via-purple-50 to-indigo-50/40 dark:from-slate-900 dark:via-slate-950 dark:to-purple-950/60 p-6 sm:p-8 shadow-2xl backdrop-blur-xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-cyan-100 dark:bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/30">
-                    Authoritative Answer & Derivation
-                  </span>
-                  <span className="text-xs font-medium text-slate-400">
-                    Card {cardIndex + 1} of {cards.length}
-                  </span>
-                </div>
-
-                {/* Scrollable Rich Breakdown Container */}
-                <div className="my-auto text-left px-2 sm:px-4 overflow-y-auto max-h-[250px] space-y-3 no-scrollbar py-2">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 block mb-1">
-                      Core Answer & Formula:
-                    </span>
-                    <p className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-line">
-                      {currentCard.back}
-                    </p>
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 pt-4">
+                      <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 font-bold">
+                        <RotateCcw className="h-3.5 w-3.5" /> Click anywhere to flip & see authoritative answer (Space)
+                      </span>
+                      {currentCard.mastered && (
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Mastered
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  {currentCard.humanExplanation && (
-                    <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs">
-                      <div className="flex items-center gap-1.5 font-bold text-purple-700 dark:text-purple-300 mb-1">
-                        <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                        <span>Plain-English Human Explanation:</span>
+                  {/* BACK OF CARD (Answer, Human Explanation, Analogy & Tips) */}
+                  <div className="absolute inset-0 flex flex-col justify-between rounded-3xl border border-purple-400/60 bg-gradient-to-br from-white via-purple-50/40 to-indigo-50/40 dark:from-slate-900 dark:via-slate-950 dark:to-purple-950/60 p-5 sm:p-7 shadow-2xl backdrop-blur-xl [backface-visibility:hidden] [transform:rotateY(180deg)]">
+                    <div className="flex items-center justify-between border-b border-purple-200/60 dark:border-purple-900/40 pb-3">
+                      <span className="rounded-full bg-cyan-100 dark:bg-cyan-500/20 px-3 py-1 text-xs font-bold text-cyan-800 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/30">
+                        Authoritative Answer & Derivation
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedModalCard(currentCard);
+                          }}
+                          className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 bg-purple-50 dark:bg-purple-950/60 px-2.5 py-1 rounded-lg border border-purple-200 dark:border-purple-800 transition-colors cursor-pointer"
+                        >
+                          <Maximize2 className="h-3 w-3" />
+                          <span>Full View</span>
+                        </button>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          Card {cardIndex + 1} of {cards.length}
+                        </span>
                       </div>
-                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                        {currentCard.humanExplanation}
-                      </p>
                     </div>
-                  )}
 
-                  {currentCard.analogy && (
-                    <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-xs">
-                      <span className="font-bold text-cyan-700 dark:text-cyan-300 block mb-0.5">
-                        💭 Real-World Analogy:
-                      </span>
-                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                        {currentCard.analogy}
-                      </p>
-                    </div>
-                  )}
+                    {/* Scrollable Rich Breakdown Container with StopPropagation */}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-1 overflow-y-auto px-1 sm:px-2 space-y-3 py-3 pr-2 scrollbar-thin scrollbar-thumb-purple-400/50 dark:scrollbar-thumb-purple-600/60"
+                    >
+                      {/* Core Answer & Formulation */}
+                      <div className="p-4 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-purple-200 dark:border-purple-900/60 shadow-sm">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300 block mb-1.5 flex items-center gap-1.5">
+                          <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                          <span>Core Technical Answer & Formulation:</span>
+                        </span>
+                        <p className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 leading-relaxed whitespace-pre-line">
+                          {currentCard.back}
+                        </p>
+                      </div>
 
-                  {currentCard.examinerTip && (
-                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
-                      <span className="font-bold text-emerald-700 dark:text-emerald-300 block mb-0.5">
-                        🎯 Examiner Scoring Tip:
-                      </span>
-                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                        {currentCard.examinerTip}
-                      </p>
-                    </div>
-                  )}
+                      {/* Plain-English Human Explanation */}
+                      {currentCard.humanExplanation && (
+                        <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60 text-xs sm:text-sm">
+                          <div className="flex items-center gap-1.5 font-bold text-purple-800 dark:text-purple-300 mb-1">
+                            <Lightbulb className="h-4 w-4 text-amber-500 shrink-0" />
+                            <span>Plain-English Human Explanation:</span>
+                          </div>
+                          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-normal">
+                            {currentCard.humanExplanation}
+                          </p>
+                        </div>
+                      )}
 
-                  {currentCard.example && (
-                    <div className="p-2.5 rounded-xl bg-slate-500/10 border border-slate-500/20 text-xs">
-                      <span className="font-bold text-slate-700 dark:text-slate-300 block mb-0.5">
-                        🔬 Concrete Application:
-                      </span>
-                      <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                        {currentCard.example}
-                      </p>
+                      {/* Real-World Analogy */}
+                      {currentCard.analogy && (
+                        <div className="p-3.5 rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-900/60 text-xs sm:text-sm">
+                          <span className="font-bold text-cyan-800 dark:text-cyan-300 block mb-1">
+                            💭 Real-World Analogy:
+                          </span>
+                          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-normal">
+                            {currentCard.analogy}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Examiner Scoring Tip */}
+                      {currentCard.examinerTip && (
+                        <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-xs sm:text-sm">
+                          <span className="font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
+                            🎯 Examiner Scoring Tip:
+                          </span>
+                          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-normal">
+                            {currentCard.examinerTip}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Concrete Application */}
+                      {currentCard.example && (
+                        <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs sm:text-sm">
+                          <span className="font-bold text-amber-800 dark:text-amber-300 block mb-1">
+                            🔬 Concrete Application:
+                          </span>
+                          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-normal">
+                            {currentCard.example}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* Footer Controls */}
+                    <div className="flex items-center justify-between border-t border-purple-200/60 dark:border-purple-900/40 pt-3 text-xs text-slate-500 dark:text-slate-400">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleFlip();
+                        }}
+                        className="flex items-center gap-1.5 font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>Flip back to Question</span>
+                      </button>
+                      <span className="text-slate-600 dark:text-slate-300 font-semibold">
+                        Rate recall below (Keys: 1-4) ↓
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Spaced Repetition Rating Buttons */}
+              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Spaced Repetition Rating (Calibrates Review Interval)
+                  </div>
+                  <span className="text-[11px] font-semibold text-purple-600 dark:text-purple-400">
+                    Keyboard Shortcuts: 1, 2, 3, 4
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-800/80 pt-3 text-xs text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <RotateCcw className="h-3.5 w-3.5" /> Click to flip back
-                  </span>
-                  <span className="text-purple-600 dark:text-purple-400 font-bold">
-                    Rate recall below ↓
-                  </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <button
+                    onClick={() => handleRateCard('again')}
+                    className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span className="px-1.5 py-0.2 bg-rose-200 dark:bg-rose-800 text-[10px] rounded font-bold">1</span>
+                      <span>Again (&lt;10m)</span>
+                    </div>
+                    <span className="text-[10px] font-normal text-rose-500">Reset Interval</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleRateCard('hard')}
+                    className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span className="px-1.5 py-0.2 bg-amber-200 dark:bg-amber-800 text-[10px] rounded font-bold">2</span>
+                      <span>Hard (1 day)</span>
+                    </div>
+                    <span className="text-[10px] font-normal text-amber-500">Review Tomorrow</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleRateCard('good')}
+                    className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span className="px-1.5 py-0.2 bg-blue-200 dark:bg-blue-800 text-[10px] rounded font-bold">3</span>
+                      <span>Good (3 days)</span>
+                    </div>
+                    <span className="text-[10px] font-normal text-blue-500">On Track</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleRateCard('easy')}
+                    className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
+                  >
+                    <div className="flex items-center gap-1">
+                      <span className="px-1.5 py-0.2 bg-emerald-200 dark:bg-emerald-800 text-[10px] rounded font-bold">4</span>
+                      <span>Easy (7 days)</span>
+                    </div>
+                    <span className="text-[10px] font-normal text-emerald-500">Mastered</span>
+                  </button>
                 </div>
               </div>
-            </motion.div>
-          </div>
 
-          {/* Spaced Repetition Rating Buttons (Visible when flipped or ready) */}
-          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="text-center text-xs font-bold uppercase tracking-wider text-slate-500">
-              Spaced Repetition Feedback (Schedules Next Recall)
+              {/* Navigation Toolbar */}
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={handlePrev}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Previous (←)</span>
+                </button>
+
+                <button
+                  onClick={handleFlip}
+                  className="flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all cursor-pointer active:scale-95"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>Flip Card (Space)</span>
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  <span>Next (→)</span>
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
+          ) : (
+            /* VIEW MODE 2: FULL STUDY SHEET (ALL 20+ CARDS EXPANDED) */
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div className="relative flex-1 w-full">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search across all 20+ cards by concept, formula, or tip..."
+                    className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+                  Showing {cards.filter(c => !searchQuery || c.front.toLowerCase().includes(searchQuery.toLowerCase()) || c.back.toLowerCase().includes(searchQuery.toLowerCase())).length} of {cards.length} Cards
+                </div>
+              </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              <button
-                onClick={() => handleRateCard('again')}
-                className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
-              >
-                <span>Again (<span className="underline">&lt;10m</span>)</span>
-                <span className="text-[10px] font-normal text-rose-500">Reset Interval</span>
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {cards
+                  .filter(c => !searchQuery || c.front.toLowerCase().includes(searchQuery.toLowerCase()) || c.back.toLowerCase().includes(searchQuery.toLowerCase()) || (c.category && c.category.toLowerCase().includes(searchQuery.toLowerCase())))
+                  .map((card, idx) => (
+                    <div
+                      key={card.id || idx}
+                      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3.5 hover:border-purple-400/50 transition-all flex flex-col justify-between"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="rounded-full bg-purple-100 dark:bg-purple-500/20 px-2.5 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+                            #{idx + 1} {card.category || currentDeck.subject}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedModalCard(card)}
+                            className="flex items-center gap-1 text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                          >
+                            <Maximize2 className="h-3 w-3" />
+                            <span>Expand</span>
+                          </button>
+                        </div>
 
-              <button
-                onClick={() => handleRateCard('hard')}
-                className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
-              >
-                <span>Hard (1 day)</span>
-                <span className="text-[10px] font-normal text-amber-500">Review Tomorrow</span>
-              </button>
+                        <h4 className="text-sm font-black text-slate-900 dark:text-white leading-snug">
+                          {card.front}
+                        </h4>
 
-              <button
-                onClick={() => handleRateCard('good')}
-                className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
-              >
-                <span>Good (3 days)</span>
-                <span className="text-[10px] font-normal text-blue-500">On Track</span>
-              </button>
+                        <div className="p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-100 dark:border-purple-900/50 text-xs">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300 block mb-1">
+                            Core Answer:
+                          </span>
+                          <p className="font-semibold text-slate-800 dark:text-slate-100 whitespace-pre-line leading-relaxed">
+                            {card.back}
+                          </p>
+                        </div>
 
-              <button
-                onClick={() => handleRateCard('easy')}
-                className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60 text-xs font-bold flex flex-col items-center gap-0.5 transition-all cursor-pointer active:scale-95"
-              >
-                <span>Easy (7 days)</span>
-                <span className="text-[10px] font-normal text-emerald-500">Mastered</span>
-              </button>
+                        {card.humanExplanation && (
+                          <div className="p-2.5 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 text-[11px]">
+                            <span className="font-bold text-indigo-700 dark:text-indigo-300 block mb-0.5">
+                              💡 Plain-English Explanation:
+                            </span>
+                            <p className="text-slate-700 dark:text-slate-300 leading-normal">
+                              {card.humanExplanation}
+                            </p>
+                          </div>
+                        )}
+
+                        {card.examinerTip && (
+                          <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 text-[11px]">
+                            <span className="font-bold text-emerald-700 dark:text-emerald-300 block mb-0.5">
+                              🎯 Examiner Tip:
+                            </span>
+                            <p className="text-slate-700 dark:text-slate-300 leading-normal">
+                              {card.examinerTip}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                        <button
+                          onClick={() => {
+                            setCardIndex(idx);
+                            setViewMode('flip');
+                          }}
+                          className="text-purple-600 dark:text-purple-400 font-bold hover:underline cursor-pointer"
+                        >
+                          Practice in 3D Mode →
+                        </button>
+                        {card.mastered && (
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" /> Mastered
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
             </div>
-          </div>
-
-          {/* Simple Navigation Toolbar */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handlePrev}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <span>Previous</span>
-            </button>
-
-            <button
-              onClick={handleFlip}
-              className="flex items-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-700 px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all cursor-pointer"
-            >
-              <RotateCcw className="h-4 w-4" />
-              <span>Flip Card</span>
-            </button>
-
-            <button
-              onClick={handleNext}
-              className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-            >
-              <span>Next</span>
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          )}
         </div>
       ) : (
         <div className="rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-12 text-center text-slate-400">
@@ -631,6 +862,121 @@ export default function FlashcardsView({
         </div>
       )}
 
+      {/* FULLSCREEN READER MODAL */}
+      {expandedModalCard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-3xl border border-purple-500/30 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-2xl space-y-5 text-slate-900 dark:text-slate-100">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+              <span className="rounded-full bg-purple-100 dark:bg-purple-500/20 px-3 py-1 text-xs font-bold text-purple-700 dark:text-purple-300">
+                {expandedModalCard.category || 'Exam Flashcard'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setExpandedModalCard(null)}
+                className="rounded-xl p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white bg-slate-100 dark:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 block mb-1">
+                Question / Concept:
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-relaxed">
+                {expandedModalCard.front}
+              </h2>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 space-y-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300 block">
+                Core Answer & Derivation:
+              </span>
+              <p className="text-base font-semibold text-slate-900 dark:text-slate-100 leading-relaxed whitespace-pre-line">
+                {expandedModalCard.back}
+              </p>
+            </div>
+
+            {expandedModalCard.humanExplanation && (
+              <div className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800/60 space-y-1">
+                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 block flex items-center gap-1.5">
+                  <Lightbulb className="h-4 w-4 text-amber-500 shrink-0" />
+                  <span>Plain-English Human Explanation:</span>
+                </span>
+                <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                  {expandedModalCard.humanExplanation}
+                </p>
+              </div>
+            )}
+
+            {expandedModalCard.analogy && (
+              <div className="p-4 rounded-2xl bg-cyan-50 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-800/60 space-y-1">
+                <span className="text-xs font-bold text-cyan-700 dark:text-cyan-300 block">
+                  💭 Real-World Analogy:
+                </span>
+                <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                  {expandedModalCard.analogy}
+                </p>
+              </div>
+            )}
+
+            {expandedModalCard.examinerTip && (
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 space-y-1">
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 block">
+                  🎯 Examiner Scoring Tip:
+                </span>
+                <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                  {expandedModalCard.examinerTip}
+                </p>
+              </div>
+            )}
+
+            {expandedModalCard.example && (
+              <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-1">
+                <span className="text-xs font-bold text-amber-700 dark:text-amber-300 block">
+                  🔬 Concrete Application:
+                </span>
+                <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                  {expandedModalCard.example}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(`Q: ${expandedModalCard.front}\n\nA: ${expandedModalCard.back}\n\nExplanation: ${expandedModalCard.humanExplanation || ''}\n\nTip: ${expandedModalCard.examinerTip || ''}`);
+                  setCopiedKey(expandedModalCard.front);
+                  setTimeout(() => setCopiedKey(null), 2000);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold transition-all cursor-pointer"
+              >
+                {copiedKey === expandedModalCard.front ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy Card Text</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setExpandedModalCard(null)}
+                className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                Close Full View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal for Creating New Deck */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -640,7 +986,7 @@ export default function FlashcardsView({
               <span>Generate AI Flashcard Deck</span>
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-              Enter any syllabus topic to generate 10-15 active recall cards with formula derivations and models.
+              Enter any syllabus topic to generate 20-25 active recall cards with formula derivations and models.
             </p>
 
             <form onSubmit={handleCreateDeck} className="space-y-4">
