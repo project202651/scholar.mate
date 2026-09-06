@@ -60,6 +60,7 @@ export default function DashboardView({
 
   const [readinessScore, setReadinessScore] = useState(72);
   const [quickPrompt, setQuickPrompt] = useState('');
+  const [visualMode, setVisualMode] = useState<'3d_interactive' | '3d_render'>('3d_interactive');
 
   const [todayMissions, setTodayMissions] = useState([
     {
@@ -141,46 +142,46 @@ export default function DashboardView({
       </div>
 
       {/* Hero Command Center */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-slate-900/90 via-slate-950/95 to-indigo-950/40 p-6 sm:p-12 shadow-2xl backdrop-blur-2xl">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-        <div className="absolute -right-24 -top-24 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-emerald-500/20 via-cyan-500/15 to-transparent blur-[140px] pointer-events-none" />
-        <div className="absolute -left-24 -bottom-24 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-purple-500/20 via-pink-500/15 to-transparent blur-[140px] pointer-events-none" />
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/15 bg-white/95 dark:bg-gradient-to-br dark:from-slate-900/90 dark:via-slate-950/95 dark:to-indigo-950/40 p-6 sm:p-12 shadow-xl shadow-slate-200/50 dark:shadow-2xl backdrop-blur-2xl">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+        <div className="absolute -right-24 -top-24 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-emerald-500/15 via-cyan-500/10 to-transparent blur-[140px] pointer-events-none" />
+        <div className="absolute -left-24 -bottom-24 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-purple-500/15 via-pink-500/10 to-transparent blur-[140px] pointer-events-none" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
           {/* Left Column */}
           <div className="lg:col-span-7 space-y-6">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3.5 py-1 text-xs font-bold text-emerald-300 shadow-sm">
-                <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 dark:border-emerald-500/40 bg-emerald-50 dark:bg-emerald-500/15 px-3.5 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 shadow-sm">
+                <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>ScholarMate 2.0 AI Coach</span>
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/15 px-3 py-1 text-xs font-bold text-purple-300">
-                <Cpu className="h-3.5 w-3.5 text-purple-400" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 dark:border-purple-500/40 bg-purple-50 dark:bg-purple-500/15 px-3 py-1 text-xs font-bold text-purple-700 dark:text-purple-300">
+                <Cpu className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                 <span>8-Part Teaching & Examiner Engine</span>
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1]">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.1]">
               Your AI{' '}
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-300 dark:to-cyan-400 bg-clip-text text-transparent">
                 Exam Coach.
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-300 max-w-xl leading-relaxed">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-xl leading-relaxed font-normal">
               Upload your syllabus, notes, and past question papers. ScholarMate decomposes your curriculum, teaches with 8-part intuitive lessons, generates 5/10-mark answers with examiner marking schemes, and tells you when you're 100% exam ready.
             </p>
 
             {/* Quick Prompt Input */}
             <form onSubmit={handleHeroSearch} className="relative max-w-xl">
-              <div className="relative flex items-center rounded-2xl border border-white/20 bg-slate-900/80 p-1.5 shadow-2xl backdrop-blur-xl focus-within:border-emerald-400 transition-all">
+              <div className="relative flex items-center rounded-2xl border border-slate-200 dark:border-white/20 bg-slate-50/90 dark:bg-slate-900/80 p-1.5 shadow-lg shadow-slate-200/50 dark:shadow-2xl backdrop-blur-xl focus-within:border-emerald-500 transition-all">
                 <Search className="h-5 w-5 text-slate-400 ml-3 shrink-0" />
                 <input
                   type="text"
                   value={quickPrompt}
                   onChange={(e) => setQuickPrompt(e.target.value)}
                   placeholder="Ask Nexa Coach: 'Teach Banker\'s Algorithm' or '10M Normalization answer'..."
-                  className="flex-1 bg-transparent px-3 py-2 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none"
+                  className="flex-1 bg-transparent px-3 py-2 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none font-medium"
                 />
                 <button
                   type="submit"
@@ -193,22 +194,22 @@ export default function DashboardView({
 
             {/* 3 Primary Action Gates */}
             <div className="pt-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2.5">
                 Primary Action Gates:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl">
                 <button
                   onClick={() => setActiveTab('nexa')}
-                  className="flex items-center gap-3 p-3 rounded-2xl border border-cyan-500/40 bg-gradient-to-br from-cyan-950/60 to-slate-900/80 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20 active:scale-[0.98] transition-all text-left cursor-pointer group"
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-cyan-500/30 dark:border-cyan-500/40 bg-white/90 dark:bg-gradient-to-br dark:from-cyan-950/60 dark:to-slate-900/80 hover:border-cyan-500 hover:shadow-lg hover:shadow-cyan-500/15 active:scale-[0.98] transition-all text-left cursor-pointer group shadow-sm"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 group-hover:scale-105 transition-transform">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15 dark:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 group-hover:scale-105 transition-transform">
                     <Bot className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-300 transition-colors">
                       🤖 Ask Nexa
                     </h4>
-                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
                       Exam doubt resolution & concepts
                     </p>
                   </div>
@@ -216,16 +217,16 @@ export default function DashboardView({
 
                 <button
                   onClick={() => setActiveTab('library')}
-                  className="flex items-center gap-3 p-3 rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-emerald-950/60 to-slate-900/80 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-[0.98] transition-all text-left cursor-pointer group"
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-emerald-500/30 dark:border-emerald-500/40 bg-white/90 dark:bg-gradient-to-br dark:from-emerald-950/60 dark:to-slate-900/80 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/15 active:scale-[0.98] transition-all text-left cursor-pointer group shadow-sm"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 group-hover:scale-105 transition-transform">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 group-hover:scale-105 transition-transform">
                     <BookOpen className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
                       📚 Study Hub
                     </h4>
-                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
                       PDF upload & synthesis
                     </p>
                   </div>
@@ -233,16 +234,16 @@ export default function DashboardView({
 
                 <button
                   onClick={() => setActiveTab('practice')}
-                  className="flex items-center gap-3 p-3 rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-950/60 to-slate-900/80 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98] transition-all text-left cursor-pointer group"
+                  className="flex items-center gap-3 p-3 rounded-2xl border border-purple-500/30 dark:border-purple-500/40 bg-white/90 dark:bg-gradient-to-br dark:from-purple-950/60 dark:to-slate-900/80 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/15 active:scale-[0.98] transition-all text-left cursor-pointer group shadow-sm"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 border border-purple-500/40 group-hover:scale-105 transition-transform">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/15 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 group-hover:scale-105 transition-transform">
                     <Zap className="h-5 w-5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">
                       🧪 Exam Practice
                     </h4>
-                    <p className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
                       5/10M model answers & recall
                     </p>
                   </div>
@@ -253,8 +254,28 @@ export default function DashboardView({
 
           {/* Right Column: 3D Visual Orb & Floating Badges */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
-            <div className="relative w-full flex justify-center">
-              <ThreeStudyOrb theme={theme} />
+            <div className="relative w-full flex justify-center min-h-[390px] items-center">
+              {visualMode === '3d_interactive' ? (
+                <ThreeStudyOrb theme={theme} />
+              ) : (
+                <motion.div
+                  initial={{ scale: 0.92, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className="relative flex items-center justify-center py-2"
+                >
+                  <div className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-emerald-500/40 shadow-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-2 max-w-[340px] max-h-[340px]">
+                    <img
+                      src="/images/student-ai-core.jpg"
+                      alt="ScholarMate 3D Student AI Knowledge Core - 9.8 Accuracy Rating"
+                      className="w-full h-full object-cover rounded-2xl shadow-inner hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-mono font-black text-[11px] px-3 py-1 rounded-xl shadow-lg border border-emerald-300/40">
+                      ★ 9.8 AI ACCURACY
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
               <motion.div
                 initial={{ y: -10, opacity: 0 }}
@@ -286,9 +307,32 @@ export default function DashboardView({
                 </div>
               </motion.div>
             </div>
-            <span className="inline-block rounded-full border border-indigo-500/30 bg-white/90 dark:bg-slate-900/80 px-3 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 backdrop-blur-md mt-2 shadow-sm">
-              ✨ 3D Holographic Neural Core (Drag to Orbit)
-            </span>
+
+            {/* Visual Mode Toggle Pill Switch */}
+            <div className="flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200 dark:border-slate-700 shadow-sm mt-2.5">
+              <button
+                type="button"
+                onClick={() => setVisualMode('3d_interactive')}
+                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                  visualMode === '3d_interactive'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                ✨ Live 3D Simulation
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisualMode('3d_render')}
+                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all cursor-pointer ${
+                  visualMode === '3d_render'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                🏆 9.8 Accuracy Concept
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -435,40 +479,40 @@ export default function DashboardView({
       </section>
 
       {/* AI & ML Engineering Development Team Showcase Section */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-b from-slate-900/95 via-slate-950 to-indigo-950/40 p-6 sm:p-10 shadow-2xl backdrop-blur-2xl">
-        <div className="absolute -right-16 -top-16 h-80 w-80 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none" />
-        <div className="absolute -left-16 -bottom-16 h-80 w-80 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/90 dark:border-white/15 bg-white/95 dark:bg-gradient-to-b dark:from-slate-900/95 dark:via-slate-950 dark:to-indigo-950/40 p-6 sm:p-10 shadow-xl shadow-slate-200/50 dark:shadow-2xl backdrop-blur-2xl">
+        <div className="absolute -right-16 -top-16 h-80 w-80 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -left-16 -bottom-16 h-80 w-80 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 space-y-8">
           {/* Section Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/80 pb-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-6">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-300">
-                  <GraduationCap className="h-3.5 w-3.5 text-cyan-400" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
+                  <GraduationCap className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                   <span>AANM & VVRSR Polytechnic College</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-300">
-                  <Cpu className="h-3.5 w-3.5 text-purple-400" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-50 dark:bg-purple-500/10 px-3 py-1 text-xs font-semibold text-purple-700 dark:text-purple-300">
+                  <Cpu className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
                   <span>Branch: AI & ML</span>
                 </span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Project Development Team —{' '}
-                <span className="bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-cyan-600 via-indigo-600 to-purple-600 dark:from-cyan-400 dark:via-indigo-300 dark:to-purple-400 bg-clip-text text-transparent">
                   AI & ML Engineering
                 </span>
               </h2>
-              <p className="mt-1 text-xs sm:text-sm text-slate-300">
+              <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                 Department of Artificial Intelligence & Machine Learning (AI & ML) • Final Year Major Project (2026 - 2027)
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-xl border border-slate-700 bg-slate-800/80 px-3.5 py-1.5 font-semibold text-slate-200">
+              <span className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/80 px-3.5 py-1.5 font-semibold text-slate-700 dark:text-slate-200">
                 👥 Team of 4 Members
               </span>
-              <span className="rounded-xl border border-indigo-500/30 bg-indigo-500/15 px-3.5 py-1.5 font-semibold text-indigo-300">
+              <span className="rounded-xl border border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/15 px-3.5 py-1.5 font-semibold text-indigo-700 dark:text-indigo-300">
                 ⚡ GenAI & Spatial WebGL
               </span>
             </div>
@@ -479,44 +523,44 @@ export default function DashboardView({
             {/* Member 1: Vastav */}
             <motion.div
               whileHover={{ y: -6 }}
-              className="relative overflow-hidden rounded-3xl border border-cyan-500/50 bg-gradient-to-b from-cyan-950/40 via-slate-900/90 to-blue-950/30 p-6 shadow-xl shadow-cyan-500/10 hover:shadow-cyan-500/30 hover:border-cyan-400 transition-all flex flex-col justify-between"
+              className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-cyan-500/50 bg-white/95 dark:bg-gradient-to-b dark:from-cyan-950/40 dark:via-slate-900/90 dark:to-blue-950/30 p-6 shadow-lg shadow-slate-200/50 dark:shadow-xl dark:shadow-cyan-500/10 hover:shadow-cyan-500/20 hover:border-cyan-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30 font-mono font-bold text-sm">
                     01
                   </span>
-                  <span className="rounded-full bg-cyan-500/20 border border-cyan-500/40 px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 shadow-sm">
+                  <span className="rounded-full bg-cyan-50 dark:bg-cyan-500/20 border border-cyan-500/30 dark:border-cyan-500/40 px-2.5 py-0.5 text-[10px] font-bold text-cyan-700 dark:text-cyan-300 shadow-sm">
                     Team Lead
                   </span>
                 </div>
-                <h3 className="mt-4 text-xl font-black text-white tracking-wide flex items-center gap-2">
+                <h3 className="mt-4 text-xl font-black text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                   <span>Vastav</span>
-                  <span className="h-2 w-2 rounded-full bg-cyan-400 animate-ping"></span>
+                  <span className="h-2 w-2 rounded-full bg-cyan-500 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 px-2.5 py-1 text-xs font-semibold text-cyan-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-cyan-950/80 border border-slate-200 dark:border-cyan-500/40 px-2.5 py-1 text-xs font-semibold text-cyan-700 dark:text-cyan-300">
                   <span>Role:</span>
-                  <span className="text-white">Lead Architect</span>
+                  <span className="text-slate-900 dark:text-white font-bold">Lead Architect</span>
                 </div>
-                <p className="text-xs font-bold text-cyan-300 mt-3">
+                <p className="text-xs font-bold text-cyan-700 dark:text-cyan-300 mt-3">
                   AI Architecture & Full-Stack Lead
                 </p>
-                <ul className="mt-3 space-y-2 text-xs text-slate-300">
+                <ul className="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
                   <li className="flex items-start gap-2">
-                    <span className="text-cyan-400 font-bold">•</span>
+                    <span className="text-cyan-500 font-bold">•</span>
                     <span>ScholarMate 2.0 Blueprint System</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-cyan-400 font-bold">•</span>
+                    <span className="text-cyan-500 font-bold">•</span>
                     <span>Nexa AI 8-Part Teaching Framework</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-cyan-400 font-bold">•</span>
+                    <span className="text-cyan-500 font-bold">•</span>
                     <span>6-Metric Readiness Diagnostic Engine</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-3 border-t border-cyan-500/20 text-[10px] text-cyan-400 font-mono font-bold">
+              <div className="mt-6 pt-3 border-t border-slate-200 dark:border-cyan-500/20 text-[10px] text-cyan-700 dark:text-cyan-400 font-mono font-bold">
                 AANM & VVRSR Polytechnic • AI & ML
               </div>
             </motion.div>
@@ -524,44 +568,44 @@ export default function DashboardView({
             {/* Member 2: Vishnu */}
             <motion.div
               whileHover={{ y: -6 }}
-              className="relative overflow-hidden rounded-3xl border border-indigo-500/50 bg-gradient-to-b from-indigo-950/40 via-slate-900/90 to-purple-950/30 p-6 shadow-xl shadow-indigo-500/10 hover:shadow-indigo-500/30 hover:border-indigo-400 transition-all flex flex-col justify-between"
+              className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-indigo-500/50 bg-white/95 dark:bg-gradient-to-b dark:from-indigo-950/40 dark:via-slate-900/90 dark:to-purple-950/30 p-6 shadow-lg shadow-slate-200/50 dark:shadow-xl dark:shadow-indigo-500/10 hover:shadow-indigo-500/20 hover:border-indigo-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/30 font-mono font-bold text-sm">
                     02
                   </span>
-                  <span className="rounded-full bg-indigo-500/20 border border-indigo-500/40 px-2.5 py-0.5 text-[10px] font-bold text-indigo-300 shadow-sm">
+                  <span className="rounded-full bg-indigo-50 dark:bg-indigo-500/20 border border-indigo-500/30 dark:border-indigo-500/40 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-300 shadow-sm">
                     3D Graphics
                   </span>
                 </div>
-                <h3 className="mt-4 text-xl font-black text-white tracking-wide flex items-center gap-2">
+                <h3 className="mt-4 text-xl font-black text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                   <span>Vishnu</span>
-                  <span className="h-2 w-2 rounded-full bg-indigo-400 animate-ping"></span>
+                  <span className="h-2 w-2 rounded-full bg-indigo-500 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-indigo-950/80 border border-indigo-500/40 px-2.5 py-1 text-xs font-semibold text-indigo-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-indigo-950/80 border border-slate-200 dark:border-indigo-500/40 px-2.5 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300">
                   <span>Role:</span>
-                  <span className="text-white">Three.js Specialist</span>
+                  <span className="text-slate-900 dark:text-white font-bold">Three.js Specialist</span>
                 </div>
-                <p className="text-xs font-bold text-indigo-300 mt-3">
+                <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 mt-3">
                   Three.js 3D & UI/UX Developer
                 </p>
-                <ul className="mt-3 space-y-2 text-xs text-slate-300">
+                <ul className="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold">•</span>
+                    <span className="text-indigo-500 font-bold">•</span>
                     <span>Interactive Three.js 3D Study Orb</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold">•</span>
+                    <span className="text-indigo-500 font-bold">•</span>
                     <span>Kinetic cursor & WebGL particles</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-indigo-400 font-bold">•</span>
+                    <span className="text-indigo-500 font-bold">•</span>
                     <span>Responsive UI styling and layouts</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-3 border-t border-indigo-500/20 text-[10px] text-indigo-400 font-mono font-bold">
+              <div className="mt-6 pt-3 border-t border-slate-200 dark:border-indigo-500/20 text-[10px] text-indigo-700 dark:text-indigo-400 font-mono font-bold">
                 AANM & VVRSR Polytechnic • AI & ML
               </div>
             </motion.div>
@@ -569,44 +613,44 @@ export default function DashboardView({
             {/* Member 3: Nikhileswar */}
             <motion.div
               whileHover={{ y: -6 }}
-              className="relative overflow-hidden rounded-3xl border border-fuchsia-500/50 bg-gradient-to-b from-fuchsia-950/40 via-slate-900/90 to-purple-950/30 p-6 shadow-xl shadow-fuchsia-500/10 hover:shadow-fuchsia-500/30 hover:border-fuchsia-400 transition-all flex flex-col justify-between"
+              className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-fuchsia-500/50 bg-white/95 dark:bg-gradient-to-b dark:from-fuchsia-950/40 dark:via-slate-900/90 dark:to-purple-950/30 p-6 shadow-lg shadow-slate-200/50 dark:shadow-xl dark:shadow-fuchsia-500/10 hover:shadow-fuchsia-500/20 hover:border-fuchsia-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-fuchsia-500 to-pink-600 text-white shadow-md shadow-fuchsia-500/30 font-mono font-bold text-sm">
                     03
                   </span>
-                  <span className="rounded-full bg-fuchsia-500/20 border border-fuchsia-500/40 px-2.5 py-0.5 text-[10px] font-bold text-fuchsia-300 shadow-sm">
+                  <span className="rounded-full bg-fuchsia-50 dark:bg-fuchsia-500/20 border border-fuchsia-500/30 dark:border-fuchsia-500/40 px-2.5 py-0.5 text-[10px] font-bold text-fuchsia-700 dark:text-fuchsia-300 shadow-sm">
                     Backend & DB
                   </span>
                 </div>
-                <h3 className="mt-4 text-xl font-black text-white tracking-wide flex items-center gap-2">
+                <h3 className="mt-4 text-xl font-black text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                   <span>Nikhileswar</span>
-                  <span className="h-2 w-2 rounded-full bg-fuchsia-400 animate-ping"></span>
+                  <span className="h-2 w-2 rounded-full bg-fuchsia-500 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-fuchsia-950/80 border border-fuchsia-500/40 px-2.5 py-1 text-xs font-semibold text-fuchsia-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-fuchsia-950/80 border border-slate-200 dark:border-fuchsia-500/40 px-2.5 py-1 text-xs font-semibold text-fuchsia-700 dark:text-fuchsia-300">
                   <span>Role:</span>
-                  <span className="text-white">Backend Architect</span>
+                  <span className="text-slate-900 dark:text-white font-bold">Backend Architect</span>
                 </div>
-                <p className="text-xs font-bold text-fuchsia-300 mt-3">
+                <p className="text-xs font-bold text-fuchsia-700 dark:text-fuchsia-300 mt-3">
                   Database & API Engine Architect
                 </p>
-                <ul className="mt-3 space-y-2 text-xs text-slate-300">
+                <ul className="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
                   <li className="flex items-start gap-2">
-                    <span className="text-fuchsia-400 font-bold">•</span>
+                    <span className="text-fuchsia-500 font-bold">•</span>
                     <span>PostgreSQL & Prisma relational schema</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-fuchsia-400 font-bold">•</span>
+                    <span className="text-fuchsia-500 font-bold">•</span>
                     <span>AI In-Memory LRU & localStorage caching</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-fuchsia-400 font-bold">•</span>
+                    <span className="text-fuchsia-500 font-bold">•</span>
                     <span>7 Dedicated AI Backend Endpoints</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-3 border-t border-fuchsia-500/20 text-[10px] text-fuchsia-400 font-mono font-bold">
+              <div className="mt-6 pt-3 border-t border-slate-200 dark:border-fuchsia-500/20 text-[10px] text-fuchsia-700 dark:text-fuchsia-400 font-mono font-bold">
                 AANM & VVRSR Polytechnic • AI & ML
               </div>
             </motion.div>
@@ -614,56 +658,56 @@ export default function DashboardView({
             {/* Member 4: Sathvik */}
             <motion.div
               whileHover={{ y: -6 }}
-              className="relative overflow-hidden rounded-3xl border border-emerald-500/50 bg-gradient-to-b from-emerald-950/40 via-slate-900/90 to-teal-950/30 p-6 shadow-xl shadow-emerald-500/10 hover:shadow-emerald-500/30 hover:border-emerald-400 transition-all flex flex-col justify-between"
+              className="relative overflow-hidden rounded-3xl border border-slate-200 dark:border-emerald-500/50 bg-white/95 dark:bg-gradient-to-b dark:from-emerald-950/40 dark:via-slate-900/90 dark:to-teal-950/30 p-6 shadow-lg shadow-slate-200/50 dark:shadow-xl dark:shadow-emerald-500/10 hover:shadow-emerald-500/20 hover:border-emerald-400 transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30 font-mono font-bold text-sm">
                     04
                   </span>
-                  <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300 shadow-sm">
+                  <span className="rounded-full bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-500/30 dark:border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 shadow-sm">
                     AI Curriculum
                   </span>
                 </div>
-                <h3 className="mt-4 text-xl font-black text-white tracking-wide flex items-center gap-2">
+                <h3 className="mt-4 text-xl font-black text-slate-900 dark:text-white tracking-wide flex items-center gap-2">
                   <span>Sathvik</span>
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping"></span>
                 </h3>
-                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 text-xs font-semibold text-emerald-300">
+                <div className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-slate-100 dark:bg-emerald-950/80 border border-slate-200 dark:border-emerald-500/40 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                   <span>Role:</span>
-                  <span className="text-white">Active Recall Lead</span>
+                  <span className="text-slate-900 dark:text-white font-bold">Active Recall Lead</span>
                 </div>
-                <p className="text-xs font-bold text-emerald-300 mt-3">
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300 mt-3">
                   Active Recall & Quiz Engine Lead
                 </p>
-                <ul className="mt-3 space-y-2 text-xs text-slate-300">
+                <ul className="mt-3 space-y-2 text-xs text-slate-600 dark:text-slate-300">
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 font-bold">•</span>
+                    <span className="text-emerald-500 font-bold">•</span>
                     <span>5 & 10-mark examiner checklist models</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 font-bold">•</span>
+                    <span className="text-emerald-500 font-bold">•</span>
                     <span>Spaced Repetition SM-2 Flashcards</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 font-bold">•</span>
+                    <span className="text-emerald-500 font-bold">•</span>
                     <span>Mock Exam Simulator section pallets</span>
                   </li>
                 </ul>
               </div>
-              <div className="mt-6 pt-3 border-t border-emerald-500/20 text-[10px] text-emerald-400 font-mono font-bold">
+              <div className="mt-6 pt-3 border-t border-slate-200 dark:border-emerald-500/20 text-[10px] text-emerald-700 dark:text-emerald-400 font-mono font-bold">
                 AANM & VVRSR Polytechnic • AI & ML
               </div>
             </motion.div>
           </div>
 
           {/* Institutional Banner */}
-          <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 text-center text-xs text-slate-300 backdrop-blur-md">
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-slate-900/50 p-4 text-center text-xs text-slate-600 dark:text-slate-300 backdrop-blur-md">
             <p className="font-semibold">
-              🎓 <strong className="text-white">AANM & VVRSR Polytechnic College</strong> • Department of Artificial Intelligence & Machine Learning (AI & ML)
+              🎓 <strong className="text-slate-900 dark:text-white">AANM & VVRSR Polytechnic College</strong> • Department of Artificial Intelligence & Machine Learning (AI & ML)
             </p>
-            <p className="text-slate-400 mt-1">
-              Final Year Major Project (2026 - 2027) | Team: <strong className="text-cyan-300">Vastav</strong> (Lead Architect), <strong className="text-indigo-300">Vishnu</strong> (3D Graphics), <strong className="text-purple-300">Nikhileswar</strong> (Backend Architect), <strong className="text-emerald-300">Sathvik</strong> (Active Recall Lead).
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
+              Final Year Major Project (2026 - 2027) | Team: <strong className="text-cyan-700 dark:text-cyan-300">Vastav</strong> (Lead Architect), <strong className="text-indigo-700 dark:text-indigo-300">Vishnu</strong> (3D Graphics), <strong className="text-purple-700 dark:text-purple-300">Nikhileswar</strong> (Backend Architect), <strong className="text-emerald-700 dark:text-emerald-300">Sathvik</strong> (Active Recall Lead).
             </p>
           </div>
         </div>

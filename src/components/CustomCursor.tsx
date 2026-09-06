@@ -80,18 +80,7 @@ export default function CustomCursor() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
-      {/* 1. Trailing Ambient Soft Light Aura */}
-      <motion.div
-        style={{
-          x: auraX,
-          y: auraY,
-          translateX: "-50%",
-          translateY: "-50%",
-        }}
-        className="fixed top-0 left-0 w-44 h-44 rounded-full bg-gradient-to-tr from-cyan-400/20 via-sky-400/15 to-indigo-500/15 blur-2xl dark:from-cyan-500/25 dark:via-indigo-500/20 dark:to-purple-500/15"
-      />
-
-      {/* 2. Sleek Fluid Cursor Ring with Specular Border */}
+      {/* 1. Sleek Fluid Precision Ring */}
       <motion.div
         style={{
           x: ringX,
@@ -100,16 +89,16 @@ export default function CustomCursor() {
           translateY: "-50%",
         }}
         animate={{
-          scale: isClicked ? 0.8 : isHovered ? 1.5 : 1,
-          width: isHovered && hoverType === "input" ? 24 : isHovered ? 44 : 30,
-          height: isHovered && hoverType === "input" ? 34 : isHovered ? 44 : 30,
-          borderRadius: isHovered && hoverType === "input" ? "6px" : "9999px",
+          scale: isClicked ? 0.85 : isHovered ? 1.4 : 1,
+          width: isHovered && hoverType === "input" ? 22 : isHovered ? 40 : 26,
+          height: isHovered && hoverType === "input" ? 32 : isHovered ? 40 : 26,
+          borderRadius: isHovered && hoverType === "input" ? "4px" : "9999px",
         }}
-        transition={{ type: "spring", stiffness: 450, damping: 28 }}
-        className="fixed top-0 left-0 border border-sky-400/70 dark:border-cyan-400/70 bg-sky-400/10 dark:bg-cyan-400/10 backdrop-blur-[2px] shadow-[0_0_15px_rgba(56,189,248,0.3)] dark:shadow-[0_0_18px_rgba(6,182,212,0.4)]"
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className="fixed top-0 left-0 border border-slate-400/60 dark:border-cyan-400/60 bg-transparent shadow-[0_0_10px_rgba(2,132,199,0.15)] dark:shadow-[0_0_12px_rgba(6,182,212,0.3)]"
       />
 
-      {/* 3. Ultra-Crisp Precision Dot with Harmonic Glow */}
+      {/* 2. Precision Center Dot */}
       <motion.div
         style={{
           x: mouseX,
@@ -118,10 +107,10 @@ export default function CustomCursor() {
           translateY: "-50%",
         }}
         animate={{
-          scale: isClicked ? 2 : isHovered ? 0.6 : 1,
-          opacity: isHovered && hoverType === "input" ? 0.3 : 1,
+          scale: isClicked ? 1.6 : isHovered ? 0.5 : 1,
+          opacity: isHovered && hoverType === "input" ? 0.2 : 1,
         }}
-        className="fixed top-0 left-0 w-2 h-2 rounded-full bg-sky-500 dark:bg-cyan-300 shadow-[0_0_8px_#0284c7] dark:shadow-[0_0_10px_#22d3ee]"
+        className="fixed top-0 left-0 w-1.5 h-1.5 rounded-full bg-slate-700 dark:bg-cyan-300"
       />
     </div>
   );

@@ -282,51 +282,68 @@ html.light .text-gray-500,
   color: #475569 !important;
 }
 
-/* In light mode, turn generic text-white into dark navy EXCEPT when inside buttons, badges, or colored gradients */
-html:not(.dark) .text-white:not(button):not(button *):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-teal-"]):not([class*="bg-violet-"]):not([class*="bg-red-"]):not([class*="bg-gradient-to"]):not([class*="bg-gradient-to"] *):not(.keep-white),
-html.light .text-white:not(button):not(button *):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-teal-"]):not([class*="bg-violet-"]):not([class*="bg-red-"]):not([class*="bg-gradient-to"]):not([class*="bg-gradient-to"] *):not(.keep-white),
-.light-theme .text-white:not(button):not(button *):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-rose-"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-blue-"]):not([class*="bg-teal-"]):not([class*="bg-violet-"]):not([class*="bg-red-"]):not([class*="bg-gradient-to"]):not([class*="bg-gradient-to"] *):not(.keep-white) {
+/* In light mode, turn generic text-white into dark navy EXCEPT on colored buttons, badges, and gradient pills */
+html:not(.dark) .text-white:not(button):not(button *):not([class*="from-"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not(.keep-white),
+html.light .text-white:not(button):not(button *):not([class*="from-"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not(.keep-white),
+.light-theme .text-white:not(button):not(button *):not([class*="from-"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="bg-cyan-"]):not([class*="bg-indigo-"]):not([class*="bg-purple-"]):not([class*="bg-blue-"]):not([class*="bg-amber-"]):not(.keep-white) {
   color: #091e42 !important;
 }
 
-/* Buttons with colorful gradients MUST KEEP razor-sharp white text */
+/* Action buttons with vibrant fills retain razor-sharp white text in light mode */
 html:not(.dark) button[class*="bg-gradient"],
-html:not(.dark) button[class*="from-cyan-500"],
-html:not(.dark) button[class*="from-indigo-600"],
-html:not(.dark) button[class*="from-rose-500"],
-html:not(.dark) button[class*="from-emerald-500"],
-html:not(.dark) button[class*="from-amber-500"],
-html:not(.dark) button.text-white,
-html:not(.dark) button .text-white,
+html:not(.dark) button[class*="from-"],
+html:not(.dark) button[class*="bg-emerald-"],
+html:not(.dark) button[class*="bg-rose-"],
+html:not(.dark) button[class*="bg-cyan-"],
+html:not(.dark) button[class*="bg-indigo-"],
+html:not(.dark) button[class*="bg-purple-"],
+html:not(.dark) button[class*="bg-blue-"],
+html.light button[class*="bg-gradient"],
+html.light button[class*="from-"],
+html.light button[class*="bg-emerald-"],
+html.light button[class*="bg-rose-"],
+html.light button[class*="bg-cyan-"],
+html.light button[class*="bg-indigo-"],
+html.light button[class*="bg-purple-"],
+html.light button[class*="bg-blue-"],
 .light-theme button[class*="bg-gradient"],
-.light-theme button[class*="from-cyan-500"],
-.light-theme button[class*="from-indigo-600"],
-.light-theme button[class*="from-rose-500"],
-.light-theme button[class*="from-emerald-500"],
-.light-theme button[class*="from-amber-500"],
-.light-theme button.text-white,
-.light-theme button .text-white,
-.light-theme .bg-gradient-to-r.text-white,
-.light-theme [class*="bg-gradient-to"] > .text-white,
-.light-theme [class*="bg-gradient-to"] .text-white,
+.light-theme button[class*="from-"],
+.light-theme button[class*="bg-emerald-"],
+.light-theme button[class*="bg-rose-"],
+.light-theme button[class*="bg-cyan-"],
+.light-theme button[class*="bg-indigo-"],
+.light-theme button[class*="bg-purple-"],
+.light-theme button[class*="bg-blue-"],
 .light-theme .keep-white {
+  color: #ffffff !important;
+}
+
+html:not(.dark) button[class*="bg-gradient"] *,
+html:not(.dark) button[class*="from-"] *,
+html.light button[class*="bg-gradient"] *,
+html.light button[class*="from-"] *,
+.light-theme button[class*="bg-gradient"] *,
+.light-theme button[class*="from-"] * {
   color: #ffffff !important;
 }
 
 /* Number badges (01, 02, 03, 04) and icon badges */
 html:not(.dark) [class*="bg-gradient-to-tr"],
+html.light [class*="bg-gradient-to-tr"],
 .light-theme [class*="bg-gradient-to-tr"] {
   color: #ffffff !important;
 }
 html:not(.dark) [class*="bg-gradient-to-tr"] svg,
+html.light [class*="bg-gradient-to-tr"] svg,
 .light-theme [class*="bg-gradient-to-tr"] svg {
   color: #ffffff !important;
 }
 
 /* High-Contrast Gradient Text in Light Mode */
 html:not(.dark) .bg-clip-text,
+html.light .bg-clip-text,
 .light-theme .bg-clip-text {
-  background-image: linear-gradient(135deg, #0284c7 0%, #3730a3 50%, #7c3aed 100%) !important;
+  background-image: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   font-weight: 800 !important;

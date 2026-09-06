@@ -3,7 +3,11 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-export default function ThreeBackground() {
+interface ThreeBackgroundProps {
+  theme?: "dark" | "light";
+}
+
+export default function ThreeBackground({ theme = "dark" }: ThreeBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -11,8 +15,8 @@ export default function ThreeBackground() {
     if (!canvas) return;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 40;
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 45;
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
@@ -23,62 +27,44 @@ export default function ThreeBackground() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
-    // Create particle network
-    const count = 120;
+    // Refined Architectural Coordinate Field
+    const count = 75;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     const velocities: { x: number; y: number; z: number }[] = [];
 
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 80;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 60;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+      positions[i * 3] = (Math.random() - 0.5) * 85;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 65;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 35;
 
       velocities.push({
-        x: (Math.random() - 0.5) * 0.04,
-        y: (Math.random() - 0.5) * 0.04,
-        z: (Math.random() - 0.5) * 0.02,
+        x: (Math.random() - 0.5) * 0.018,
+        y: (Math.random() - 0.5) * 0.018,
+        z: (Math.random() - 0.5) * 0.01,
       });
     }
 
-    // Vibrant multi-color palette for particles
-    const colors = new Float32Array(count * 3);
-    const colorPalette = [
-      new THREE.Color(0x06b6d4), // Vibrant cyan
-      new THREE.Color(0x818cf8), // Electric indigo
-      new THREE.Color(0xc084fc), // Neon purple
-      new THREE.Color(0xf43f5e), // Rose pink
-      new THREE.Color(0x10b981), // Emerald green
-      new THREE.Color(0xf59e0b), // Golden amber
-    ];
-
-    for (let i = 0; i < count; i++) {
-      const col = colorPalette[i % colorPalette.length];
-      colors[i * 3] = col.r;
-      colors[i * 3 + 1] = col.g;
-      colors[i * 3 + 2] = col.b;
-    }
-
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
+    // Subtle Monochromatic Architectural Palette
     const material = new THREE.PointsMaterial({
-      vertexColors: true,
-      size: 2.2,
+      color: theme === "light" ? 0x0284c7 : 0x38bdf8,
+      size: theme === "light" ? 1.6 : 2.0,
       transparent: true,
-      opacity: 0.8,
+      opacity: theme === "light" ? 0.22 : 0.4,
     });
 
     const particles = new THREE.Points(geometry, material);
     scene.add(particles);
 
-    // Mouse movement response
+    // Smooth Mouse Movement Response
     let mouseX = 0;
     let mouseY = 0;
 
     const onMouseMove = (e: MouseEvent) => {
-      mouseX = (e.clientX / window.innerWidth - 0.5) * 10;
-      mouseY = (e.clientY / window.innerHeight - 0.5) * 10;
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 6;
+      mouseY = (e.clientY / window.innerHeight - 0.5) * 6;
     };
 
     const onResize = () => {
@@ -100,16 +86,14 @@ export default function ThreeBackground() {
         pos[i * 3 + 1] += velocities[i].y;
         pos[i * 3 + 2] += velocities[i].z;
 
-        // Bounce back from boundaries
         if (Math.abs(pos[i * 3]) > 45) velocities[i].x *= -1;
         if (Math.abs(pos[i * 3 + 1]) > 35) velocities[i].y *= -1;
-        if (Math.abs(pos[i * 3 + 2]) > 25) velocities[i].z *= -1;
+        if (Math.abs(pos[i * 3 + 2]) > 20) velocities[i].z *= -1;
       }
       geometry.attributes.position.needsUpdate = true;
 
-      // Slight camera drift towards mouse
-      camera.position.x += (mouseX - camera.position.x) * 0.02;
-      camera.position.y += (-mouseY - camera.position.y) * 0.02;
+      camera.position.x += (mouseX - camera.position.x) * 0.015;
+      camera.position.y += (-mouseY - camera.position.y) * 0.015;
       camera.lookAt(scene.position);
 
       renderer.render(scene, camera);
@@ -125,7 +109,7 @@ export default function ThreeBackground() {
       material.dispose();
       renderer.dispose();
     };
-  }, []);
+  }, [theme]);
 
   return (
     <canvas

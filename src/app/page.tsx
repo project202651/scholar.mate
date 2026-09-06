@@ -7,7 +7,6 @@ import AISettingsModal from '@/components/AISettingsModal';
 import EmergencyModeModal from '@/components/EmergencyModeModal';
 import StartingAnimation from '@/components/StartingAnimation';
 import CustomCursor from '@/components/CustomCursor';
-import ClickEffect from '@/components/ClickEffect';
 import ThreeBackground from '@/components/ThreeBackground';
 
 // 9 Blueprint Views
@@ -111,10 +110,9 @@ export default function Home() {
           : 'dark bg-slate-950 text-slate-100'
       } selection:bg-emerald-500 selection:text-white font-sans transition-colors duration-200`}
     >
-      {/* 3D WebGL ambient background & Cursor animations */}
-      <ThreeBackground />
+      {/* 3D WebGL architectural background & Clean Cursor */}
+      <ThreeBackground theme={theme} />
       <CustomCursor />
-      <ClickEffect />
 
       {/* Ambient Glassmorphic Color Orbs for Rich Frosted Refraction */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
