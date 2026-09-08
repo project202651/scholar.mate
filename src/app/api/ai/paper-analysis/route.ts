@@ -5,9 +5,8 @@ import { getCachedAIResponse, setCachedAIResponse } from '@/lib/aiCache';
 export async function POST(req: Request) {
   try {
     const authHeader = req.headers.get('authorization');
-    const customApiKey = authHeader?.startsWith('Bearer ')
-      ? authHeader.slice(7)
-      : undefined;
+    const headerKey = req.headers.get('x-gemini-key');
+    const customApiKey = (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined) || headerKey || undefined;
 
     const body = await req.json();
     const subject = body.subject || 'Engineering Subject';

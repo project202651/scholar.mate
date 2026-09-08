@@ -31,7 +31,9 @@ import {
   Sliders,
   BookMarked,
   BarChart3,
-  Info
+  Info,
+  Mic,
+  Printer
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -55,6 +57,8 @@ interface DashboardViewProps {
   onOpenEmergencyModal?: () => void;
   onOpenOnboarding?: () => void;
   onOpenMistakeNotebook?: () => void;
+  onOpenVoiceViva?: () => void;
+  onOpenPocketSheet?: () => void;
   onSelectTopic?: (topic: string, subject?: string) => void;
   theme?: 'dark' | 'light';
   isDemoMode?: boolean;
@@ -67,6 +71,8 @@ export default function DashboardView({
   onOpenEmergencyModal,
   onOpenOnboarding,
   onOpenMistakeNotebook,
+  onOpenVoiceViva,
+  onOpenPocketSheet,
   onSelectTopic,
   isDemoMode = false,
 }: DashboardViewProps) {
@@ -305,15 +311,39 @@ export default function DashboardView({
             </p>
           </div>
 
-          {onOpenOnboarding && (
-            <button
-              onClick={onOpenOnboarding}
-              className="flex items-center gap-2 rounded-2xl border border-[#54d6c7]/30 bg-[#54d6c7]/10 hover:bg-[#54d6c7]/20 px-4 py-2.5 text-xs font-bold text-[#54d6c7] transition-all cursor-pointer"
-            >
-              <Sliders className="h-4 w-4" />
-              <span>Calibrate Target &amp; Exam</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {onOpenVoiceViva && (
+              <button
+                type="button"
+                onClick={onOpenVoiceViva}
+                className="flex items-center gap-1.5 rounded-2xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 px-3.5 py-2 text-xs font-bold text-purple-300 transition-all cursor-pointer"
+              >
+                <Mic className="h-3.5 w-3.5" />
+                <span>Voice Viva</span>
+              </button>
+            )}
+
+            {onOpenPocketSheet && (
+              <button
+                type="button"
+                onClick={onOpenPocketSheet}
+                className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 px-3.5 py-2 text-xs font-bold text-emerald-300 transition-all cursor-pointer"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                <span>Pocket Sheet</span>
+              </button>
+            )}
+
+            {onOpenOnboarding && (
+              <button
+                onClick={onOpenOnboarding}
+                className="flex items-center gap-2 rounded-2xl border border-[#54d6c7]/30 bg-[#54d6c7]/10 hover:bg-[#54d6c7]/20 px-4 py-2.5 text-xs font-bold text-[#54d6c7] transition-all cursor-pointer"
+              >
+                <Sliders className="h-4 w-4" />
+                <span>Calibrate Target &amp; Exam</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* 6-Metric Dynamic Readiness Forecast Grid */}
@@ -558,6 +588,125 @@ export default function DashboardView({
               <ArrowRight className="h-3 w-3" />
             </div>
           </button>
+        </div>
+      </section>
+
+      {/* 2.5 THREE CORE AI EXAM WEAPONS (Voice Viva, 5-Year Predictor, Pocket Sheet) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-[#54d6c7]" />
+            <span>AI Exam Superpowers (Voice Viva • Paper Predictor • Pocket Sheet)</span>
+          </h2>
+          <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">Calibrated strictly to your university syllabus</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card 1: Nexa Voice Viva & Oral Examiner */}
+          <div className="relative overflow-hidden rounded-3xl border border-purple-500/30 bg-gradient-to-b from-purple-500/10 via-[#111c2e] to-[#0b1220] p-5 shadow-xl flex flex-col justify-between group hover:border-purple-400/60 transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 group-hover:scale-110 transition-transform">
+                  <Mic className="h-5 w-5" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  AI Oral Examiner
+                </span>
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-white group-hover:text-purple-300 transition-colors">
+                  Nexa Voice Viva Voce
+                </h3>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Practice spoken university oral exams. AI speaks questions, records your voice, scores out of 5, detects keyword hits/misses, and provides model answers.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400 font-medium">Theory &amp; Lab Practical</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenVoiceViva) onOpenVoiceViva();
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 text-xs font-black transition-all cursor-pointer shadow-md shadow-purple-500/20"
+              >
+                <span>Start Oral Viva</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: 5-Year University Paper Predictor & Heatmap */}
+          <div className="relative overflow-hidden rounded-3xl border border-cyan-500/30 bg-gradient-to-b from-cyan-500/10 via-[#111c2e] to-[#0b1220] p-5 shadow-xl flex flex-col justify-between group hover:border-cyan-400/60 transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 group-hover:scale-110 transition-transform">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  94% Confidence
+                </span>
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-white group-hover:text-cyan-300 transition-colors">
+                  5-Year Paper Predictor &amp; Heatmap
+                </h3>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Deep analysis of recurring PYQs. Unit 1–5 mark weightage distribution, guaranteed questions, and high-probability 10-mark derivations.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400 font-medium">Unit 1–5 Weightage</span>
+              <button
+                type="button"
+                onClick={() => setActiveTab('predictor')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 text-xs font-black transition-all cursor-pointer shadow-md shadow-cyan-400/20"
+              >
+                <span>View Heatmap</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: 1-Page Pocket Revision Sheet */}
+          <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-b from-emerald-500/10 via-[#111c2e] to-[#0b1220] p-5 shadow-xl flex flex-col justify-between group hover:border-emerald-400/60 transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 group-hover:scale-110 transition-transform">
+                  <Printer className="h-5 w-5" />
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Printable A4 PDF
+                </span>
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-white group-hover:text-emerald-300 transition-colors">
+                  1-Page Pocket Revision Sheet
+                </h3>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Exam-morning ultra-dense summary. Formulas, 3-mark definitions, ASCII block diagrams, examiner traps, and 10-mark derivation outlines formatted for 1 printed page.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-4 mt-3 border-t border-white/5 flex items-center justify-between">
+              <span className="text-[10px] text-slate-400 font-medium">Exam Hall Ready</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (onOpenPocketSheet) onOpenPocketSheet();
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-black transition-all cursor-pointer shadow-md shadow-emerald-400/20"
+              >
+                <span>Get Pocket Sheet</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 

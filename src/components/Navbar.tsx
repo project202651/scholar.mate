@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { 
   GraduationCap, LogOut, User as UserIcon, 
   Cpu, Target, Bot, BookOpen, FileCheck2, Award, Layers, BarChart3, Clock,
-  Sparkles, ChevronDown, Menu, X, Calendar, Plus, UploadCloud, Sun, Moon, Eye, EyeOff, BookMarked
+  Sparkles, ChevronDown, Menu, X, Calendar, Plus, UploadCloud, Sun, Moon, Eye, EyeOff, BookMarked,
+  TrendingUp, Mic, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -29,6 +30,8 @@ interface NavbarProps {
   onOpenOnboarding?: () => void;
   onOpenEmergencyModal?: () => void;
   onOpenMistakeNotebook?: () => void;
+  onOpenVoiceViva?: () => void;
+  onOpenPocketSheet?: () => void;
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
   is3DDisabled?: boolean;
@@ -44,6 +47,8 @@ export default function Navbar({
   onOpenAISettings,
   onOpenOnboarding,
   onOpenMistakeNotebook,
+  onOpenVoiceViva,
+  onOpenPocketSheet,
   theme = 'dark',
   onToggleTheme,
   is3DDisabled = false,
@@ -61,6 +66,7 @@ export default function Navbar({
       items: [
         { id: 'nexa', label: 'Nexa AI Tutor', desc: 'Ask doubts & concept breakdowns', icon: Bot },
         { id: 'exam_center', label: 'Syllabus Blueprint', desc: '5-unit mark weightage maps', icon: Target },
+        { id: 'predictor', label: 'Paper Predictor', desc: '5-year recurring question heatmap', icon: TrendingUp },
       ]
     },
     {
@@ -69,6 +75,7 @@ export default function Navbar({
       icon: FileCheck2,
       items: [
         { id: 'practice', label: 'Practice Questions', desc: '15-question bank with AI scoring', icon: FileCheck2 },
+        { id: 'viva', label: 'Voice Viva Voce', desc: 'AI oral examination & live scoring', icon: Mic },
         { id: 'mock_exams', label: 'Mock Simulator', desc: 'Full-length timed examinations', icon: Award },
         { id: 'flashcards', label: 'Active Recall', desc: 'Spaced repetition memory deck', icon: Layers },
       ]
@@ -85,6 +92,18 @@ export default function Navbar({
   ];
 
   const handleNavClick = (tabId: string) => {
+    if (tabId === 'viva' && onOpenVoiceViva) {
+      onOpenVoiceViva();
+      setOpenDropdown(null);
+      setIsMobileDrawerOpen(false);
+      return;
+    }
+    if (tabId === 'pocket_sheet' && onOpenPocketSheet) {
+      onOpenPocketSheet();
+      setOpenDropdown(null);
+      setIsMobileDrawerOpen(false);
+      return;
+    }
     setActiveTab(tabId);
     setOpenDropdown(null);
     setIsMobileDrawerOpen(false);
@@ -224,6 +243,30 @@ export default function Navbar({
               </button>
             )}
 
+            {/* Voice Viva Quick Trigger */}
+            {onOpenVoiceViva && (
+              <button
+                onClick={onOpenVoiceViva}
+                title="Nexa Voice Viva & Oral Examiner"
+                className="hidden lg:flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-500/20 transition-all cursor-pointer"
+              >
+                <Mic className="h-3.5 w-3.5 text-purple-400" />
+                <span className="hidden xl:inline">Voice Viva</span>
+              </button>
+            )}
+
+            {/* Pocket Sheet Quick Trigger */}
+            {onOpenPocketSheet && (
+              <button
+                onClick={onOpenPocketSheet}
+                title="1-Page Pocket Revision Sheet (Printable PDF)"
+                className="hidden lg:flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition-all cursor-pointer"
+              >
+                <Printer className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="hidden xl:inline">Pocket Sheet</span>
+              </button>
+            )}
+
             {/* Mistake Vault Shortcut */}
             {onOpenMistakeNotebook && (
               <button
@@ -344,6 +387,34 @@ export default function Navbar({
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Quick Superpower Actions in Mobile Drawer */}
+            <div className="pt-2 border-t border-white/10 flex gap-2">
+              {onOpenVoiceViva && (
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onOpenVoiceViva();
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-bold"
+                >
+                  <Mic className="w-3.5 h-3.5 text-purple-400" />
+                  <span>Voice Viva</span>
+                </button>
+              )}
+              {onOpenPocketSheet && (
+                <button
+                  onClick={() => {
+                    setIsMobileDrawerOpen(false);
+                    onOpenPocketSheet();
+                  }}
+                  className="flex-1 flex items-center justify-center gap-1.5 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold"
+                >
+                  <Printer className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Pocket Sheet</span>
+                </button>
+              )}
             </div>
           </motion.div>
         )}

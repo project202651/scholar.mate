@@ -12,7 +12,7 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import ThreeBackground from '@/components/ThreeBackground';
 import NexaFloatingButton from '@/components/NexaFloatingButton';
 
-// 9 Core Blueprint Views
+// 9 Core Blueprint Views + Superpowers
 import DashboardView from '@/components/DashboardView';
 import ExamCenterView from '@/components/ExamCenterView';
 import NexaCoachView from '@/components/NexaCoachView';
@@ -23,6 +23,9 @@ import MockExamSimulatorView from '@/components/MockExamSimulatorView';
 import FlashcardsView from '@/components/FlashcardsView';
 import ProgressAndWeaknessView from '@/components/ProgressAndWeaknessView';
 import StudyTimerView from '@/components/StudyTimerView';
+import PaperPredictorView from '@/components/PaperPredictorView';
+import NexaVoiceVivaModal from '@/components/NexaVoiceVivaModal';
+import PocketRevisionModal from '@/components/PocketRevisionModal';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -37,6 +40,8 @@ function StudentWorkspaceContent() {
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isMistakeNotebookOpen, setIsMistakeNotebookOpen] = useState(false);
+  const [isVoiceVivaOpen, setIsVoiceVivaOpen] = useState(false);
+  const [isPocketSheetOpen, setIsPocketSheetOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [is3DDisabled, setIs3DDisabled] = useState(false);
 
@@ -160,6 +165,8 @@ function StudentWorkspaceContent() {
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
         onOpenMistakeNotebook={() => setIsMistakeNotebookOpen(true)}
+        onOpenVoiceViva={() => setIsVoiceVivaOpen(true)}
+        onOpenPocketSheet={() => setIsPocketSheetOpen(true)}
         theme={theme}
         onToggleTheme={toggleTheme}
         is3DDisabled={is3DDisabled}
@@ -184,6 +191,8 @@ function StudentWorkspaceContent() {
                 onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
                 onOpenOnboarding={() => setIsOnboardingOpen(true)}
                 onOpenMistakeNotebook={() => setIsMistakeNotebookOpen(true)}
+                onOpenVoiceViva={() => setIsVoiceVivaOpen(true)}
+                onOpenPocketSheet={() => setIsPocketSheetOpen(true)}
                 onSelectTopic={handleTopicSelect}
                 theme={theme}
               />
@@ -300,6 +309,20 @@ function StudentWorkspaceContent() {
                 }}
               />
             )}
+
+            {activeTab === 'predictor' && (
+              <PaperPredictorView
+                initialSubject={selectedSubject}
+                onNavigateToPractice={(topic: string, question: string) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('practice');
+                }}
+                onNavigateToNexa={(topic: string) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('nexa');
+                }}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -359,6 +382,24 @@ function StudentWorkspaceContent() {
         isOpen={isMistakeNotebookOpen}
         onClose={() => setIsMistakeNotebookOpen(false)}
         onReTestQuestion={handleReTestMistake}
+      />
+
+      <NexaVoiceVivaModal
+        isOpen={isVoiceVivaOpen}
+        onClose={() => setIsVoiceVivaOpen(false)}
+        initialSubject={selectedSubject}
+        initialTopic={selectedTopic}
+        onPracticeQuestion={(topic, questionText) => {
+          setSelectedTopic(topic);
+          setIsVoiceVivaOpen(false);
+          setActiveTab('practice');
+        }}
+      />
+
+      <PocketRevisionModal
+        isOpen={isPocketSheetOpen}
+        onClose={() => setIsPocketSheetOpen(false)}
+        initialSubject={selectedSubject}
       />
     </div>
   );
