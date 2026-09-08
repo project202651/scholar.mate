@@ -36,7 +36,7 @@ export default function EmergencyModeModal({
   onClose,
   onStartEmergencySprint
 }: EmergencyModeModalProps) {
-  const [subject, setSubject] = useState('Operating Systems');
+  const [subject, setSubject] = useState('');
   const [hoursLeft, setHoursLeft] = useState<number>(24);
   const [targetGoal, setTargetGoal] = useState<'Pass (40-50%)' | 'High Yield (70%+)' | 'Maximum Coverage'>('High Yield (70%+)');
   const [loading, setLoading] = useState(false);
@@ -55,6 +55,7 @@ export default function EmergencyModeModal({
   if (!isOpen) return null;
 
   const handleGenerateSurvivalPlan = async () => {
+    if (!subject.trim()) return;
     setLoading(true);
     setPlan(null);
 
@@ -63,10 +64,9 @@ export default function EmergencyModeModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subject,
+          subject: subject.trim(),
           hoursRemaining: hoursLeft,
-          weakTopics: ['Paging Algorithms', 'Deadlocks', 'File Allocation Table'],
-          syllabusOverview: 'Process Management, CPU Scheduling, Synchronization, Memory Management, Storage'
+          targetGoal
         })
       });
       const data = await res.json();
@@ -133,7 +133,7 @@ export default function EmergencyModeModal({
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:ring-2 focus:ring-rose-500 outline-none"
-                  placeholder="e.g. Operating Systems"
+                  placeholder="Type your exam subject (e.g. DBMS, Networks, AI)..."
                 />
               </div>
 

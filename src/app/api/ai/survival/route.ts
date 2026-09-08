@@ -7,7 +7,10 @@ export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
     const body = await req.json();
-    const subject = (body.subject || "Operating Systems & AI").trim();
+    const subject = (body.subject || "").trim();
+    if (!subject) {
+      return NextResponse.json({ error: "Please enter your exam subject to generate a survival sprint." }, { status: 400 });
+    }
     const hoursLeft = Number(body.hoursLeft || body.hoursRemaining || 12);
     const customKey = req.headers.get("x-gemini-key") || body.apiKey || undefined;
 

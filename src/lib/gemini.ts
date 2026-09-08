@@ -288,18 +288,19 @@ export async function askGemini(
 - Never dump an arbitrary rigid 8-part block unless asked. Focus directly on answering their question with maximum clarity, precision, and helpfulness.`;
 
   const systemInstructions = `You are Nexa AI, the intelligent, conversational academic tutor and exam coach inside ScholarMate${subject ? ` for ${subject}` : ''}.
-CORE BEHAVIOR:
-1. DIRECTNESS: Directly answer what the student is asking right from the first sentence. Do not recite vague filler or endless generic concept lists.
-2. ADAPTIVE: ${modeInstruction}
-3. FORMATTING: Use clean Markdown with bold keywords, clean bullet points, code or math blocks ($$...$$) where appropriate.
-4. ENGAGING & INTERACTIVE: At the end of your answer, proactively ask the user how they would like to proceed and offer 3-4 specific, relevant follow-up options:
-   e.g.:
+CRITICAL RULES:
+- NEVER assume or default to "Operating Systems", "Deadlocks", or "Banker's Algorithm" unless the student explicitly asks about them or they appear in the student's study material.
+- Ground your answer strictly in the student's actual question and subject.
+- DIRECTNESS: Directly answer what the student is asking right from the first sentence. Avoid beginner-level generic filler or unwanted padding.
+- ADAPTIVE: ${modeInstruction}
+- HIGH-QUALITY & RESULT-ORIENTED: Structure answers logically with bold keywords, clean bullet points, code blocks, or math notation ($$...$$) where appropriate. Give exam-ready value.
+- PROACTIVE ENGAGEMENT: At the very end of your response, ask the user what format or depth they want next, and provide 3-4 clear options (e.g., deeper explanation, 60s summary, 3M/7M/10M exam questions, step-by-step numerical/proof, examiner traps):
    ---
-   **What do you need next?**
-   - 📖 *Want a deeper explanation or real-world example?*
-   - ⚡ *Want a 60-second summary and formula cheat-sheet?*
+   **What type of answer do you need next?**
+   - 📖 *Want an intuitive explanation with real-world analogies?*
+   - ⚡ *Want a 60-second revision summary & formula sheet?*
    - 📝 *Want 3-mark, 7-mark, or 10-mark exam questions on this?*
-   - ⚠️ *Want to see common examiner traps and mistakes students make?*`;
+   - ⚠️ *Want top examiner traps and common student mistakes?*`;
 
   const fullPrompt = context
     ? `${systemInstructions}\n\nStudy Material Context:\n"""\n${context}\n"""\n\nStudent Request:\n${prompt}`
@@ -1319,62 +1320,64 @@ Format strictly as JSON array of day plans:
 function getHeuristicChatAnswer(prompt: string, mode?: string, subject?: string) {
   const cleanPrompt = prompt.trim();
   const lower = cleanPrompt.toLowerCase();
+  const topicLabel = cleanPrompt.length < 55 ? cleanPrompt : 'your requested topic';
 
   const isSummary = mode === 'summary' || lower.includes('summar') || lower.includes('brief') || lower.includes('short');
   const isQuestion = mode === 'questions' || lower.includes('question') || lower.includes('3-mark') || lower.includes('7-mark') || lower.includes('10-mark');
-  const isSolve = mode === 'solve' || lower.includes('solve') || lower.includes('deriv') || lower.includes('formula');
+  const isSolve = mode === 'solve' || lower.includes('solve') || lower.includes('deriv') || lower.includes('formula') || lower.includes('step');
 
   let body = "";
 
   if (isSummary) {
-    body = "### ⚡ High-Yield Summary: " + cleanPrompt + "\n\n" +
-      "Here is your quick, high-impact breakdown for revision:\n\n" +
-      "* **Core Concept**: Focuses on structured state transformations and resource consistency to satisfy system requirements.\n" +
-      "* **Key Invariance**: All operational state transitions must satisfy conservation and boundary limits without deadlocks or race conditions.\n" +
-      "* **Essential Metric**: Efficiency = (Useful Work Output / Total Energy Input) * 100%.\n" +
-      "* **University Exam Checkpoints**:\n" +
-      "  1. Define the technical law in the first sentence.\n" +
-      "  2. Write the formula before calculating.\n" +
-      "  3. Draw a neat block schematic with directional control arrows.";
+    body = `### ⚡ High-Yield Exam Summary: ${cleanPrompt}\n\n` +
+      `Here is your quick, high-impact revision breakdown${subject ? ` for **${subject}**` : ''}:\n\n` +
+      `* **Core Definition & Principle**: Fundamental principles governing **${topicLabel}**, focusing on systematic structure, efficiency, and consistency.\n` +
+      `* **Key Invariant / Governing Rule**: All operational boundaries, assumptions, and conservation laws must be satisfied sequentially to prevent anomalies or failure states.\n` +
+      `* **Essential Formulas & Relationships**: Always verify dimension, units, and input constraints before applying standard governing formulas.\n` +
+      `* **University Exam Checkpoints**:\n` +
+      `  1. Write the formal textbook definition in the very first sentence.\n` +
+      `  2. Draw a neat, labeled schematic or flow diagram with directional indicators.\n` +
+      `  3. Use enumerated points to highlight properties, advantages, and limitations.`;
   } else if (isQuestion) {
-    body = "### 📝 Exam Questions & Model Solutions: " + cleanPrompt + "\n\n" +
-      "#### 1. [3-Mark Short Question]\n" +
-      "**Q**: State the formal definition and primary governing law for " + cleanPrompt + ".\n" +
-      "* **Ideal Model Answer**: It is the structured protocol ensuring state safety and non-blocking resource allocation. Governing constraint: Sum(Allocated) <= Total Available.\n" +
-      "* **Examiner Tip**: Define key terms clearly; 1.5 marks for definition, 1.5 marks for the formula.\n\n" +
-      "#### 2. [7-Mark Analytical Question]\n" +
-      "**Q**: Explain the operational working architecture with a labeled block diagram.\n" +
-      "* **Ideal Model Answer**:\n" +
-      "  [Input Request] ──► [Ingestion Buffer] ──► [Parity Controller] ──► [Verified Output]\n" +
-      "  Detail the 4 operational phases: Initialization, Signal Transformation, Invariance Verification, and Final Execution.\n" +
-      "* **Examiner Tip**: Examiners allocate 2.5 marks specifically for neat diagrams with labeled signal arrows.\n\n" +
-      "#### 3. [10-Mark Comprehensive Question]\n" +
-      "**Q**: Derive the mathematical governing equations and prove convergence under boundary limits.\n" +
-      "* **Examiner Tip**: State initial conditions at t=0, write all intermediate transformations, and box your final answer.";
+    body = `### 📝 University Exam Questions & Model Solutions: ${cleanPrompt}\n\n` +
+      `#### 1. [3-Mark Short Answer Question]\n` +
+      `**Q**: State the formal definition and two essential characteristics of ${cleanPrompt}.\n` +
+      `* **Model Answer**: State the primary principle clearly in 2–3 precise lines using standard technical terms. Enumerate two major characteristics.\n` +
+      `* **Examiner Marking Scheme**: 1.5 marks for definition + 1.5 marks for accurate characteristics.\n\n` +
+      `#### 2. [7-Mark Analytical Question]\n` +
+      `**Q**: Explain the operational working architecture, mechanism, and stages of ${cleanPrompt} with a labeled diagram.\n` +
+      `* **Model Answer**:\n` +
+      `  [Input & Parameters] ──► [Core Processing / Logic] ──► [Validation & Verified Output]\n` +
+      `  Detail the key stages: Initialization, Analytical Transformation, Invariance Verification, and Final Execution.\n` +
+      `* **Examiner Marking Scheme**: 2.5 marks for neat schematic diagram + 3.5 marks for step-by-step mechanism + 1 mark for real-world application.\n\n` +
+      `#### 3. [10-Mark Comprehensive Question]\n` +
+      `**Q**: Provide a comprehensive analysis, step-by-step mathematical/structural proof, and edge-case evaluation of ${cleanPrompt}.\n` +
+      `* **Model Answer**: Formulate boundary conditions from first principles, write all intermediate transformation steps without skipping steps, and highlight the final conclusion in a box.\n` +
+      `* **Examiner Marking Scheme**: 3 marks for theory/assumptions + 4 marks for mathematical/structural rigor + 3 marks for edge cases and trade-offs.`;
   } else if (isSolve) {
-    body = "### 🔢 Step-by-Step Technical Solution: " + cleanPrompt + "\n\n" +
-      "1. **Initial Boundary State (t = 0)**:\n" +
-      "   Define system vectors: S_0 = [Available, Max, Allocation].\n" +
-      "2. **Governing State Transition**:\n" +
-      "   S_{t+1} = A * S_t + B * U_t\n" +
-      "3. **Algebraic Substitution & Verification**:\n" +
-      "   Ensure state invariant condition: Need[i] <= Available for all active processes.\n" +
-      "4. **Final Boxed Solution**:\n" +
-      "   Safety Condition Satisfied <=> for all i, Finish[i] == True.";
+    body = `### 🔢 Step-by-Step Technical Solution: ${cleanPrompt}\n\n` +
+      `1. **Problem Formulation & Given Parameters**:\n` +
+      `   Identify all known input constraints, boundary variables, and target objectives for **${topicLabel}**.\n` +
+      `2. **Governing Law & Core Formulations**:\n` +
+      `   Apply standard governing relationships and establish state conservation conditions.\n` +
+      `3. **Algebraic Substitution & Step-by-Step Evaluation**:\n` +
+      `   Systematically evaluate intermediate equations, verifying each transition maintains dimensional and logical consistency.\n` +
+      `4. **Final Verification & Boxed Answer**:\n` +
+      `   Confirm all boundary conditions hold true and state the final result clearly for maximum university exam marks.`;
   } else {
-    body = "### 💡 Nexa AI Answer\n\n" +
-      "**Regarding: \"" + cleanPrompt + "\"**\n\n" +
-      (cleanPrompt.length < 50 ? "Here is a clear, intuitive explanation of **" + cleanPrompt + "**:\n\n" : "Here is the direct analysis of your query:\n\n") +
-      "* **What it means intuitively**: Think of it as an intelligent coordinator in complex systems—it allocates resources, enforces rules, and ensures processes flow smoothly without collisions, latency spikes, or deadlocks.\n" +
-      "* **How it works in practice**: When an input request is received, the system verifies available capacity against constraints. If valid, state is allocated deterministically; if invalid, it falls back to a safe checkpoint state.\n" +
-      "* **Real-World Engineering Application**: Modern cloud microservices, operating system kernels, robotics, and distributed payment networks.";
+    body = `### 💡 Nexa AI Answer\n\n` +
+      `**Regarding: "${cleanPrompt}"**\n\n` +
+      (cleanPrompt.length < 60 ? `Here is a clear, intuitive breakdown of **${cleanPrompt}**${subject ? ` for ${subject}` : ''}:\n\n` : `Here is the direct analysis of your query:\n\n`) +
+      `* **What it means intuitively**: At its core, this concept provides a structured, reliable framework to solve complex problems and guarantee predictable outcomes.\n` +
+      `* **How it works in practice**: The system processes input data through standardized logical stages, applying defined constraints at each step to produce a verified result.\n` +
+      `* **Why it matters for your exams**: University examiners frequently test this topic to assess your conceptual clarity, diagrammatic skills, and ability to apply fundamental principles to practical challenges.`;
   }
 
-  return body + "\n\n---\n**What would you like me to do next for you?**\n" +
-    "* 📖 *Need an even deeper or simpler explanation?*\n" +
-    "* ⚡ *Want a 60-second revision summary?*\n" +
+  return body + "\n\n---\n**What type of answer do you need next?**\n" +
+    "* 📖 *Want an intuitive explanation with real-world analogies?*\n" +
+    "* ⚡ *Want a quick 60-second revision summary & formula sheet?*\n" +
     "* 📝 *Want practice 3-mark, 7-mark, or 10-mark exam questions?*\n" +
-    "* ⚠️ *Want to know the top examiner traps and common student mistakes?*";
+    "* ⚠️ *Want top examiner traps and common student mistakes?*";
 }
 
 function getHeuristicExamMap(subject: string) {

@@ -197,7 +197,7 @@ export default function DashboardView({
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (quickPrompt.trim()) {
-      if (onSelectTopic) onSelectTopic(quickPrompt, studentPlan.subject);
+      if (onSelectTopic) onSelectTopic(quickPrompt, '');
       setActiveTab('nexa');
     }
   };
@@ -370,19 +370,19 @@ export default function DashboardView({
             <div>
               <span className="text-[10px] font-bold uppercase text-[#54d6c7] block">Nexa AI Readiness Insight</span>
               <p className="text-xs text-slate-200 font-medium leading-relaxed">
-                You have <strong className="text-white">{studentPlan.daysRemaining} days left</strong>. Complete 2 more <strong className="text-[#54d6c7]">Deadlocks &amp; Memory Management</strong> sessions to move Operating Systems from <strong className="text-amber-400">82%</strong> to approximately <strong className="text-emerald-400">88%</strong>.
+                You have <strong className="text-white">{studentPlan.daysRemaining} days left</strong>. Complete 2 more <strong className="text-[#54d6c7]">{studentPlan.lastStudiedTopic || "priority revision"}</strong> sessions to move {studentPlan.subject || "your syllabus"} to approximately <strong className="text-emerald-400">{studentPlan.targetScore}%</strong>.
               </p>
             </div>
           </div>
 
           <button
             onClick={() => {
-              if (onSelectTopic) onSelectTopic('Banker\'s Algorithm for Deadlock Avoidance', 'Operating Systems');
+              if (onSelectTopic) onSelectTopic(studentPlan.lastStudiedTopic || '', studentPlan.subject || '');
               setActiveTab('nexa');
             }}
             className="flex items-center gap-1 rounded-xl bg-[#54d6c7] hover:bg-[#43c4b5] px-3.5 py-2 text-xs font-black text-slate-950 transition-all cursor-pointer shrink-0 hidden sm:flex"
           >
-            <span>Start Topic</span>
+            <span>Start Revision</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>

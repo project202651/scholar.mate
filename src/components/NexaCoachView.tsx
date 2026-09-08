@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -97,7 +97,15 @@ What topic or question would you like to work on right now?`,
     const textToSend = (customPrompt || topicInput).trim();
     if (!textToSend || isLoading) return;
 
-    const mode = modeOverride || activeMode;
+    let mode = modeOverride || activeMode;
+    if (!modeOverride) {
+      const lower = textToSend.toLowerCase();
+      if (lower.includes('simpler') || lower.includes('explain')) mode = 'explain';
+      else if (lower.includes('summary') || lower.includes('60-second')) mode = 'summary';
+      else if (lower.includes('question') || lower.includes('mark') || lower.includes('3m') || lower.includes('7m') || lower.includes('10m')) mode = 'questions';
+      else if (lower.includes('solve') || lower.includes('proof') || lower.includes('step')) mode = 'solve';
+    }
+
     const userMsg: Message = {
       id: Date.now().toString(),
       sender: 'user',
@@ -121,7 +129,7 @@ What topic or question would you like to work on right now?`,
           message: textToSend,
           question: textToSend,
           mode: mode,
-          subject: subjectInput || 'Engineering',
+          subject: subjectInput.trim() || undefined,
           documentId: initialDocumentId || undefined,
           apiKey: customKey || undefined
         })
@@ -137,10 +145,11 @@ What topic or question would you like to work on right now?`,
           text: answerText,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           suggestedPrompts: [
-            `Explain this in even simpler terms`,
-            `Give me a 60-second summary and formula sheet`,
-            `Show 3-mark, 7-mark, and 10-mark exam questions`,
-            `What are the deadly examiner traps to avoid?`
+            `📖 Explain this in simpler terms with everyday examples`,
+            `⚡ 60-second revision summary & key formulas`,
+            `📝 3-mark, 7-mark & 10-mark exam questions with answers`,
+            `🔢 Step-by-step problem solution and proof`,
+            `⚠️ Common examiner traps & mistakes to avoid`
           ]
         };
         setMessages(prev => [...prev, botMsg]);
@@ -166,7 +175,26 @@ What topic or question would you like to work on right now?`,
   };
 
   const handleQuickChip = (chipType: string) => {
-    const currentTopic = topicInput.trim() || initialTopic || 'Operating Systems: Deadlocks';
+    const currentTopic = topicInput.trim() || initialTopic || '';
+    if (!currentTopic) {
+      const actionVerb = chipType === 'explain' 
+        ? 'explain simply' 
+        : chipType === 'summary' 
+        ? 'summarize' 
+        : chipType === 'questions' 
+        ? 'generate 3M/7M/10M exam questions for' 
+        : chipType === 'traps'
+        ? 'find examiner traps for'
+        : 'solve step-by-step';
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        sender: 'nexa',
+        text: `What topic or concept would you like me to ${actionVerb}? Please type your topic in the input box below!`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+      return;
+    }
+
     if (chipType === 'explain') {
       setActiveMode('explain');
       handleSendMessage(`Explain "${currentTopic}" intuitively with clear real-world examples and core principles.`, 'explain');
@@ -367,7 +395,7 @@ What topic or question would you like to work on right now?`,
               onChange={(e) => setTopicInput(e.target.value)}
               placeholder={
                 activeMode === 'summary' 
-                  ? "What topic do you want summarized? (e.g., Deadlock Avoidance, Fourier Transform)"
+                  ? "What topic do you want summarized? (e.g., Fourier Transform, Normalization, Thermodynamics)"
                   : activeMode === 'questions'
                   ? "What topic do you want 3M, 7M & 10M questions for?"
                   : activeMode === 'explain'

@@ -11,12 +11,12 @@ export async function POST(req: Request) {
 
     const subjectsArray = Array.isArray(subjects)
       ? subjects
-      : (subjects || "Data Structures, Computer Networks, Operating Systems, Software Engineering")
+      : (subjects || "Selected Subjects")
           .split(",")
           .map((s: string) => s.trim())
           .filter(Boolean);
 
-    const examTitle = targetExam || "Polytechnic Board Exams";
+    const examTitle = targetExam || "Semester Final Exams";
     const dateStr = examDate || "Upcoming Semester Exam";
 
     let daysRemaining = 30;

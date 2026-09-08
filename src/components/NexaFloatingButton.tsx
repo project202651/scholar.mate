@@ -19,12 +19,31 @@ export default function NexaFloatingButton({
   activeDocTitle,
   onNavigateToTab
 }: NexaFloatingButtonProps) {
+  const [manualTopic, setManualTopic] = useState(activeTopic || '');
+  const [manualSubject, setManualSubject] = useState(activeSubject || '');
+  const [isEditingContext, setIsEditingContext] = useState(false);
+
+  useEffect(() => {
+    if (activeTopic) setManualTopic(activeTopic);
+  }, [activeTopic]);
+
+  useEffect(() => {
+    if (activeSubject) setManualSubject(activeSubject);
+  }, [activeSubject]);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string; options?: string[] }>>([
     {
       role: 'assistant',
-      text: "👋 Hi! I'm **Nexa AI**, your personal study assistant and exam coach.\n\nTell me what you need help with:\n• 📖 *Need an intuitive explanation of any concept?*\n• ⚡ *Want a quick 60-second revision summary?*\n• 📝 *Need 3-mark, 7-mark, or 10-mark exam questions and answers?*\n• ❓ *Have a specific doubt or problem to solve?*"
+      text: "👋 Hi! I'm **Nexa AI**, your personal study assistant and exam coach.\n\nTell me what you need help with:\n• 📖 *Need an intuitive explanation of any concept?*\n• ⚡ *Want a quick 60-second revision summary?*\n• 📝 *Need 3-mark, 7-mark, or 10-mark exam questions and answers?*\n• ❓ *Have a specific doubt or problem to solve?*",
+      options: [
+        "📖 Explain a concept simply",
+        "⚡ 60-second revision summary",
+        "📝 3M, 7M & 10M exam questions",
+        "🔢 Step-by-step problem solution",
+        "⚠️ Common examiner traps"
+      ]
     }
   ]);
   const [input, setInput] = useState('');
@@ -51,6 +70,15 @@ export default function NexaFloatingButton({
     const textToSend = queryText.trim();
     if (!textToSend || loading) return;
 
+    let detectedMode = mode || 'general';
+    if (!mode) {
+      const lower = textToSend.toLowerCase();
+      if (lower.includes('simpler') || lower.includes('explain')) detectedMode = 'explain';
+      else if (lower.includes('summary') || lower.includes('60-second')) detectedMode = 'summary';
+      else if (lower.includes('question') || lower.includes('3m') || lower.includes('7m') || lower.includes('10m')) detectedMode = 'questions';
+      else if (lower.includes('solve') || lower.includes('proof') || lower.includes('step')) detectedMode = 'solve';
+    }
+
     setInput('');
     setMessages(prev => [...prev, { role: 'user', text: textToSend }]);
     setLoading(true);
@@ -66,17 +94,27 @@ export default function NexaFloatingButton({
         body: JSON.stringify({
           message: textToSend,
           question: textToSend,
-          mode: mode || undefined,
+          mode: detectedMode,
           documentId: activeDocId || undefined,
-          subject: activeSubject || 'General',
-          topic: activeTopic || undefined
+          subject: manualSubject.trim() || activeSubject || undefined,
+          topic: manualTopic.trim() || activeTopic || undefined
         })
       });
 
       if (res.ok) {
         const data = await res.json();
         const finalAnswer = data.answer || data.reply || data.response || data.text || "Here is the explanation for your query.";
-        setMessages(prev => [...prev, { role: 'assistant', text: finalAnswer }]);
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          text: finalAnswer,
+          options: [
+            "📖 Explain this in simpler terms",
+            "⚡ Give a 60-second summary & formulas",
+            "📝 Show 3M, 7M & 10M exam questions",
+            "🔢 Step-by-step problem solution",
+            "⚠️ Top examiner traps to avoid"
+          ]
+        }]);
       } else {
         const errData = await res.json().catch(() => ({}));
         setMessages(prev => [
@@ -92,6 +130,31 @@ export default function NexaFloatingButton({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOptionClick = (opt: string) => {
+    let mode = 'general';
+    let query = opt;
+    const lower = opt.toLowerCase();
+
+    if (lower.includes('simpler') || lower.includes('explain')) {
+      mode = 'explain';
+      query = 'Please explain this concept in simpler terms with clear, intuitive real-world analogies.';
+    } else if (lower.includes('summary') || lower.includes('60-second')) {
+      mode = 'summary';
+      query = 'Give me a high-yield 60-second revision summary and formula cheat-sheet for this.';
+    } else if (lower.includes('question') || lower.includes('3m') || lower.includes('7m') || lower.includes('10m')) {
+      mode = 'questions';
+      query = 'Show the top 3-mark, 7-mark, and 10-mark university exam questions with answers for this.';
+    } else if (lower.includes('trap') || lower.includes('mistake')) {
+      mode = 'general';
+      query = 'What are the top examiner traps and common student mistakes for this topic?';
+    } else if (lower.includes('step') || lower.includes('solve') || lower.includes('problem')) {
+      mode = 'solve';
+      query = 'Walk me step-by-step through the mathematical derivation or solved problem for this.';
+    }
+
+    handleSendQuery(query, mode);
   };
 
   const handleSend = (e?: React.FormEvent) => {
@@ -195,6 +258,58 @@ export default function NexaFloatingButton({
               </div>
             )}
 
+            {/* User-Controlled Topic Context Bar */}
+            <div className="flex items-center justify-between px-4 py-1.5 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/90 dark:bg-slate-800/60 text-[11px]">
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="text-[10px] font-bold text-slate-400">Target:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[210px]">
+                  {manualTopic || manualSubject || "Any Subject / Topic (Manual)"}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditingContext(!isEditingContext)}
+                className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shrink-0"
+              >
+                {isEditingContext ? "Done" : "Set Subject/Topic"}
+              </button>
+            </div>
+
+            {/* Context Manual Input Panel */}
+            {isEditingContext && (
+              <div className="p-2.5 bg-slate-100/90 dark:bg-slate-800/90 border-b border-slate-200 dark:border-white/10 space-y-2 animate-fadeIn">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={manualSubject}
+                    onChange={(e) => setManualSubject(e.target.value)}
+                    placeholder="Subject (e.g., Mathematics, AI)"
+                    className="flex-1 px-2.5 py-1 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <input
+                    type="text"
+                    value={manualTopic}
+                    onChange={(e) => setManualTopic(e.target.value)}
+                    placeholder="Topic (e.g., Normalization, Calculus)"
+                    className="flex-1 px-2.5 py-1 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-emerald-500"
+                  />
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400">
+                  <span>Custom context gives you laser-focused exam answers.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualSubject('');
+                      setManualTopic('');
+                    }}
+                    className="text-rose-500 hover:underline cursor-pointer font-medium"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Messages Container */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {messages.map((m, idx) => (
@@ -209,7 +324,28 @@ export default function NexaFloatingButton({
                         : 'bg-slate-100 dark:bg-slate-800/80 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-white/5 rounded-bl-xs'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap">{m.text}</div>
+                    <div className="whitespace-pre-wrap font-sans leading-relaxed">{m.text}</div>
+                    
+                    {/* Interactive follow-up options directly inside the message bubble */}
+                    {m.options && m.options.length > 0 && (
+                      <div className="mt-3 pt-2 border-t border-slate-200/60 dark:border-white/10 space-y-1.5">
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block">
+                          What type of answer do you need next?
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {m.options.map((opt, oIdx) => (
+                            <button
+                              key={oIdx}
+                              type="button"
+                              onClick={() => handleOptionClick(opt)}
+                              className="text-[10px] bg-white dark:bg-slate-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-md transition-all cursor-pointer font-medium"
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -229,28 +365,56 @@ export default function NexaFloatingButton({
               <span className="text-slate-400 dark:text-slate-500 shrink-0 font-medium">Quick:</span>
               <button
                 type="button"
-                onClick={() => handleSendQuery(activeTopic ? `Explain ${activeTopic} in simple terms with an everyday analogy` : "Explain this in simple terms with an analogy", 'explain')}
+                onClick={() => {
+                  const target = manualTopic || activeTopic;
+                  if (target) {
+                    handleSendQuery(`Explain ${target} in simple terms with an everyday analogy`, 'explain');
+                  } else {
+                    handleSendQuery('Explain this concept in simple terms with an everyday analogy', 'explain');
+                  }
+                }}
                 className="shrink-0 px-2.5 py-0.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 transition-all cursor-pointer font-medium"
               >
                 📖 Explain simply
               </button>
               <button
                 type="button"
-                onClick={() => handleSendQuery(activeTopic ? `Give me a 60-second summary and formula cheat-sheet for ${activeTopic}` : "Give me a 60-second summary and formula cheat-sheet", 'summary')}
+                onClick={() => {
+                  const target = manualTopic || activeTopic;
+                  if (target) {
+                    handleSendQuery(`Give me a 60-second summary and formula cheat-sheet for ${target}`, 'summary');
+                  } else {
+                    handleSendQuery('Give me a 60-second summary and formula cheat-sheet for this', 'summary');
+                  }
+                }}
                 className="shrink-0 px-2.5 py-0.5 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 transition-all cursor-pointer font-medium"
               >
                 ⚡ 60s Summary
               </button>
               <button
                 type="button"
-                onClick={() => handleSendQuery(activeTopic ? `What are the top 3-mark and 7-mark university exam questions for ${activeTopic}?` : "Give me top 3-mark and 7-mark exam questions with model answers", 'questions')}
+                onClick={() => {
+                  const target = manualTopic || activeTopic;
+                  if (target) {
+                    handleSendQuery(`What are the top 3-mark, 7-mark, and 10-mark university exam questions for ${target}?`, 'questions');
+                  } else {
+                    handleSendQuery('What are the top 3-mark, 7-mark, and 10-mark university exam questions for this topic?', 'questions');
+                  }
+                }}
                 className="shrink-0 px-2.5 py-0.5 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 transition-all cursor-pointer font-medium"
               >
                 📝 Exam Questions
               </button>
               <button
                 type="button"
-                onClick={() => handleSendQuery(activeTopic ? `What are the top examiner traps and common student mistakes in ${activeTopic}?` : "What are the common examiner traps and mistakes to avoid?", 'general')}
+                onClick={() => {
+                  const target = manualTopic || activeTopic;
+                  if (target) {
+                    handleSendQuery(`What are the top examiner traps and common student mistakes in ${target}?`, 'general');
+                  } else {
+                    handleSendQuery('What are the top examiner traps and common student mistakes for this topic?', 'general');
+                  }
+                }}
                 className="shrink-0 px-2.5 py-0.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/20 transition-all cursor-pointer font-medium"
               >
                 ⚠️ Examiner Traps

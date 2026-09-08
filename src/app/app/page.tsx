@@ -40,9 +40,9 @@ function StudentWorkspaceContent() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [is3DDisabled, setIs3DDisabled] = useState(false);
 
-  // Shared active focus context for inter-view transitions
-  const [selectedTopic, setSelectedTopic] = useState<string>('Banker\'s Algorithm for Deadlock Avoidance');
-  const [selectedSubject, setSelectedSubject] = useState<string>('Operating Systems');
+  // Shared active focus context for inter-view transitions (user-driven, no forced defaults)
+  const [selectedTopic, setSelectedTopic] = useState<string>('');
+  const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedDocId, setSelectedDocId] = useState<string>('');
   const [selectedDocTitle, setSelectedDocTitle] = useState<string>('');
 
