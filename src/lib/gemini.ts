@@ -134,6 +134,43 @@ async function callHuggingFace(prompt: string): Promise<string | null> {
   }
 }
 
+async function callOpenAI(prompt: string, isJson: boolean = false, customKey?: string): Promise<string | null> {
+  const key = (customKey || process.env.OPENAI_API_KEY || "").trim();
+  if (!key || (!key.startsWith("sk-") && key.length < 15)) return null;
+
+  const models = ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"];
+  for (const model of models) {
+    try {
+      const res = await withTimeout(
+        fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: isJson ? 0.2 : 0.4,
+            ...(isJson ? { response_format: { type: "json_object" } } : {})
+          }),
+        }),
+        15000
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content && content.trim().length > 0) {
+          return content.trim();
+        }
+      }
+    } catch {
+      // Continue to next model or fallback provider
+    }
+  }
+  return null;
+}
+
 export async function executeMultiProviderPrompt(prompt: string, isJson: boolean = false, customKey?: string): Promise<string | null> {
   const cacheKey = `${isJson ? "json" : "text"}:${prompt.slice(0, 400)}`;
   if (!customKey) {
@@ -141,21 +178,28 @@ export async function executeMultiProviderPrompt(prompt: string, isJson: boolean
     if (cached) return cached;
   }
 
-  // 1. Primary High-Speed Engine: Google Gemini 3.6 Flash / 3.5 Flash-Lite (Direct REST, 1M context)
+  // 1. Primary Engine: OpenAI (GPT-4o Mini / GPT-4o) if key provided
+  const openaiResult = await callOpenAI(prompt, isJson, customKey);
+  if (openaiResult) {
+    setCached(cacheKey, openaiResult);
+    return openaiResult;
+  }
+
+  // 2. High-Speed Direct Engine: Google Gemini 3.6 Flash / 3.5 Flash-Lite (Direct REST, 1M context)
   const geminiResult = await callGeminiREST(prompt, isJson, customKey);
   if (geminiResult) {
     setCached(cacheKey, geminiResult);
     return geminiResult;
   }
 
-  // 2. Secondary Reasoning Engine: OpenRouter DeepSeek V3
+  // 3. Secondary Reasoning Engine: OpenRouter DeepSeek V3
   const openRouterResult = await callOpenRouter(prompt, isJson);
   if (openRouterResult) {
     setCached(cacheKey, openRouterResult);
     return openRouterResult;
   }
 
-  // 3. Fallback GoogleGenAI SDK
+  // 4. Fallback GoogleGenAI SDK
   const serverInstance = getGenAIClient(customKey);
   if (serverInstance) {
     for (const model of CANDIDATE_MODELS) {
@@ -176,7 +220,7 @@ export async function executeMultiProviderPrompt(prompt: string, isJson: boolean
     }
   }
 
-  // 4. Tertiary Engine: HuggingFace
+  // 5. Tertiary Engine: HuggingFace
   const hfResult = await callHuggingFace(prompt);
   if (hfResult) {
     setCached(cacheKey, hfResult);
@@ -298,11 +342,11 @@ Format strictly as JSON:
   "examinerTraps": ["Examiner Trap 1", "Common Student Pitfall 2"],
   "sixtySecondSummary": "High-yield 60-second summary",
   "practiceQuestions": [
-    { "marks": 2, "question": "Short definition question", "answerHint": "Key term hint" },
-    { "marks": 5, "question": "Analytical question", "answerHint": "Steps hint" },
-    { "marks": 10, "question": "Comprehensive essay question", "answerHint": "Diagram & derivation hint" }
+    { "marks": 3, "question": "Short definition and core formula question", "answerHint": "Key term & SI unit hint" },
+    { "marks": 7, "question": "Analytical and architecture schematic question", "answerHint": "Labeled diagram & working steps hint" },
+    { "marks": 10, "question": "Comprehensive derivation / masterclass essay question", "answerHint": "Step-by-step mathematical derivation & application hint" }
   ]
-}`;
+} `;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
@@ -316,7 +360,7 @@ Format strictly as JSON:
 
 export async function generateExamMarkAnswer(
   topic: string,
-  marks: 1 | 2 | 5 | 10,
+  marks: 1 | 2 | 3 | 5 | 7 | 10,
   subject: string,
   customKey?: string,
   textbookContext?: string
@@ -325,32 +369,42 @@ export async function generateExamMarkAnswer(
     ? `\nReference Material / Textbook Excerpt:\n"""\n${textbookContext.slice(0, 12000)}\n"""\nBase the explanation, definitions, formulas, and diagrams strictly on the concepts and terminology in this reference material.\n`
     : "";
 
+  const is3M = marks === 3 || marks <= 3;
+  const is7M = marks === 7 || marks === 5;
+  const targetMarks = is3M ? 3 : is7M ? 7 : 10;
+
   const prompt = `You are a Senior University Examiner for "${subject}".
-Write an ideal model answer for a ${marks}-Mark question on "${topic}" with the Examiner Marking Scheme.${contextBlock}
+Write an ideal model answer for a ${targetMarks}-Mark question on "${topic}" with the Official Examiner Marking Scheme.${contextBlock}
+${is3M ? 'For 3-Mark: Focus on formal definition, key formula/notation, and fundamental principle (concise, high precision).' : ''}
+${is7M ? 'For 7-Mark: Include technical principle, clear ASCII labeled block diagram or comparative matrix, step-by-step working logic, and practical engineering application.' : ''}
+${!is3M && !is7M ? 'For 10-Mark: Comprehensive master answer including introduction, architectural schematic, full mathematical derivation/algorithm steps with boundary conditions, error/failover handling, and real-world industrial deployments.' : ''}
+
 Format strictly as JSON:
 {
   "topic": "${topic}",
-  "marks": ${marks},
+  "marks": ${targetMarks},
   "subject": "${subject}",
-  "question": "${marks}-Mark Exam Question on ${topic}",
-  "idealAnswer": "Complete comprehensive markdown answer with introduction, technical principles, clear ASCII/text schematic diagram, step-by-step mathematical working or algorithm, and real-world engineering applications...",
+  "question": "${targetMarks}-Mark Exam Question on ${topic}",
+  "idealAnswer": "Complete comprehensive markdown answer formatted with headings, technical principles, ASCII schematic block, and step-by-step working...",
   "examinerChecklist": [
-    { "criterion": "Definition & Principle", "marksAllocated": ${marks === 10 ? 2 : marks === 5 ? 1 : 1}, "description": "Accurately state the formal definition" },
-    { "criterion": "Labeled Schematic Block", "marksAllocated": ${marks === 10 ? 3 : marks === 5 ? 2 : 0.5}, "description": "Draw labeled diagram" },
-    { "criterion": "Step-by-step working / derivation", "marksAllocated": ${marks === 10 ? 3 : marks === 5 ? 1.5 : 0.5}, "description": "Show intermediate logic" },
-    { "criterion": "Industrial applications & summary", "marksAllocated": ${marks === 10 ? 2 : marks === 5 ? 0.5 : 0}, "description": "Give 2 industrial use cases" }
+    { "criterion": "Formal Definition & Principle", "marksAllocated": ${is3M ? 1.5 : is7M ? 2 : 2}, "description": "Accurately state the formal textbook definition and invariance criteria" },
+    { "criterion": "Governing Formula / Labeled Diagram", "marksAllocated": ${is3M ? 1.5 : is7M ? 2.5 : 3}, "description": "${is3M ? 'State correct formula, variables, and dimensions' : 'Draw labeled ASCII schematic diagram with directional control arrows'}" },
+    ${!is3M ? `{ "criterion": "Step-by-step Derivation / Working Logic", "marksAllocated": ${is7M ? 1.5 : 3}, "description": "Show complete intermediate logic and boundary calculations" },` : ''}
+    ${!is3M ? `{ "criterion": "Industrial Applications & Boxed Result", "marksAllocated": ${is7M ? 1 : 2}, "description": "Give 2 concrete real-world engineering use cases and boxed summary" }` : ''}
   ],
-  "keyPoints": ["Core Invariance", "Deterministic State", "Throughput", "Fault Tolerance"],
-  "commonMistakes": ["Omitting schematic diagram", "Skipping mathematical derivation"]
+  "keyPoints": ["Core Invariance", "Deterministic State Progression", "Throughput Optimization", "Boundary Constraint"],
+  "commonMistakes": ["Omitting schematic diagram", "Skipping initial boundary condition setup", "Confusing synchronous vs asynchronous state"]
 }`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
     try {
-      return safeJsonParse(aiRes);
+      const parsed = safeJsonParse(aiRes);
+      if (parsed && parsed.idealAnswer) return parsed;
     } catch {}
   }
 
+  return getHeuristicMarkAnswer(topic, targetMarks, subject);
 }
 
 export async function generatePracticeQuestionBank(
@@ -364,53 +418,84 @@ export async function generatePracticeQuestionBank(
     : "";
 
   const prompt = `You are a Senior University Examiner for "${subject}".
-Generate a comprehensive Question Bank of 15 high-yield exam questions on "${topic}".
-Include:
-- 5 Short Definition & Core Principle Questions (2-Mark each)
-- 5 Analytical & Working Principle Questions (5-Mark each)
-- 5 Comprehensive Essay / Mathematical Derivation / Architecture Problems (10-Mark each)${contextBlock}
+Generate an exhaustive, high-yield Question Bank of AT LEAST 15 to 20 distinct university exam questions on "${topic}".
+
+STRUCTURE THE QUESTIONS STRICTLY AS:
+1. 5 to 7 x 3-Mark Short Definition, Law & Core Formula Questions
+2. 5 to 7 x 7-Mark Analytical, Comparative & Architectural Schematic Questions
+3. 5 to 6 x 10-Mark Comprehensive Derivation, Essay & Solved Numerical Master Problems
+TOTAL QUESTIONS: 15 to 20 questions.${contextBlock}
 
 Format strictly as JSON:
 {
   "topic": "${topic}",
   "subject": "${subject}",
-  "totalQuestions": 15,
+  "totalQuestions": 18,
   "questions": [
     {
       "id": "q1",
-      "marks": 2,
-      "category": "2-Mark Short Question",
-      "question": "Clear 2-mark question statement on ${topic}",
-      "idealAnswer": "Concise definition, mathematical notation, and key technical criteria...",
-      "keyPoints": ["Formal Definition", "Unit / Metric"],
-      "examinerTip": "Must state standard terminology to secure 2/2 marks."
+      "marks": 3,
+      "category": "3-Mark Short Question",
+      "question": "Define ${topic} and state its primary governing law or formula.",
+      "simpleExplanation": "Simple plain-English explanation for rapid intuitive understanding.",
+      "idealAnswer": "### Definition\nFormal textbook definition...\n\n### Governing Formula\nFormula with units and variable definitions...",
+      "keyPoints": ["Formal Definition", "Governing Equation", "SI Unit / Metric", "Boundary Condition"],
+      "diagramText": "[Input Signal] ──► [Filter & Normalize] ──► [Valid Output]",
+      "commonMistakes": ["Vague definition without exact technical terms", "Forgetting SI units"],
+      "markingScheme": [
+        { "criterion": "Formal Definition", "marksAllocated": 1.5, "description": "State standard technical definition" },
+        { "criterion": "Formula & Variable Mapping", "marksAllocated": 1.5, "description": "Accurate equation and units" }
+      ],
+      "quickRevision": "1-line rapid memory anchor summarizing the core concept.",
+      "examinerTip": "Always state standard textbook terminology to secure 3/3 full marks."
     },
     {
-      "id": "q6",
-      "marks": 5,
-      "category": "5-Mark Analytical Question",
-      "question": "Analytical question with working principle or diagram on ${topic}",
-      "idealAnswer": "Structured answer with working principle, schematic diagram, and comparison...",
-      "keyPoints": ["Operational Principle", "Labeled Diagram", "Step-by-step Working"],
-      "examinerTip": "Always draw a labeled block schematic."
+      "id": "q7",
+      "marks": 7,
+      "category": "7-Mark Analytical Question",
+      "question": "Explain the operational architecture and working mechanism of ${topic} with a labeled block diagram.",
+      "simpleExplanation": "Step-by-step intuitive walkthrough of how signals and data flow.",
+      "idealAnswer": "### 1. Working Principle\nOperational principle...\n\n### 2. Labeled Block Architecture\n\`\`\`\n[Stage 1: Input] ──► [Stage 2: Controller] ──► [Stage 3: Output]\n\`\`\`\n\n### 3. Step-by-Step Mechanism\n1. Ingestion\n2. Transformation\n3. Verification\n\n### 4. Real-World Applications\n1. Industrial deployment\n2. Embedded systems",
+      "keyPoints": ["Working Principle", "Labeled Block Schematic", "Stage Execution", "Industrial Application"],
+      "diagramText": "[Input Request] ──► [Processing Unit] ──► [Parity Check] ──► [Output Response]",
+      "commonMistakes": ["Omitting signal directional arrows in block diagram", "Writing dense paragraph blocks without numbered steps"],
+      "markingScheme": [
+        { "criterion": "Working Principle & Scope", "marksAllocated": 2, "description": "Clear conceptual foundation" },
+        { "criterion": "Labeled Block Schematic", "marksAllocated": 2.5, "description": "Diagram with control arrows and subsystem blocks" },
+        { "criterion": "Step-by-Step Logic", "marksAllocated": 1.5, "description": "Clear operational stages" },
+        { "criterion": "Applications", "marksAllocated": 1, "description": "2 industrial use cases" }
+      ],
+      "quickRevision": "Remember: 4 functional stages, directional arrows, and parity verification.",
+      "examinerTip": "Examiners award 2.5 marks specifically for neat labeled diagrams."
     },
     {
-      "id": "q11",
+      "id": "q13",
       "marks": 10,
       "category": "10-Mark Comprehensive Problem",
-      "question": "In-depth comprehensive derivation / algorithm / problem on ${topic}",
-      "idealAnswer": "Complete masterclass response with mathematical proof, case analysis, circuit/system diagram, and real-world industrial application...",
-      "keyPoints": ["Mathematical Foundation", "Algorithm Execution", "Fault Tolerance", "Real-world Application"],
+      "question": "Derive the mathematical state formulation, governing equations, and step-by-step algorithmic proof for ${topic}.",
+      "simpleExplanation": "Comprehensive masterclass connecting foundational theory to solved mathematical derivations.",
+      "idealAnswer": "### 1. Theoretical Scope & Assumptions\nInitial assumptions at t=0...\n\n### 2. State Equation Derivation\nStep 1: Governing differential equations...\nStep 2: Laplace / matrix transformation...\nStep 3: State variable integration...\n\n### 3. Architectural Schematic\nComplete system schematic layout...\n\n### 4. Solved Numerical Example & Case Study\nConcrete numerical example with step calculations and boxed answer.\n\n### 5. Industrial Deployment & Fault Containment\nRedundancy protocols and recovery latency.",
+      "keyPoints": ["Mathematical Foundation", "Matrix Formulation", "Asymptotic Convergence", "Solved Numerical Example", "Boxed Final Result"],
+      "diagramText": "[State S(t)] ──► [Transformation Matrix T] ──► [State S(t+1)]\n     ▲                                               │\n     └──────────── [Error Feedback Loop] ────────────┘",
+      "commonMistakes": ["Skipping initial boundary conditions (t=0)", "Failing to box the final numerical solution", "Confusing static and dynamic state models"],
+      "markingScheme": [
+        { "criterion": "Formal Formulation & Assumptions", "marksAllocated": 2, "description": "Assumptions at t=0 and invariance law" },
+        { "criterion": "Detailed Schematic Block Diagram", "marksAllocated": 3, "description": "Subsystem blocks and feedback loops" },
+        { "criterion": "Step-by-step Mathematical Derivation", "marksAllocated": 3, "description": "All intermediate algebraic transformations" },
+        { "criterion": "Solved Example & Boxed Answer", "marksAllocated": 2, "description": "Numerical calculations and boxed conclusion" }
+      ],
+      "quickRevision": "10M Master Strategy: State assumptions at t=0 -> apply transformation matrix -> compute error convergence -> box final result.",
       "examinerTip": "Show step-by-step intermediate calculations and highlight the final boxed answer."
     }
   ]
-}`;
+}
+Generate all 15 to 20 questions in the 'questions' array!`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
     try {
       const parsed = safeJsonParse(aiRes);
-      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length >= 6) {
         return parsed;
       }
     } catch {}
@@ -420,23 +505,27 @@ Format strictly as JSON:
 }
 
 export async function evaluateStudentAnswer(question: string, studentAnswer: string, marks: number, customKey?: string) {
-  const prompt = `You are a University Examiner evaluating a student answer for a ${marks}-mark question.
+  const is3M = marks === 3 || marks <= 3;
+  const is7M = marks === 7 || marks === 5;
+  const targetMarks = is3M ? 3 : is7M ? 7 : 10;
+
+  const prompt = `You are a University Examiner evaluating a student answer for a ${targetMarks}-mark question.
 Question: "${question}"
 Student's Answer:
 """\n${studentAnswer}\n"""
 
 Format strictly as JSON:
 {
-  "scoreObtained": ${Math.round(marks * 0.8)},
-  "maxMarks": ${marks},
+  "scoreObtained": ${Math.round(targetMarks * 0.8)},
+  "maxMarks": ${targetMarks},
   "percentage": 80,
   "feedback": "Constructive feedback on student answer",
   "missingKeywords": ["Governing Law", "Boundary Conditions"],
   "checklistMatches": [
-    { "criterion": "Formal Technical Definition", "awarded": true, "marksAwarded": ${marks === 10 ? 2 : 1}, "comment": "Accurate definition provided" },
-    { "criterion": "Architectural Schematic Diagram", "awarded": false, "marksAwarded": 0, "comment": "Diagram was missing or incomplete" }
+    { "criterion": "Formal Technical Definition", "awarded": true, "marksAwarded": ${is3M ? 1.5 : 2}, "comment": "Accurate definition provided" },
+    { "criterion": "${is3M ? 'Formula / Notation' : 'Architectural Schematic Diagram'}", "awarded": false, "marksAwarded": 0, "comment": "Diagram or formula was missing or incomplete" }
   ],
-  "improvementTip": "Draw the input/output block diagram to secure full marks."
+  "improvementTip": "Include the standard technical keywords and schematic diagram to secure full marks."
 }`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
@@ -446,17 +535,17 @@ Format strictly as JSON:
     } catch {}
   }
 
-  const score = Math.max(1, Math.round(marks * 0.75));
+  const score = Math.max(1, Math.round(targetMarks * 0.75));
   return {
     scoreObtained: score,
-    maxMarks: marks,
-    percentage: Math.round((score / marks) * 100),
-    feedback: "Good conceptual foundation. Answer demonstrates core understanding but requires more precise technical terms and labeled schematic diagrams to secure full marks.",
+    maxMarks: targetMarks,
+    percentage: Math.round((score / targetMarks) * 100),
+    feedback: "Good conceptual foundation. Answer demonstrates core understanding but requires more precise technical terms, governing formulas, and labeled schematic diagrams to secure full marks.",
     missingKeywords: ["Governing Law", "Boundary Conditions", "Time Complexity"],
     checklistMatches: [
-      { criterion: "Formal Definition", awarded: true, marksAwarded: Math.round(marks * 0.3), comment: "Accurate core definition" },
-      { criterion: "Schematic Diagram", awarded: false, marksAwarded: 0, comment: "Add labeled block diagram" },
-      { criterion: "Step-by-step Logic", awarded: true, marksAwarded: Math.round(marks * 0.45), comment: "Logic correctly outlined" }
+      { criterion: "Formal Definition", awarded: true, marksAwarded: Math.round(targetMarks * 0.35), comment: "Accurate core definition" },
+      { criterion: is3M ? "Formula / Syntax" : "Schematic Diagram", awarded: false, marksAwarded: 0, comment: "Add labeled block diagram or governing formula" },
+      { criterion: "Step-by-step Logic", awarded: true, marksAwarded: Math.round(targetMarks * 0.45), comment: "Logic correctly outlined" }
     ],
     improvementTip: "Include the standard block schematic and list at least 2 real-world applications to get full marks."
   };
@@ -473,42 +562,52 @@ export async function generateMockExam(
     : "";
 
   const prompt = `You are the Chief Exam Controller for "${subject}".
-Generate an authentic timed university examination with Section A (Short & MCQs - 2M), Section B (Analytical & Architectural - 5M), and Section C (Comprehensive Essay & Derivation - 10M).${contextBlock}
+Generate an authentic timed university examination with Section A (Short Questions - 3M), Section B (Analytical & Schematic - 7M), and Section C (Comprehensive Essay & Derivations - 10M).${contextBlock}
 Units to focus on: ${units && units.length ? JSON.stringify(units) : "Comprehensive syllabus modules"}.
 
 Format strictly as JSON:
 {
   "examTitle": "${subject} University Examination",
   "subject": "${subject}",
-  "totalMarks": 30,
-  "timeLimitMinutes": 30,
+  "totalMarks": 40,
+  "timeLimitMinutes": 45,
   "instructions": [
-    "Section A: Answer all compulsory short questions and MCQs (2 Marks each)",
-    "Section B: Answer analytical schematic questions with diagrams (5 Marks each)",
+    "Section A: Answer all compulsory short questions and MCQs (3 Marks each)",
+    "Section B: Answer analytical schematic questions with diagrams (7 Marks each)",
     "Section C: Answer comprehensive derivation and essay questions (10 Marks each)"
   ],
   "sections": [
     {
-      "name": "Section A (Short & MCQs - 2M)",
+      "name": "Section A (Short Questions - 3M Each)",
       "description": "Fundamental definitions and core concept checks",
-      "totalMarks": 6,
+      "totalMarks": 9,
       "questions": [
         {
           "id": "q1",
           "section": "Section A",
-          "marks": 2,
+          "marks": 3,
           "questionText": "What is the primary governing principle in ${subject}?",
-          "options": ["Fundamental Axiom", "Secondary Effect", "Boundary Limit", "Static Formulation"],
+          "options": ["Conservation of State", "Secondary Effect", "Boundary Limit", "Static Formulation"],
           "correctOptionIndex": 0,
-          "explanation": "Fundamental axiom defines the base mathematical property for this topic.",
+          "explanation": "Conservation of state defines the foundational consistency property for this topic.",
           "topicTag": "Fundamentals"
         },
         {
           "id": "q2",
           "section": "Section A",
-          "marks": 2,
-          "questionText": "Which optimal method is standard in ${subject}?",
-          "options": ["Dynamic Evaluation", "Exhaustive Linear Search", "Arbitrary Allocation", "Recursive Randomization"],
+          "marks": 3,
+          "questionText": "State the standard governing formula and SI units in ${subject}.",
+          "options": ["S_{t+1} = Trans(S_t, I_t)", "Random Walk Delta", "Arbitrary Ratio", "Static Matrix Null"],
+          "correctOptionIndex": 0,
+          "explanation": "The state transformation equation maps input vectors to deterministic outputs.",
+          "topicTag": "Formulas"
+        },
+        {
+          "id": "q3",
+          "section": "Section A",
+          "marks": 3,
+          "questionText": "Which optimal method is standard for algorithmic efficiency in ${subject}?",
+          "options": ["Dynamic Evaluation & Pipelining", "Exhaustive Linear Search", "Arbitrary Allocation", "Recursive Randomization"],
           "correctOptionIndex": 0,
           "explanation": "Dynamic evaluation optimizes transitions across states.",
           "topicTag": "Optimization"
@@ -516,43 +615,52 @@ Format strictly as JSON:
       ]
     },
     {
-      "name": "Section B (Analytical & Architectural - 5M)",
-      "description": "Working mechanism and schematic questions",
-      "totalMarks": 10,
+      "name": "Section B (Analytical & Architectural - 7M Each)",
+      "description": "Working mechanism, schematic diagrams, and comparative analysis",
+      "totalMarks": 14,
       "questions": [
         {
-          "id": "q3",
+          "id": "q4",
           "section": "Section B",
-          "marks": 5,
-          "questionText": "Explain the working architecture and state transitions in ${subject} with a neat schematic diagram.",
-          "modelAnswer": "1. Input preprocessing\\n2. Transformation engine\\n3. Error correction\\n4. Output formatting",
+          "marks": 7,
+          "questionText": "Explain the working architecture and state transitions in ${subject} with a neat labeled schematic diagram.",
+          "modelAnswer": "1. Input preprocessing\\n2. Transformation engine\\n3. Parity validation\\n4. Output driver",
           "explanation": "Ensure all 4 blocks and control arrows are labeled.",
           "topicTag": "Architectures"
         },
         {
-          "id": "q4",
+          "id": "q5",
           "section": "Section B",
-          "marks": 5,
-          "questionText": "Differentiate between standard and optimized configurations in ${subject}.",
-          "modelAnswer": "Comparison table covering latency, throughput, implementation cost, and reliability.",
+          "marks": 7,
+          "questionText": "Differentiate between standard and optimized configurations in ${subject} using a comparative table.",
+          "modelAnswer": "Comparison table covering latency, throughput, implementation cost, and fault tolerance.",
           "explanation": "State at least 4 contrast points.",
           "topicTag": "Paradigms"
         }
       ]
     },
     {
-      "name": "Section C (Comprehensive Essay & Derivation - 10M)",
-      "description": "In-depth derivation and problem solving",
-      "totalMarks": 14,
+      "name": "Section C (Comprehensive Essay & Derivations - 10M Each)",
+      "description": "In-depth mathematical derivation, algorithm proof, and industrial case studies",
+      "totalMarks": 20,
       "questions": [
         {
-          "id": "q5",
+          "id": "q6",
           "section": "Section C",
           "marks": 10,
-          "questionText": "Derive the mathematical formulation, governing equations, and step-by-step algorithm for ${subject}.",
-          "modelAnswer": "Step 1: System modeling & assumptions\\nStep 2: State variable definition\\nStep 3: Derivation of governing equations\\nStep 4: Real-world industrial deployment",
+          "questionText": "Derive the mathematical formulation, governing state equations, and step-by-step algorithm for ${subject}.",
+          "modelAnswer": "Step 1: System modeling & assumptions at t=0\\nStep 2: State variable definition\\nStep 3: Derivation of governing equations\\nStep 4: Real-world industrial deployment and boxed solution",
           "explanation": "Show all intermediate derivation steps, diagrams, and boundary conditions.",
           "topicTag": "Mathematical Foundations"
+        },
+        {
+          "id": "q7",
+          "section": "Section C",
+          "marks": 10,
+          "questionText": "Discuss the end-to-end industrial deployment, failure modes, and fault tolerance protocols in ${subject}.",
+          "modelAnswer": "Comprehensive essay covering multi-tier architecture, active-active failover, WAL recovery, and telemetry monitoring.",
+          "explanation": "Detail failover latency and production case studies.",
+          "topicTag": "Industrial Deployments"
         }
       ]
     }
@@ -652,7 +760,7 @@ CRITICAL REQUIREMENTS:
 1. Provide a comprehensive multi-paragraph overview in "summary".
 2. Provide EXACTLY 10 distinct deep analytical sections in "summarySections" covering the full theoretical, architectural, and mathematical spectrum.
 3. Provide AT LEAST 15 to 20 detailed, exam-focused key bullet points in "bulletPoints" with bold keywords.
-4. Provide AT LEAST 6 authentic university exam questions (mix of 2-Mark short checks, 5-Mark analytical, and 10-Mark comprehensive derivations) in "importantQuestions".
+4. Provide AT LEAST 6 authentic university exam questions (mix of 3-Mark short checks, 7-Mark analytical, and 10-Mark comprehensive derivations) in "importantQuestions".
 
 Format strictly as JSON:
 {
@@ -740,7 +848,7 @@ Format strictly as JSON:
       },
       {
         sectionTitle: "7. High-Yield University Exam Weightage & Historical Trends",
-        content: `Historical semester analysis demonstrates an average weightage of 22-28 marks for this topic. Compulsory questions consistently target the 10-mark architectural derivation and 5-mark comparative contrast tables.`
+        content: `Historical semester analysis demonstrates an average weightage of 22-28 marks for this topic. Compulsory questions consistently target the 10-mark architectural derivation and 7-mark comparative contrast tables.`
       },
       {
         sectionTitle: "8. Examiner Traps & Common Student Pitfalls",
@@ -776,12 +884,12 @@ Format strictly as JSON:
       `18. **Final Exam Strategy**: Dedicate 12 minutes to the 10-mark question, ensuring 4 minutes are spent on a pristine diagram.`
     ],
     importantQuestions: [
-      { marks: 2, question: `Define ${cleanSubject} and state its primary engineering objective.`, answer: "Formal technical definition stating deterministic state preservation, error bounds, and predictable transformation of input signals." },
-      { marks: 2, question: `Write the standard governing equation for ${cleanSubject} and state all variables.`, answer: "S_{t+1} = Transformation(S_t, I_t) - ErrorCorrection(e_t), where S represents state, I represents input, and e is residual error." },
-      { marks: 5, question: `Explain the system architecture of ${cleanSubject} with a labeled block diagram.`, answer: "1. Input stage, 2. Controller & computation unit, 3. Parity checker, 4. Output buffer. Includes signal flow and control bus." },
-      { marks: 5, question: `Compare synchronous and asynchronous configurations in ${cleanSubject}.`, answer: "4-column comparative matrix detailing clocking overhead, latency, power consumption, and metastability risks." },
-      { marks: 10, question: `Derive the complete mathematical formulation, governing equations, and step-by-step proof for ${cleanSubject}.`, answer: "Full 6-step derivation: Assumptions -> Boundary setup -> Transformation matrix -> Error convergence proof -> Industrial validation." },
-      { marks: 10, question: `Discuss in detail the working principle, failure modes, and real-world industrial applications of ${cleanSubject}.`, answer: "End-to-end essay covering operational stages, failover redundancy protocols, and production deployments in automotive and telecommunications." }
+      { marks: 3, question: `Define ${cleanSubject} and state its primary engineering objective. (3 Marks)`, answer: "Formal technical definition stating deterministic state preservation, error bounds, and predictable transformation of input signals." },
+      { marks: 3, question: `Write the standard governing equation for ${cleanSubject} and state all variables with SI units. (3 Marks)`, answer: "S_{t+1} = Transformation(S_t, I_t) - ErrorCorrection(e_t), where S represents state, I represents input, and e is residual error." },
+      { marks: 7, question: `Explain the system architecture and 4 functional stages of ${cleanSubject} with a labeled block diagram. (7 Marks)`, answer: "1. Input stage, 2. Controller & computation unit, 3. Parity checker, 4. Output buffer. Includes signal flow and control bus." },
+      { marks: 7, question: `Compare synchronous and asynchronous configurations in ${cleanSubject} using a 4-point comparison table. (7 Marks)`, answer: "4-column comparative matrix detailing clocking overhead, latency, power consumption, and metastability risks." },
+      { marks: 10, question: `Derive the complete mathematical formulation, governing state equations, and step-by-step proof for ${cleanSubject}. (10 Marks)`, answer: "Full 6-step derivation: Assumptions -> Boundary setup -> Transformation matrix -> Error convergence proof -> Industrial validation." },
+      { marks: 10, question: `Discuss in detail the operational workflow, failover redundancy protocols, and production industrial applications of ${cleanSubject}. (10 Marks)`, answer: "End-to-end essay covering operational stages, failover redundancy protocols, and production deployments in automotive and telecommunications." }
     ]
   };
 }
@@ -893,7 +1001,7 @@ export function getDynamicSubjectFlashcards(subject: string, content: string) {
       back: `1. Confusing synchronous vs asynchronous state updates.\n2. Omitting initial boundary condition checks in mathematical derivations.`,
       humanExplanation: `Students frequently remember the formula but forget to verify whether the assumptions (steady state, ideal conditions) apply to the specific exam question.`,
       analogy: `Driving with high-speed tires on ice: the mechanics work, but the assumptions of friction don't hold!`,
-      examinerTip: `Explicitly state your assumptions at the start of any 5-mark or 10-mark answer.`,
+      examinerTip: `Explicitly state your assumptions at the start of any 3-mark, 7-mark, or 10-mark answer.`,
       example: `Assuming linear behavior in non-linear operational domains.`,
       category: "Examiner Traps"
     },
@@ -1015,7 +1123,7 @@ export function getDynamicSubjectFlashcards(subject: string, content: string) {
       category: "Optimization Techniques"
     },
     {
-      front: `What typical 5-mark distinction question frequently appears on ${cleanSubject}?`,
+      front: `What typical 7-mark distinction question frequently appears on ${cleanSubject}?`,
       back: `Compare and contrast the primary mechanism of ${cleanSubject} against its historical legacy counterpart.`,
       humanExplanation: `Examiners test whether you understand why modern engineering adopted this paradigm over older, slower alternatives.`,
       analogy: `Comparing modern solid-state drives (SSDs) to spinning magnetic hard drives (HDDs).`,
@@ -1026,7 +1134,7 @@ export function getDynamicSubjectFlashcards(subject: string, content: string) {
     {
       front: `Rapid 60-Second Memory Digest: What are the 5 non-negotiable points to remember for ${cleanSubject}?`,
       back: `1. Definition: Deterministic state transformation.\n2. Formula: S_{t+1} = Trans(S_t, I_t).\n3. Diagram: 4 blocks with directional arrows.\n4. Traps: State initial conditions at t=0.\n5. Application: Industrial real-time telemetry.`,
-      humanExplanation: `These 5 core pillars form the skeleton of any 2-mark, 5-mark, or 10-mark exam question in this subject.`,
+      humanExplanation: `These 5 core pillars form the skeleton of any 3-mark, 7-mark, or 10-mark exam question in this subject.`,
       analogy: `The five fingers on a hand: together they form an unbreakable grip on the subject syllabus.`,
       examinerTip: `Review these 5 points in the 10 minutes right before you enter the exam hall!`,
       example: `Recalling all 5 points in sequence to answer a surprise Section C essay question.`,
@@ -1198,9 +1306,9 @@ function getHeuristicExamMap(subject: string) {
         weightagePercent: 20,
         difficulty: "Easy",
         topics: [
-          { id: "u1_t1", title: "Introduction & Terminology", importance: "High", status: "exam_ready", summary: "Fundamental concepts and definitions", keyFormula: "E = mc^2", frequentQuestionType: "2-Mark" },
-          { id: "u1_t2", title: "Governing Laws & Analytical Principles", importance: "High", status: "learning", summary: "Primary equations and scientific laws", keyFormula: "F = m * a", frequentQuestionType: "5-Mark" },
-          { id: "u1_t3", title: "Standard Classifications", importance: "Medium", status: "unlearned", summary: "Comparing paradigms and architectures", keyFormula: "Taxonomy Tree", frequentQuestionType: "5-Mark" }
+          { id: "u1_t1", title: "Introduction & Terminology", importance: "High", status: "exam_ready", summary: "Fundamental concepts and definitions", keyFormula: "E = mc^2", frequentQuestionType: "3-Mark" },
+          { id: "u1_t2", title: "Governing Laws & Analytical Principles", importance: "High", status: "learning", summary: "Primary equations and scientific laws", keyFormula: "F = m * a", frequentQuestionType: "7-Mark" },
+          { id: "u1_t3", title: "Standard Classifications", importance: "Medium", status: "unlearned", summary: "Comparing paradigms and architectures", keyFormula: "Taxonomy Tree", frequentQuestionType: "7-Mark" }
         ]
       },
       {
@@ -1220,7 +1328,7 @@ function getHeuristicExamMap(subject: string) {
         difficulty: "Hard",
         topics: [
           { id: "u3_t1", title: "Primary Step-by-Step Derivation", importance: "High", status: "unlearned", summary: "Mathematical proof", keyFormula: "d[f(g(x))] = f'(g(x)) * g'(x)", frequentQuestionType: "10-Mark" },
-          { id: "u3_t2", title: "Optimization & Error Minimization", importance: "High", status: "unlearned", summary: "Gradient descent updates", keyFormula: "theta := theta - alpha * grad J", frequentQuestionType: "5-Mark" }
+          { id: "u3_t2", title: "Optimization & Error Minimization", importance: "High", status: "unlearned", summary: "Gradient descent updates", keyFormula: "theta := theta - alpha * grad J", frequentQuestionType: "7-Mark" }
         ]
       },
       {
@@ -1229,8 +1337,8 @@ function getHeuristicExamMap(subject: string) {
         weightagePercent: 15,
         difficulty: "Medium",
         topics: [
-          { id: "u4_t1", title: "Standard Protocols & Formats", importance: "Medium", status: "unlearned", summary: "Header structures", keyFormula: "Header format", frequentQuestionType: "5-Mark" },
-          { id: "u4_t2", title: "Fault Detection & Error Correction", importance: "High", status: "unlearned", summary: "Parity and CRC checks", keyFormula: "CRC Polynomial", frequentQuestionType: "5-Mark" }
+          { id: "u4_t1", title: "Standard Protocols & Formats", importance: "Medium", status: "unlearned", summary: "Header structures", keyFormula: "Header format", frequentQuestionType: "7-Mark" },
+          { id: "u4_t2", title: "Fault Detection & Error Correction", importance: "High", status: "unlearned", summary: "Parity and CRC checks", keyFormula: "CRC Polynomial", frequentQuestionType: "7-Mark" }
         ]
       },
       {
@@ -1243,6 +1351,90 @@ function getHeuristicExamMap(subject: string) {
         ]
       }
     ]
+  };
+}
+
+function getHeuristicSubjectMap(subject: string, aiRes?: string) {
+  if (aiRes) {
+    try {
+      const parsed = safeJsonParse(aiRes);
+      if (parsed && (parsed.summary || parsed.bulletPoints)) {
+        return parsed;
+      }
+    } catch {}
+  }
+
+  const cleanSubject = (subject || "Engineering").replace(/polytechnic|engineering|diploma/gi, "").trim() || subject || "Engineering";
+
+  return {
+    summary: `Comprehensive academic dossier and data analysis for ${cleanSubject}. This module structures theoretical principles, architectural schematics, governing laws, and performance optimization methods required for high-scoring university examinations. It highlights state-space preservation, deterministic input-output relationships, and examiner-tested derivations.`,
+    summarySections: [
+      {
+        sectionTitle: "1. Executive Synthesis & Core Scope",
+        content: `${cleanSubject} forms a core foundational pillar of the engineering syllabus. The domain establishes formal methodologies to process input data vectors, compute state transformations deterministically, and generate verified outputs while maintaining mathematical equilibrium.`
+      },
+      {
+        sectionTitle: "2. Theoretical Foundations & Governing Laws",
+        content: `Governed by fundamental conservation principles and deterministic state logic. All subsystem components must respect physical boundary limits, invariant constraints, and equilibrium stability criteria during runtime operations.`
+      },
+      {
+        sectionTitle: "3. Mathematical Modeling & State Equations",
+        content: `The mathematical state progression is formulated as: S_{t+1} = Transformation(S_t, I_t) - ErrorCorrection(e_t). Parameter sensitivities and boundary limits are evaluated at steady state (t -> inf) to ensure asymptotic stability.`
+      },
+      {
+        sectionTitle: "4. System Architecture & Block Diagram Logic",
+        content: `The architecture consists of four cascaded stages: 1) Input Conditioning & Normalization, 2) Central Processing & Transformation Controller, 3) Parity Verification & Error Check Subsystem, and 4) Output Driver Stage.`
+      },
+      {
+        sectionTitle: "5. Step-by-Step Operational Workflow",
+        content: `1. Initialization: Registers and state variables are zeroed.\n2. Ingestion: Raw input signals are filtered against noise thresholds.\n3. Processing: Matrix transformations and algorithmic iterations execute.\n4. Validation: Checksums and invariants are verified.\n5. Dispatch: Output signals are latched to memory buses.`
+      },
+      {
+        sectionTitle: "6. Comparative Performance & Bottleneck Analysis",
+        content: `Trade-offs balance throughput (operations/sec) against latency (propagation delay). High-speed pipelining increases clock frequencies by 35% but requires proportional register buffering to prevent pipeline stalls.`
+      },
+      {
+        sectionTitle: "7. High-Yield University Exam Weightage & Historical Trends",
+        content: `Historical semester analysis demonstrates an average weightage of 22-28 marks for this topic. Compulsory questions consistently target the 10-mark architectural derivation and 7-mark comparative contrast tables.`
+      },
+      {
+        sectionTitle: "8. Examiner Traps & Common Student Pitfalls",
+        content: `Examiners frequently penalize candidates who omit directional signal arrows in block diagrams, confuse synchronous and asynchronous state clocks, or jump straight to final formulas without stating boundary assumptions.`
+      },
+      {
+        sectionTitle: "9. Real-World Engineering & Industrial Applications",
+        content: `Deployed widely across safety-critical automotive ECUs, autonomous drone flight telemetry, telecommunications switching fabrics, and distributed low-latency database engines.`
+      },
+      {
+        sectionTitle: "10. Rapid 60-Second Revision Digest",
+        content: `Key Memory Anchors: 1) Invariant state law, 2) Four-stage block architecture, 3) S_{t+1} transition equation, 4) Directional arrows in diagrams, 5) Real-world automotive/cloud use cases.`
+      }
+    ],
+    bulletPoints: [
+      `1. **Governing Law**: Operates under strict conservation of system state and deterministic transitions.`,
+      `2. **Input Normalization**: Preprocessing filters raw input vectors to eliminate anomalous transient spikes.`,
+      `3. **Core Computation Engine**: Executes matrix arithmetic and non-linear transformations with bounded time complexity.`,
+      `4. **Signal Flow Direction**: Data travels unidirectionally from input staging to transformation units to output buffers.`,
+      `5. **Mathematical State Equation**: Modeled by S_{t+1} = Transformation(S_t, I_t) with convergence criteria ||S_{t+1} - S_t|| < epsilon.`,
+      `6. **Throughput Optimization**: Subdividing execution stages through pipelining increases operational throughput by up to 40%.`,
+      `7. **Latency Trade-off**: Minimizing propagation delay requires dedicated hardware registers, incurring higher area overhead.`,
+      `8. **Memory Hierarchy Alignment**: Locality of reference ensures 90%+ cache hit rates during core algorithmic loops.`,
+      `9. **Error Detection & Parity**: Real-time parity bits and checksum matrices prevent corrupted state propagation.`,
+      `10. **Synchronous vs Asynchronous**: Synchronous modes provide predictable timing; asynchronous modes reduce standby power dissipation.`,
+      `11. **Boundary Condition Testing**: Numerical stability holds strictly when input amplitudes remain within [-V_max, +V_max].`,
+      `12. **Examiner Trap #1**: Forgetting to state initial conditions (t=0) deductions cost up to 2 marks in Section C.`,
+      `13. **Examiner Trap #2**: Omitting labeled control arrows in block diagrams is the single most common student error.`,
+      `14. **Scoring Keyword #1**: Always include the phrase "deterministic state progression" in formal definitions.`,
+      `15. **Scoring Keyword #2**: Emphasize "asymptotic convergence" when deriving mathematical limits.`,
+      `16. **Industrial Deployment**: Utilized in flight-control redundant computers where mean time between failures (MTBF) exceeds 100,000 hours.`,
+      `17. **Telecommunications Integration**: Serves as the high-speed packet routing logic in fiber-optic multiplexers.`,
+      `18. **Final Exam Strategy**: Dedicate 12 minutes to the 10-mark question, ensuring 4 minutes are spent on a pristine diagram.`
+    ],
+    importantQuestions: Array.from({ length: 18 }, (_, i) => {
+        if (i < 6) return { marks: 3, question: `Define ${cleanSubject} concepts (3 Marks)`, answer: "Technical definition with boundary constraints." };
+        if (i < 12) return { marks: 7, question: `Analyze architecture/working principle (7 Marks)`, answer: "Detailed diagram, workflow, and comparative logic." };
+        return { marks: 10, question: `Derive complete mathematical model/proof (10 Marks)`, answer: "Comprehensive derivation with stability analysis." };
+    })
   };
 }
 
@@ -1262,9 +1454,9 @@ function getHeuristicTeachingLesson(topic: string, subject: string) {
     ],
     sixtySecondSummary: `${topic} establishes deterministic state transitions in ${subject}. Key exam points: 1) Initial boundary setup, 2) Transformation matrix application, 3) Convergence verification, 4) Industrial deployment.`,
     practiceQuestions: [
-      { marks: 2, question: `Define ${topic} in two sentences.`, answerHint: "Mention deterministic state transition." },
-      { marks: 5, question: `Explain the working principle of ${topic} with a neat block diagram.`, answerHint: "Draw 4 blocks with control arrows." },
-      { marks: 10, question: `Derive the complete mathematical formulation and proof for ${topic}.`, answerHint: "Show Steps 1 through 5 with error bounds." }
+      { marks: 3, question: `Define ${topic} and write its primary governing formula. (3 Marks)`, answerHint: "Mention deterministic state transition and state variables." },
+      { marks: 7, question: `Explain the operational architecture of ${topic} with a neat labeled block diagram. (7 Marks)`, answerHint: "Draw 4 blocks with directional control arrows." },
+      { marks: 10, question: `Derive the complete mathematical formulation, step-by-step algorithmic proof, and industrial use cases for ${topic}. (10 Marks)`, answerHint: "Show Steps 1 through 5 with error bounds and boxed final result." }
     ]
   };
 }
@@ -1286,34 +1478,35 @@ function getHeuristicMarkAnswer(topic: string, marks: number, subject: string) {
       keyPoints: ["Invariance Principle", "Deterministic State", "Gradient Update", "Throughput", "Fault Tolerance"],
       commonMistakes: ["Skipping the architectural diagram", "Missing mathematical equations", "Confusing synchronous and asynchronous modes"]
     };
-  } else if (marks === 5) {
+  } else if (marks === 7) {
     return {
       topic,
-      marks: 5,
+      marks: 7,
       subject,
-      question: `Explain the Working Principle and Key Features of ${topic}. (5 Marks)`,
-      idealAnswer: `### 1. Definition\n${topic} is a vital mechanism in ${subject} that structures procedural execution to achieve predictable, high-efficiency outcomes.\n\n### 2. Core Working Principle\n- Acquires initial system states and applies input filters.\n- Executes core logic based on the governing transformation function.\n- Generates validated output signals with zero buffer overflows.\n\n### 3. Key Advantages\n1. High Efficiency: Reduces operational bottlenecks by up to 40%.\n2. Modularity: Integrates seamlessly with existing engineering pipelines.`,
+      question: `Explain the Working Principle, Labeled Block Architecture, and Key Features of ${topic}. (7 Marks)`,
+      idealAnswer: `### 1. Definition & Core Principle\n${topic} is a vital mechanism in ${subject} that structures procedural execution to achieve predictable, high-efficiency outcomes and invariant system equilibrium.\n\n### 2. Labeled Block Architecture\n\`\`\`\n[Input Conditioning] ──► [Central Processing Engine] ──► [Parity Check] ──► [Output Driver]\n\`\`\`\n\n### 3. Step-by-Step Operational Workflow\n1. Ingestion: Acquires initial system states and applies input filters.\n2. Processing: Executes core logic based on the governing transformation function.\n3. Validation: Generates validated output signals with zero buffer overflows.\n\n### 4. Key Engineering Advantages & Applications\n1. High Throughput: Reduces operational bottlenecks by up to 40%.\n2. Modularity: Integrates seamlessly with existing engineering pipelines in embedded and cloud systems.`,
       examinerChecklist: [
-        { criterion: "Clear definition & principle", marksAllocated: 2, description: "Mention primary function and state transition" },
-        { criterion: "Labeled schematic block", marksAllocated: 1.5, description: "Draw input/output blocks" },
-        { criterion: "Bulleted key points & advantages", marksAllocated: 1.5, description: "List at least 2 distinct advantages" }
+        { criterion: "Technical definition & principle", marksAllocated: 2, description: "Mention primary function and state transition" },
+        { criterion: "Labeled schematic block diagram", marksAllocated: 2.5, description: "Draw input/controller/output blocks with directional arrows" },
+        { criterion: "Step-by-step operational logic", marksAllocated: 1.5, description: "List numbered sequential workflow" },
+        { criterion: "Applications & Boxed Summary", marksAllocated: 1, description: "Give 2 concrete applications" }
       ],
-      keyPoints: ["Transformation Function", "Buffer Integrity", "Throughput", "Modularity"],
-      commonMistakes: ["Writing paragraphs instead of clear numbered bullets", "Omitting practical advantages"]
+      keyPoints: ["Transformation Function", "Buffer Integrity", "Throughput Optimization", "Modularity", "Parity Check"],
+      commonMistakes: ["Writing paragraphs instead of clear numbered bullets", "Omitting directional arrows in block diagram"]
     };
   } else {
     return {
       topic,
-      marks: 2,
+      marks: 3,
       subject,
-      question: `Define ${topic}. (2 Marks)`,
-      idealAnswer: `${topic} is defined as the formal engineering process in ${subject} that transforms input variables into verified outputs while preserving system equilibrium.`,
+      question: `Define ${topic} and state its governing formula / primary invariance condition. (3 Marks)`,
+      idealAnswer: `### 1. Definition\n${topic} is defined as the formal engineering process in ${subject} that transforms input variables into verified outputs while preserving deterministic system equilibrium.\n\n### 2. Governing Formula\n$$\\mathbf{S}_{t+1} = \\mathcal{T}(\\mathbf{S}_t, \\mathbf{I}_t) - \\mathbf{E}(e_t)$$\nwhere $\\mathbf{S}$ represents state vector, $\\mathbf{I}$ represents input, and $\\mathbf{E}$ is residual error correction.`,
       examinerChecklist: [
-        { criterion: "Precise definition", marksAllocated: 1.5, description: "State formal technical definition" },
-        { criterion: "Formula / Unit", marksAllocated: 0.5, description: "Write standard equation or dimension" }
+        { criterion: "Precise Technical Definition", marksAllocated: 1.5, description: "State formal technical definition with keywords" },
+        { criterion: "Governing Formula / Variable Mapping", marksAllocated: 1.5, description: "Write standard equation with SI units and parameter definitions" }
       ],
-      keyPoints: ["Formal Definition", "Equilibrium", "System State"],
-      commonMistakes: ["Vague colloquial definitions without technical terminology"]
+      keyPoints: ["Formal Definition", "Equilibrium Invariance", "State Vector Equation", "Deterministic Transition"],
+      commonMistakes: ["Vague colloquial definitions without technical terminology", "Forgetting to define formula symbols"]
     };
   }
 }
@@ -1322,76 +1515,36 @@ function getHeuristicMockExam(subject: string) {
   return {
     examTitle: `${subject} University Mock Paper`,
     subject,
-    totalMarks: 30,
-    timeLimitMinutes: 30,
-    instructions: ["Answer all questions in Section A, B, and C.", "Maintain clear structured handwriting / typed formats."],
+    totalMarks: 40,
+    timeLimitMinutes: 45,
+    instructions: ["Answer all questions in Section A (3M), Section B (7M), and Section C (10M).", "Maintain clear structured handwriting / typed formats."],
     sections: [
       {
-        name: "Section A (Short & MCQs - 2 Marks Each)",
+        name: "Section A (Short Questions - 3 Marks Each)",
         description: "Core definitions and quick evaluation",
-        totalMarks: 6,
+        totalMarks: 9,
         questions: [
-          {
-            id: "q1",
-            section: "Section A",
-            marks: 2,
-            questionText: `What is the primary governing principle in ${subject}?`,
-            options: ["Conservation of State", "Non-linear Dispersion", "Stochastic Degradation", "Static Allocation"],
-            correctOptionIndex: 0,
-            explanation: "Conservation of state ensures bounded computational consistency.",
-            topicTag: "Unit 1: Fundamentals"
-          },
-          {
-            id: "q2",
-            section: "Section A",
-            marks: 2,
-            questionText: `What is the optimal average complexity in ${subject}?`,
-            options: ["O(N log N)", "O(N!)", "O(2^N)", "O(N^3)"],
-            correctOptionIndex: 0,
-            explanation: "Divide-and-conquer partitions space in logarithmic time.",
-            topicTag: "Unit 1: Fundamentals"
-          }
+          { id: "q1", section: "Section A", marks: 3, questionText: `What is the primary governing principle in ${subject}?`, options: ["Conservation of State", "Non-linear Dispersion", "Stochastic Degradation", "Static Allocation"], correctOptionIndex: 0, explanation: "Conservation of state ensures bounded computational consistency.", topicTag: "Unit 1: Fundamentals" },
+          { id: "q2", section: "Section A", marks: 3, questionText: `What is the optimal average complexity in ${subject}?`, options: ["O(N log N)", "O(N!)", "O(2^N)", "O(N^3)"], correctOptionIndex: 0, explanation: "Divide-and-conquer partitions space in logarithmic time.", topicTag: "Unit 1: Fundamentals" },
+          { id: "q3", section: "Section A", marks: 3, questionText: `State the standard state equation for ${subject}.`, options: ["S_{t+1} = Trans(S_t, I_t)", "Delta = Random()", "Null Array", "Static Invariance Zero"], correctOptionIndex: 0, explanation: "Deterministic state progression preserves runtime invariance.", topicTag: "Unit 1: Fundamentals" }
         ]
       },
       {
-        name: "Section B (Analytical Questions - 5 Marks Each)",
-        description: "Working mechanism and schematic questions",
-        totalMarks: 10,
+        name: "Section B (Analytical Questions - 7 Marks Each)",
+        description: "Working mechanism, schematic diagrams, and comparative analysis",
+        totalMarks: 14,
         questions: [
-          {
-            id: "q3",
-            section: "Section B",
-            marks: 5,
-            questionText: `Explain the working principle and schematic diagram of ${subject}.`,
-            modelAnswer: "1. Definition\n2. Block diagram (Input, Processing, Output)\n3. Advantages\n4. Applications",
-            explanation: "Draw neat labeled blocks.",
-            topicTag: "Unit 2: Architectures"
-          },
-          {
-            id: "q4",
-            section: "Section B",
-            marks: 5,
-            questionText: `Differentiate between synchronous and asynchronous architectures in ${subject}.`,
-            modelAnswer: "4-point comparison table covering clocking, speed, complexity, and power.",
-            explanation: "List at least 4 distinct contrast points.",
-            topicTag: "Unit 4: Protocols"
-          }
+          { id: "q4", section: "Section B", marks: 7, questionText: `Explain the working principle and schematic diagram of ${subject}.`, modelAnswer: "1. Definition\n2. Block diagram\n3. Advantages\n4. Applications", explanation: "Draw neat labeled blocks with control signal arrows.", topicTag: "Unit 2: Architectures" },
+          { id: "q5", section: "Section B", marks: 7, questionText: `Differentiate between synchronous and asynchronous architectures in ${subject}.`, modelAnswer: "4-point comparison table covering clocking, speed, complexity, and power.", explanation: "List at least 4 distinct contrast points.", topicTag: "Unit 4: Protocols" }
         ]
       },
       {
         name: "Section C (Comprehensive Essay - 10 Marks Each)",
-        description: "In-depth derivation and problem solving",
-        totalMarks: 14,
+        description: "In-depth derivation, algorithm proof, and industrial case studies",
+        totalMarks: 20,
         questions: [
-          {
-            id: "q5",
-            section: "Section C",
-            marks: 10,
-            questionText: `Describe in detail the complete end-to-end architecture, governing equations, and industrial deployment in ${subject}.`,
-            modelAnswer: "Formal definition, governing laws, schematic diagram, derivation, comparative table, industrial applications.",
-            explanation: "Include step-by-step mathematical formulation and real-world use cases.",
-            topicTag: "Unit 3: Algorithmic Logic"
-          }
+          { id: "q6", section: "Section C", marks: 10, questionText: `Describe in detail the complete end-to-end architecture, governing equations, and industrial deployment in ${subject}.`, modelAnswer: "Formal definition, governing laws, schematic diagram, derivation, comparative table, industrial applications.", explanation: "Include step-by-step mathematical formulation and real-world use cases.", topicTag: "Unit 3: Algorithmic Logic" },
+          { id: "q7", section: "Section C", marks: 10, questionText: `Derive the mathematical state equations and step-by-step algorithm for ${subject} with a solved numerical problem.`, modelAnswer: "Step 1: Assumptions at t=0\nStep 2: State variables\nStep 3: Derivation\nStep 4: Solved numerical example with boxed answer.", explanation: "Show all intermediate derivation steps and final boxed answer.", topicTag: "Unit 3: Mathematical Foundations" }
         ]
       }
     ]
@@ -1402,17 +1555,17 @@ function getHeuristicSurvivalPlan(subject: string, hoursLeft: number) {
   return {
     subject,
     hoursRemaining: hoursLeft,
-    strategySummary: `80/20 Pareto Sprint: Focus exclusively on the top 3 guaranteed 10-mark questions and high-frequency formulas to secure maximum score in ${hoursLeft} hours.`,
+    strategySummary: `80/20 Pareto Sprint: Focus exclusively on the top 3 guaranteed 10-mark questions, 7-mark architecture schematics, and high-frequency 3-mark formulas to secure maximum score in ${hoursLeft} hours.`,
     hourByHourPlan: [
       { hourSlot: "0-2h", topic: "Unit 1: Core Fundamentals", actionType: "Mastery", instructions: "Master the 2 primary 10-mark definitions & derivations." },
       { hourSlot: "2-4h", topic: "Unit 2: Block Diagrams", actionType: "Practice", instructions: "Practice sketching and labeling the 3 core architecture diagrams." },
-      { hourSlot: "4-6h", topic: "High-Yield 5M Questions", actionType: "Practice", instructions: "Review the top 5 frequent distinction questions." },
-      { hourSlot: "6-7h", topic: "Active Recall Flashcards", actionType: "Revision", instructions: "Drill 25 flashcards to lock formulas into short-term memory." }
+      { hourSlot: "4-6h", topic: "High-Yield 7M Questions", actionType: "Practice", instructions: "Review the top 5 frequent distinction and analytical questions." },
+      { hourSlot: "6-7h", topic: "Active Recall Flashcards", actionType: "Revision", instructions: "Drill 25 flashcards to lock 3M formulas into short-term memory." }
     ],
     guaranteedTopics: [
       { topic: "Core Architecture & Block Diagrams", expectedMarks: 15, whyGuaranteed: "Appears in every previous semester paper" },
       { topic: "Primary Mathematical Derivations", expectedMarks: 15, whyGuaranteed: "Standard compulsory 10M question" },
-      { topic: "Comparative Tables & Distinctions", expectedMarks: 10, whyGuaranteed: "High-frequency 5M question" }
+      { topic: "Comparative Tables & Distinctions", expectedMarks: 14, whyGuaranteed: "High-frequency 7M question" }
     ],
     formulaCheatSheet: [
       "State Transition: S_{t+1} = f(S_t, I_t)",
@@ -1430,147 +1583,26 @@ function getHeuristicQuestionBank(topic: string, subject: string) {
   return {
     topic,
     subject,
-    totalQuestions: 15,
+    totalQuestions: 18,
     questions: [
-      // 5x 2-Mark Questions
-      {
-        id: "q1",
-        marks: 2,
-        category: "2-Mark Short Question",
-        question: `Define ${topic} and state its primary role in ${subject}.`,
-        idealAnswer: `**Definition:** ${topic} is a core operational construct in ${subject} responsible for maintaining deterministic state transitions, resource scheduling, and fault containment.\n\n**Primary Purpose:** Guarantees system consistency and maximizes execution efficiency.`,
-        keyPoints: ["Formal Definition", "Primary Operational Function"],
-        examinerTip: "Always use standard scientific keywords."
-      },
-      {
-        id: "q2",
-        marks: 2,
-        category: "2-Mark Short Question",
-        question: `List the two primary conditions or constraints required for ${topic}.`,
-        idealAnswer: `1. **Invariance Condition:** State consistency must remain valid throughout execution.\n2. **Boundary Condition:** System resources must satisfy non-negative allocation limits.`,
-        keyPoints: ["Constraint 1", "Constraint 2"],
-        examinerTip: "Present as numbered bullet points."
-      },
-      {
-        id: "q3",
-        marks: 2,
-        category: "2-Mark Short Question",
-        question: `State the standard governing formula or equation for ${topic}.`,
-        idealAnswer: `$$\\text{Efficiency}(\\eta) = \\frac{\\text{Useful Work Output}}{\\text{Total Resource Input}} \\times 100\\%$$\nEnsure all state variables are evaluated within the defined operational boundary.`,
-        keyPoints: ["Equation Notation", "Variable Definitions"],
-        examinerTip: "Write the formula before explaining terms."
-      },
-      {
-        id: "q4",
-        marks: 2,
-        category: "2-Mark Short Question",
-        question: `Give two real-world engineering applications of ${topic}.`,
-        idealAnswer: `1. High-throughput distributed cloud computing clusters.\n2. Mission-critical embedded control systems and microcontrollers.`,
-        keyPoints: ["Application 1", "Application 2"],
-        examinerTip: "Mention modern industrial domains."
-      },
-      {
-        id: "q5",
-        marks: 2,
-        category: "2-Mark Short Question",
-        question: `What is the primary operational trade-off in ${topic}?`,
-        idealAnswer: `The trade-off exists between **latency overhead** (time spent in synchronization/verification) and **system throughput / reliability**.`,
-        keyPoints: ["Latency vs Throughput", "Reliability Trade-off"],
-        examinerTip: "Identify both competing performance parameters."
-      },
-      // 5x 5-Mark Questions
-      {
-        id: "q6",
-        marks: 5,
-        category: "5-Mark Analytical Question",
-        question: `Explain the working principle and operational phases of ${topic} with a block schematic.`,
-        idealAnswer: `### 1. Working Principle\n${topic} functions by transforming input signals/requests through sequential verification and execution stages.\n\n### 2. Block Schematic\n\`\`\`\n[Input Request] ──► [Pre-Processing & Validation] ──► [Core Execution Engine] ──► [Verified Output State]\n\`\`\`\n\n### 3. Key Phases\n- **Phase 1 (Initialization):** Allocate state buffers and establish boundary checks.\n- **Phase 2 (Processing):** Execute core transformation algorithms.\n- **Phase 3 (Post-Condition):** Commit state and release resources.`,
-        keyPoints: ["Working Principle", "Labeled Block Schematic", "Operational Phases"],
-        examinerTip: "Draw a clean diagram; 2 marks are awarded for the schematic alone."
-      },
-      {
-        id: "q7",
-        marks: 5,
-        category: "5-Mark Analytical Question",
-        question: `Differentiate between static and dynamic approaches in ${topic} using a comparative table.`,
-        idealAnswer: `| Parameter | Static Approach | Dynamic Approach |\n| :--- | :--- | :--- |\n| **Allocation Time** | Compile / Design Time | Runtime Execution |\n| **Flexibility** | Fixed, deterministic | Highly adaptive to load |\n| **Overhead** | Low runtime overhead | Moderate compute overhead |\n| **Fault Recovery** | Requires reinitialization | Autonomous dynamic recovery |`,
-        keyPoints: ["4 Distinct Comparison Parameters", "Comparative Table Format"],
-        examinerTip: "Tabular comparisons score higher than paragraphs."
-      },
-      {
-        id: "q8",
-        marks: 5,
-        category: "5-Mark Analytical Question",
-        question: `Describe the error handling and boundary condition management strategies in ${topic}.`,
-        idealAnswer: `### Error Containment Strategies\n1. **Threshold Validation:** Verify inputs against maximum upper bound parameters.\n2. **Rollback & Recovery:** Revert to the previous checkpoint if an exception occurs.\n3. **Fallback Degraded Mode:** Continue partial operation without system-wide failure.`,
-        keyPoints: ["Boundary Checks", "Rollback Mechanism", "Graceful Degradation"],
-        examinerTip: "List specific mitigation steps."
-      },
-      {
-        id: "q9",
-        marks: 5,
-        category: "5-Mark Analytical Question",
-        question: `Calculate the performance metrics and time complexity for ${topic}.`,
-        idealAnswer: `### Time & Space Complexity\n- **Best Case:** $\\mathcal{O}(1)$ or $\\mathcal{O}(\\log n)$ under optimal cache alignment.\n- **Average Case:** $\\mathcal{O}(n)$ linear scaling.\n- **Worst Case:** $\\mathcal{O}(n^2)$ under extreme resource contention.\n- **Auxiliary Space:** $\\mathcal{O}(1)$ in-place execution.`,
-        keyPoints: ["Asymptotic Notation", "Best/Average/Worst Cases", "Space Complexity"],
-        examinerTip: "Clearly differentiate time vs space complexity."
-      },
-      {
-        id: "q10",
-        marks: 5,
-        category: "5-Mark Analytical Question",
-        question: `Explain the top 3 examiner traps and common student misconceptions in ${topic}.`,
-        idealAnswer: `### Common Pitfalls & Traps\n1. **Zero-Index Confusion:** Forgetting to account for base offset index in calculations.\n2. **State Assumption:** Assuming an uninitialized buffer defaults to zero without explicit clearing.\n3. **Unit Inconsistency:** Mixing millisecond vs microsecond timeframes in throughput calculations.`,
-        keyPoints: ["Trap 1: Indexing", "Trap 2: State Initialization", "Trap 3: Unit Consistency"],
-        examinerTip: "Highlight how to avoid each pitfall in exams."
-      },
-      // 5x 10-Mark Questions
-      {
-        id: "q11",
-        marks: 10,
-        category: "10-Mark Comprehensive Problem",
-        question: `Derive the comprehensive mathematical model and algorithmic proof for ${topic} with a solved numerical example.`,
-        idealAnswer: `### 1. Mathematical Formulation & Governing Equations\nLet the system state vector be denoted as $\\mathbf{S} = [s_1, s_2, \\dots, s_n]^T$.\nThe rate of change is governed by:\n$$\\frac{d\\mathbf{S}}{dt} = \\mathbf{A}\\mathbf{S}(t) + \\mathbf{B}\\mathbf{U}(t)$$\n\n### 2. Step-by-Step Derivation\n1. Define initial condition $\\mathbf{S}(0) = \\mathbf{S}_0$.\n2. Apply the Laplace / State transformation:\n$$s\\mathbf{S}(s) - \\mathbf{S}_0 = \\mathbf{A}\\mathbf{S}(s) + \\mathbf{B}\\mathbf{U}(s)$$\n3. Solve for state vector:\n$$\\mathbf{S}(s) = (s\\mathbf{I} - \\mathbf{A})^{-1}\\mathbf{S}_0 + (s\\mathbf{I} - \\mathbf{A})^{-1}\\mathbf{B}\\mathbf{U}(s)$$\n\n### 3. Solved Numerical Example\nGiven $\\mathbf{A} = \\begin{bmatrix} 2 & 1 \\\\ 0 & 3 \\end{bmatrix}$ and $\\mathbf{S}_0 = \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}$:\n$$\\det(s\\mathbf{I} - \\mathbf{A}) = (s-2)(s-3) = s^2 - 5s + 6$$\nEigenvalues are $\\lambda_1 = 2, \\lambda_2 = 3$.\n\n### 4. Examiner Scoring Checkpoints\n- **Formal Definitions & Formulation:** 2 Marks\n- **Step-by-step Mathematical Working:** 4 Marks\n- **Solved Numerical Example:** 3 Marks\n- **Final Answer in Box:** 1 Mark`,
-        keyPoints: ["Governing Equations", "Step-by-step Proof", "Solved Numerical Example", "Boxed Final Result"],
-        examinerTip: "Show every intermediate algebraic step; boxed final answers get full presentation marks."
-      },
-      {
-        id: "q12",
-        marks: 10,
-        category: "10-Mark Comprehensive Problem",
-        question: `Describe the end-to-end architectural implementation of ${topic} in enterprise systems with failure recovery mechanisms.`,
-        idealAnswer: `### 1. Enterprise Architecture Overview\nEnterprise implementation of ${topic} relies on a multi-tiered architecture featuring load-balanced ingress, stateless computation engines, and replicated persistent state stores.\n\n### 2. Fault Tolerance & High Availability\n- **Active-Active Clustering:** Automatic failover within <50ms.\n- **Write-Ahead Logging (WAL):** Ensures ACID atomicity during unexpected crashes.\n- **Heartbeat Health Monitors:** Proactively evicts degraded nodes.`,
-        keyPoints: ["Multi-Tier Architecture", "WAL Crash Recovery", "High Availability Protocol"],
-        examinerTip: "Include clear architectural block diagrams."
-      },
-      {
-        id: "q13",
-        marks: 10,
-        category: "10-Mark Comprehensive Problem",
-        question: `Compare and evaluate all major algorithmic variations of ${topic} with case studies.`,
-        idealAnswer: `### Comprehensive Algorithm Evaluation\nEvaluates Variation A (Optimistic) vs Variation B (Pessimistic) across scalability, network footprint, lock contention, and recovery latency.\n\nIncludes complete comparative performance benchmark graphs and industrial deployment recommendations.`,
-        keyPoints: ["Algorithm A vs B vs C", "Benchmark Analysis", "Industrial Case Study"],
-        examinerTip: "Use clear metrics for each algorithm evaluated."
-      },
-      {
-        id: "q14",
-        marks: 10,
-        category: "10-Mark Comprehensive Problem",
-        question: `Design an end-to-end optimized pipeline for ${topic} meeting strict latency (<10ms) and 99.999% availability SLAs.`,
-        idealAnswer: `### System Design Specification\n1. **Ingress Tier:** Edge CDN caching with eBPF kernel routing.\n2. **Compute Tier:** Lock-free ring buffer processing with SIMD vectorization.\n3. **Storage Tier:** In-memory LSM-trees with async background compaction.\n\nGuarantees deterministic $p99$ response times within $8.2\\text{ ms}$.`,
-        keyPoints: ["SLA Guarantees", "Lock-free Data Structures", "Latency Budgeting"],
-        examinerTip: "State numerical SLA benchmarks."
-      },
-      {
-        id: "q15",
-        marks: 10,
-        category: "10-Mark Comprehensive Problem",
-        question: `Formulate a complete exam revision masterclass for ${topic} covering all past 5 years university questions.`,
-        idealAnswer: `### 5-Year High-Yield Revision Matrix\nSynthesizes compulsory Part A short questions, Part B derivations, and Part C numerical problems into an examiner-proven revision blueprint.`,
-        keyPoints: ["5-Year Trend Synthesis", "Compulsory Problem Templates", "Scoring Maximizer Formula"],
-        examinerTip: "Review all 5 years recurring patterns."
-      }
+      { id: "q1", marks: 3, category: "3-Mark Short Question", question: `Define ${topic} and state its primary role in ${subject}.`, idealAnswer: `**Definition:** ${topic} is a core operational construct in ${subject} responsible for maintaining deterministic state transitions, resource scheduling, and fault containment.\n\n**Primary Purpose:** Guarantees system consistency and maximizes execution efficiency.`, keyPoints: ["Formal Definition", "Primary Operational Function"], examinerTip: "Always use standard scientific keywords." },
+      { id: "q2", marks: 3, category: "3-Mark Short Question", question: `List the two primary conditions or constraints required for ${topic}.`, idealAnswer: `1. **Invariance Condition:** State consistency must remain valid throughout execution.\n2. **Boundary Condition:** System resources must satisfy non-negative allocation limits.`, keyPoints: ["Constraint 1", "Constraint 2"], examinerTip: "Present as numbered bullet points." },
+      { id: "q3", marks: 3, category: "3-Mark Short Question", question: `State the standard governing formula for ${topic}.`, idealAnswer: `$$\\text{Efficiency}(\\eta) = \\frac{\\text{Useful Work Output}}{\\text{Total Resource Input}} \\times 100\\%$$\nEnsure all state variables are evaluated within the defined operational boundary.`, keyPoints: ["Equation Notation", "Variable Definitions"], examinerTip: "Write the formula before explaining terms." },
+      { id: "q4", marks: 3, category: "3-Mark Short Question", question: `Give two real-world engineering applications of ${topic}.`, idealAnswer: `1. High-throughput distributed cloud computing clusters.\n2. Mission-critical embedded control systems and microcontrollers.`, keyPoints: ["Application 1", "Application 2"], examinerTip: "Mention modern industrial domains." },
+      { id: "q5", marks: 3, category: "3-Mark Short Question", question: `What is the primary operational trade-off in ${topic}?`, idealAnswer: `The trade-off exists between **latency overhead** (time spent in synchronization/verification) and **system throughput / reliability**.`, keyPoints: ["Latency vs Throughput", "Reliability Trade-off"], examinerTip: "Identify both competing performance parameters." },
+      { id: "q6", marks: 3, category: "3-Mark Short Question", question: `State asymptotic time/space complexity for ${topic}.`, idealAnswer: `Time: O(N log N) average; Space: O(N) auxiliary.`, keyPoints: ["Time Complexity", "Space Complexity"], examinerTip: "Distinguish time vs space complexity." },
+      { id: "q7", marks: 7, category: "7-Mark Analytical Question", question: `Explain the working principle and operational phases of ${topic} with a block schematic.`, idealAnswer: `1. Working Principle\n2. Block Schematic (4 stages: Ingestion, Processing, Parity Check, Dispatch)\n3. Phases: Initialization, Processing, Validation, Output.`, keyPoints: ["Working Principle", "Labeled Block Schematic", "Operational Phases"], examinerTip: "Draw a clean diagram; 2 marks are awarded for the schematic alone." },
+      { id: "q8", marks: 7, category: "7-Mark Analytical Question", question: `Differentiate between static and dynamic approaches in ${topic} using a comparative table.`, idealAnswer: `| Parameter | Static Approach | Dynamic Approach |\n| :--- | :--- | :--- |\n| **Allocation Time** | Compile / Design Time | Runtime Execution |\n| **Flexibility** | Fixed, deterministic | Highly adaptive to load |\n| **Overhead** | Low runtime overhead | Moderate compute overhead |\n| **Fault Recovery** | Requires reinitialization | Autonomous dynamic recovery |`, keyPoints: ["4 Distinct Comparison Parameters", "Comparative Table Format"], examinerTip: "Tabular comparisons score higher than paragraphs." },
+      { id: "q9", marks: 7, category: "7-Mark Analytical Question", question: `Describe the error handling and boundary condition management strategies in ${topic}.`, idealAnswer: `1. Threshold Validation: Verify inputs against upper bounds.\n2. Rollback: Revert to previous checkpoint on failure.\n3. Degraded Mode: Continue partial operation.`, keyPoints: ["Boundary Checks", "Rollback Mechanism", "Graceful Degradation"], examinerTip: "List specific mitigation steps." },
+      { id: "q10", marks: 7, category: "7-Mark Analytical Question", question: `Analyze performance bottlenecks and optimization techniques for ${topic}.`, idealAnswer: `1. Bottlenecks: Memory contention and pipeline stalls.\n2. Optimization: Instruction pipelining, Circular ring buffers, SIMD vectorization.`, keyPoints: ["Memory Contention", "Pipeline Hazards", "Optimization Techniques"], examinerTip: "State Amdahl's Law formula and show numerical calculation." },
+      { id: "q11", marks: 7, category: "7-Mark Analytical Question", question: `Explain the top 3 examiner traps and common student misconceptions in ${topic}.`, idealAnswer: `1. Zero-Index Confusion.\n2. State Assumption (uninitialized buffers).\n3. Unit Inconsistency (ms vs sec).`, keyPoints: ["Trap 1: Indexing", "Trap 2: State Initialization", "Trap 3: Unit Consistency"], examinerTip: "Highlight how to avoid each pitfall in exams." },
+      { id: "q12", marks: 7, category: "7-Mark Analytical Question", question: `How does ${topic} scale under distributed cloud environments?`, idealAnswer: `1. Horizontal Sharding.\n2. Consistent Hashing.\n3. Stateless microservices.\n4. Asynchronous Queuing.`, keyPoints: ["Horizontal Scaling", "Consistency", "Cloud Patterns"], examinerTip: "Mention horizontal vs vertical scaling." },
+      { id: "q13", marks: 10, category: "10-Mark Comprehensive Problem", question: `Derive the comprehensive mathematical model and algorithmic proof for ${topic} with a solved numerical example.`, idealAnswer: `1. Governing Equations: dS/dt = AS + BU.\n2. Laplace domain transformation.\n3. Numerical example (eigenvalues).\n4. Boxed final result.`, keyPoints: ["Governing Equations", "Step-by-step Proof", "Solved Numerical Example", "Boxed Final Result"], examinerTip: "Show every intermediate algebraic step; boxed final answers get full presentation marks." },
+      { id: "q14", marks: 10, category: "10-Mark Comprehensive Problem", question: `Describe in detail the end-to-end architectural implementation of ${topic} in enterprise systems.`, idealAnswer: `1. Multi-Tier Topology.\n2. High availability and failover.\n3. WAL (Write-Ahead Logging).\n4. Observability and metrics.`, keyPoints: ["Multi-Tier Architecture", "WAL Crash Recovery", "High Availability Protocol"], examinerTip: "Include clear architectural block diagrams." },
+      { id: "q15", marks: 10, category: "10-Mark Comprehensive Problem", question: `Compare and evaluate all major algorithmic variations of ${topic} with case studies.`, idealAnswer: `1. Comparative Benchmarks (throughput/latency).\n2. Memory vs Lock contention analysis.\n3. Production case study.`, keyPoints: ["Algorithm A vs B vs C", "Benchmark Analysis", "Industrial Case Study"], examinerTip: "Use clear metrics for each algorithm evaluated." },
+      { id: "q16", marks: 10, category: "10-Mark Comprehensive Problem", question: `Design an end-to-end optimized pipeline for ${topic} meeting strict latency (<10ms) and 99.999% availability.`, idealAnswer: `1. Ingress Tier (DPDK/eBPF).\n2. Compute Tier (SIMD/Lock-free).\n3. Storage Tier (Async WAL).\n4. Latency budget calculation.`, keyPoints: ["SLA Guarantees", "Lock-free Data Structures", "Latency Budgeting"], examinerTip: "State numerical SLA benchmarks." },
+      { id: "q17", marks: 10, category: "10-Mark Comprehensive Problem", question: `Formulate a complete exam revision masterclass for ${topic} covering all past 5 years recurring university questions.`, idealAnswer: `1. 5-Year Trend Synthesis.\n2. Compulsory Part A/B/C templates.\n3. Scoring maximizer formula.`, keyPoints: ["5-Year Trend Synthesis", "Compulsory Problem Templates", "Scoring Maximizer Formula"], examinerTip: "Review all 5 years recurring patterns." },
+      { id: "q18", marks: 10, category: "10-Mark Comprehensive Problem", question: `Explain the end-to-end security, cryptographic verification, and tamper-resistance protocols in ${topic}.`, idealAnswer: `1. Threat Model (replay/tampering).\n2. Multi-layer security: HMAC, TPM, RBAC.\n3. Tamper containment/isolation.`, keyPoints: ["HMAC signatures", "Hardware Root of Trust", "RBAC", "Tamper Mitigation"], examinerTip: "Detail cryptographic primitives (HMAC, SHA-256, TPM) to prove security expertise." }
     ]
   };
 }
-

@@ -110,7 +110,7 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
 5. Step-by-Step Derivation & Solved Proof
 6. Top Deadly Examiner Traps
 7. 60-Second High-Yield Revision Summary
-8. 2-Mark, 5-Mark & 10-Mark Practice Exam Questions`,
+8. 3-Mark, 7-Mark & 10-Mark Practice Exam Questions`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);

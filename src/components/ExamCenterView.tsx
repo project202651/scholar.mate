@@ -75,7 +75,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         topics: [
           { id: "ai_t1", title: "Uninformed & Informed Search (BFS, DFS, A*, Heuristics)", difficulty: "Medium", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Algorithm", summary: "State space search, admissible heuristics, completeness and time complexity." },
           { id: "ai_t2", title: "First-Order Logic & Resolution Refutation", difficulty: "Hard", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Proof", summary: "CNF conversion, unification algorithm, proof by contradiction." },
-          { id: "ai_t3", title: "Game Playing & Minimax with Alpha-Beta Pruning", difficulty: "Medium", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Derivation", summary: "Game tree traversal, pruning conditions, evaluation functions." }
+          { id: "ai_t3", title: "Game Playing & Minimax with Alpha-Beta Pruning", difficulty: "Medium", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Derivation", summary: "Game tree traversal, pruning conditions, evaluation functions." }
         ]
       },
       {
@@ -84,7 +84,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         weightagePercentage: 25,
         topics: [
           { id: "ai_t4", title: "Linear & Logistic Regression with Cost Functions", difficulty: "Medium", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Derivation", summary: "Gradient descent optimization, sigmoid activation, MSE loss vs cross-entropy." },
-          { id: "ai_t5", title: "Decision Trees & ID3 / C4.5 Information Gain", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Numerical", summary: "Entropy calculation, information gain ratio, tree pruning techniques." },
+          { id: "ai_t5", title: "Decision Trees & ID3 / C4.5 Information Gain", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Numerical", summary: "Entropy calculation, information gain ratio, tree pruning techniques." },
           { id: "ai_t6", title: "Support Vector Machines (SVM) & Kernel Trick", difficulty: "Hard", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Theory", summary: "Maximum margin hyperplane, support vectors, RBF and polynomial kernels." }
         ]
       },
@@ -103,7 +103,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 4: Unsupervised Learning & Dimensionality Reduction",
         weightagePercentage: 15,
         topics: [
-          { id: "ai_t10", title: "K-Means Clustering & Hierarchical Dendrograms", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Step-by-Step", summary: "Centroid initialization, Euclidean distance convergence, agglomerative clustering." },
+          { id: "ai_t10", title: "K-Means Clustering & Hierarchical Dendrograms", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Step-by-Step", summary: "Centroid initialization, Euclidean distance convergence, agglomerative clustering." },
           { id: "ai_t11", title: "Principal Component Analysis (PCA)", difficulty: "Medium", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Math", summary: "Covariance matrix, eigenvalues, eigenvectors, projection into orthogonal subspace." }
         ]
       },
@@ -112,8 +112,8 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 5: Model Evaluation, Overfitting & Ethical AI",
         weightagePercentage: 15,
         topics: [
-          { id: "ai_t12", title: "Confusion Matrix, Precision, Recall, F1-Score & ROC", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Numerical", summary: "True positive rates, false alarm trade-offs, AUC-ROC curve interpretation." },
-          { id: "ai_t13", title: "Regularization (L1 Lasso, L2 Ridge, Dropout) & Bias-Variance", difficulty: "Medium", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Theory", summary: "Preventing overfitting, weight penalties, cross-validation strategies." }
+          { id: "ai_t12", title: "Confusion Matrix, Precision, Recall, F1-Score & ROC", difficulty: "Easy", marksWeight: "3-Mark", frequentQuestionType: "3-Mark Numerical", summary: "True positive rates, false alarm trade-offs, AUC-ROC curve interpretation." },
+          { id: "ai_t13", title: "Regularization (L1 Lasso, L2 Ridge, Dropout) & Bias-Variance", difficulty: "Medium", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Theory", summary: "Preventing overfitting, weight penalties, cross-validation strategies." }
         ]
       }
     ]
@@ -131,7 +131,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 1: Process Management & CPU Scheduling",
         weightagePercentage: 25,
         topics: [
-          { id: "os_t1", title: "Process States, PCB Structure & Context Switching", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Diagram", summary: "5-state process lifecycle, PCB attributes, interrupt handling mechanics." },
+          { id: "os_t1", title: "Process States, PCB Structure & Context Switching", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Diagram", summary: "5-state process lifecycle, PCB attributes, interrupt handling mechanics." },
           { id: "os_t2", title: "CPU Scheduling (FCFS, SJF, SRTF, Round Robin, Priority)", difficulty: "Medium", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Gantt Chart", summary: "Average turnaround time, waiting time, response ratio, preemption criteria." },
           { id: "os_t3", title: "Inter-Process Communication & Semaphores", difficulty: "Hard", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Code/Logic", summary: "Critical section problem, Peterson's algorithm, counting vs binary semaphores." }
         ]
@@ -141,7 +141,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 2: Deadlock Handling & Banker's Algorithm",
         weightagePercentage: 20,
         topics: [
-          { id: "os_t4", title: "4 Necessary Conditions for Deadlock & Resource Allocation Graphs", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Theory", summary: "Mutual exclusion, hold & wait, no preemption, circular wait detection." },
+          { id: "os_t4", title: "4 Necessary Conditions for Deadlock & Resource Allocation Graphs", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Theory", summary: "Mutual exclusion, hold & wait, no preemption, circular wait detection." },
           { id: "os_t5", title: "Banker's Algorithm for Deadlock Avoidance", difficulty: "Hard", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Numerical", summary: "Safety check algorithm, resource request sequence, Need Matrix calculation." }
         ]
       },
@@ -160,7 +160,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         weightagePercentage: 15,
         topics: [
           { id: "os_t8", title: "File Allocation Methods (Contiguous, Linked, Indexed / Inodes)", difficulty: "Medium", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Comparison", summary: "Disk block addressing, direct and indirect block pointers in Unix inodes." },
-          { id: "os_t9", title: "Free Space Management (Bitmaps, Linked Lists)", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Short", summary: "Bit vector efficiency, pointer chaining, disk space overhead." }
+          { id: "os_t9", title: "Free Space Management (Bitmaps, Linked Lists)", difficulty: "Easy", marksWeight: "3-Mark", frequentQuestionType: "3-Mark Short", summary: "Bit vector efficiency, pointer chaining, disk space overhead." }
         ]
       },
       {
@@ -168,7 +168,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 5: Secondary Storage & Disk Scheduling",
         weightagePercentage: 15,
         topics: [
-          { id: "os_t10", title: "Disk Arm Scheduling (SSTF, SCAN, C-SCAN, LOOK)", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Calculation", summary: "Total head movement computation, seek time optimization, cylinder request queues." }
+          { id: "os_t10", title: "Disk Arm Scheduling (SSTF, SCAN, C-SCAN, LOOK)", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Calculation", summary: "Total head movement computation, seek time optimization, cylinder request queues." }
         ]
       }
     ]
@@ -186,8 +186,8 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 1: Asymptotic Analysis & Linear Structures",
         weightagePercentage: 20,
         topics: [
-          { id: "dsa_t1", title: "Big-O, Big-Omega, Theta & Recurrence Relations", difficulty: "Medium", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Proof", summary: "Master Theorem, recursion trees, time & space complexity." },
-          { id: "dsa_t2", title: "Singly, Doubly & Circular Linked Lists Operations", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Implementation", summary: "Insertion, deletion, reversal, cycle detection (Floyd's algorithm)." }
+          { id: "dsa_t1", title: "Big-O, Big-Omega, Theta & Recurrence Relations", difficulty: "Medium", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Proof", summary: "Master Theorem, recursion trees, time & space complexity." },
+          { id: "dsa_t2", title: "Singly, Doubly & Circular Linked Lists Operations", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Implementation", summary: "Insertion, deletion, reversal, cycle detection (Floyd's algorithm)." }
         ]
       },
       {
@@ -195,7 +195,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 2: Stacks, Queues & Expression Parsing",
         weightagePercentage: 20,
         topics: [
-          { id: "dsa_t3", title: "Infix to Postfix Conversion & Postfix Evaluation", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Step-by-Step", summary: "Operator precedence, stack simulation, parenthesis matching." },
+          { id: "dsa_t3", title: "Infix to Postfix Conversion & Postfix Evaluation", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Step-by-Step", summary: "Operator precedence, stack simulation, parenthesis matching." },
           { id: "dsa_t4", title: "Circular Queues & Priority Queues with Heaps", difficulty: "Medium", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Operations", summary: "Array wrapping formulas, binary min/max heapify operations." }
         ]
       },
@@ -204,7 +204,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 3: Trees & Binary Search Trees (BST)",
         weightagePercentage: 25,
         topics: [
-          { id: "dsa_t5", title: "Binary Tree Traversals (Inorder, Preorder, Postorder)", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Traversal", summary: "Recursive and iterative traversals, reconstructing tree from orders." },
+          { id: "dsa_t5", title: "Binary Tree Traversals (Inorder, Preorder, Postorder)", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Traversal", summary: "Recursive and iterative traversals, reconstructing tree from orders." },
           { id: "dsa_t6", title: "AVL Tree Rotations (LL, RR, LR, RL) & B-Trees", difficulty: "Hard", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Derivation", summary: "Balance factor recalculation, single and double rotations, B-tree node splitting." }
         ]
       },
@@ -213,7 +213,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 4: Graph Algorithms & Minimum Spanning Trees",
         weightagePercentage: 20,
         topics: [
-          { id: "dsa_t7", title: "Graph Traversals (BFS & DFS) & Topological Sort", difficulty: "Medium", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Algorithm", summary: "Queue vs recursion stack, cycle detection in directed graphs." },
+          { id: "dsa_t7", title: "Graph Traversals (BFS & DFS) & Topological Sort", difficulty: "Medium", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Algorithm", summary: "Queue vs recursion stack, cycle detection in directed graphs." },
           { id: "dsa_t8", title: "Shortest Paths (Dijkstra) & Minimum Spanning Trees (Prim / Kruskal)", difficulty: "Hard", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Step-by-Step", summary: "Greedy edge selection, disjoint sets union-find, relaxation step." }
         ]
       },
@@ -240,7 +240,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 1: ER Modeling & Relational Algebra",
         weightagePercentage: 20,
         topics: [
-          { id: "dbms_t1", title: "ER Diagrams, Cardinality, & Conversion to Tables", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Schema", summary: "Entities, attributes, relationships, foreign key constraints." },
+          { id: "dbms_t1", title: "ER Diagrams, Cardinality, & Conversion to Tables", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Schema", summary: "Entities, attributes, relationships, foreign key constraints." },
           { id: "dbms_t2", title: "Relational Algebra Operations (Select, Project, Join)", difficulty: "Medium", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Query", summary: "Theta join, natural join, set operations, division operator." }
         ]
       },
@@ -266,7 +266,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         weightagePercentage: 20,
         topics: [
           { id: "dbms_t5", title: "Serializability & Conflict Equivalence Schedules", difficulty: "Hard", marksWeight: "10-Mark", frequentQuestionType: "10-Mark Proof", summary: "Precedence graph testing, read-write conflict pairs." },
-          { id: "dbms_t6", title: "Two-Phase Locking (2PL) Protocol & Deadlocks", difficulty: "Medium", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Theory", summary: "Growing phase, shrinking phase, strict 2PL, wait-die vs wound-wait." }
+          { id: "dbms_t6", title: "Two-Phase Locking (2PL) Protocol & Deadlocks", difficulty: "Medium", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Theory", summary: "Growing phase, shrinking phase, strict 2PL, wait-die vs wound-wait." }
         ]
       },
       {
@@ -292,7 +292,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 1: OSI vs TCP/IP Layers & Physical Layer",
         weightagePercentage: 20,
         topics: [
-          { id: "cn_t1", title: "OSI 7-Layer Model Responsibilities & PDU Encapsulation", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Diagram", summary: "Physical to Application layer mapping, headers, packet flow." }
+          { id: "cn_t1", title: "OSI 7-Layer Model Responsibilities & PDU Encapsulation", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Diagram", summary: "Physical to Application layer mapping, headers, packet flow." }
         ]
       },
       {
@@ -343,7 +343,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 1: Cloud Service & Deployment Models",
         weightagePercentage: 20,
         topics: [
-          { id: "cl_t1", title: "IaaS, PaaS, SaaS & Public/Private/Hybrid Clouds", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Comparison", summary: "Shared responsibility model, elasticity vs scalability." }
+          { id: "cl_t1", title: "IaaS, PaaS, SaaS & Public/Private/Hybrid Clouds", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Comparison", summary: "Shared responsibility model, elasticity vs scalability." }
         ]
       },
       {
@@ -367,7 +367,7 @@ const ENGINEERING_SUBJECTS: SubjectBlueprint[] = [
         name: "Unit 4: CI/CD Pipelines & Automation",
         weightagePercentage: 15,
         topics: [
-          { id: "cl_t4", title: "Continuous Integration & Automated Testing Workflows", difficulty: "Easy", marksWeight: "5-Mark", frequentQuestionType: "5-Mark Flowchart", summary: "Build artifacts, deployment strategies (blue-green, canary)." }
+          { id: "cl_t4", title: "Continuous Integration & Automated Testing Workflows", difficulty: "Easy", marksWeight: "7-Mark", frequentQuestionType: "7-Mark Flowchart", summary: "Build artifacts, deployment strategies (blue-green, canary)." }
         ]
       },
       {

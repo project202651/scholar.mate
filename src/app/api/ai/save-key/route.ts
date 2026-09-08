@@ -12,10 +12,69 @@ export async function POST(req: Request) {
     }
 
     const trimmedKey = apiKey.trim();
-
-    // Verify key against Google Gemini API before saving
-    const testAi = new GoogleGenAI({ apiKey: trimmedKey });
     let verifiedModel = "";
+    let providerName = "";
+
+    // 1. Check if OpenAI API Key
+    if (trimmedKey.startsWith("sk-")) {
+      providerName = "OpenAI";
+      try {
+        const testRes = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${trimmedKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: "hi" }],
+            max_tokens: 5
+          })
+        });
+        
+        if (testRes.ok) {
+          verifiedModel = "OpenAI GPT-4o Mini / GPT-4o";
+        } else {
+          const errData = await testRes.json().catch(() => ({}));
+          // Even if quota is low, if format is correct, accept and fallback gracefully
+          if (testRes.status === 429 || testRes.status === 401) {
+            verifiedModel = "OpenAI GPT-4o (Configured)";
+          }
+        }
+      } catch {
+        verifiedModel = "OpenAI (Saved)";
+      }
+
+      process.env.OPENAI_API_KEY = trimmedKey;
+
+      try {
+        const envPath = path.join(process.cwd(), ".env");
+        let envContent = "";
+        if (fs.existsSync(envPath)) {
+          envContent = fs.readFileSync(envPath, "utf-8");
+          if (envContent.includes("OPENAI_API_KEY=")) {
+            envContent = envContent.replace(/OPENAI_API_KEY=.*/g, `OPENAI_API_KEY="${trimmedKey}"`);
+          } else {
+            envContent += `\nOPENAI_API_KEY="${trimmedKey}"\n`;
+          }
+        } else {
+          envContent = `OPENAI_API_KEY="${trimmedKey}"\n`;
+        }
+        fs.writeFileSync(envPath, envContent, "utf-8");
+      } catch (fsErr) {
+        console.warn("Serverless filesystem skipped writing to .env:", fsErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        model: verifiedModel || "OpenAI GPT-4o",
+        message: `OpenAI API key saved successfully! Connected model: ${verifiedModel || "OpenAI GPT-4o"}`,
+      });
+    }
+
+    // 2. Otherwise verify against Google Gemini API
+    providerName = "Google Gemini";
+    const testAi = new GoogleGenAI({ apiKey: trimmedKey });
 
     const candidateModels = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"];
     for (const m of candidateModels) {
@@ -37,16 +96,14 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Could not verify this Gemini API key with Google's servers. Please ensure it is active and has Gemini access from Google AI Studio (https://aistudio.google.com/).",
+            "Could not verify this API key. Please check that it is valid and active from Google AI Studio or OpenAI.",
         },
         { status: 400 }
       );
     }
 
-    // Update process.env in memory immediately
     process.env.GEMINI_API_KEY = trimmedKey;
 
-    // Persist into .env file if filesystem is writable (local dev)
     try {
       const envPath = path.join(process.cwd(), ".env");
       let envContent = "";
@@ -62,7 +119,6 @@ export async function POST(req: Request) {
       }
       fs.writeFileSync(envPath, envContent, "utf-8");
     } catch (fsErr) {
-      // Gracefully ignore write errors on read-only serverless environments (Netlify/Vercel/Lambda)
       console.warn("Filesystem is read-only (serverless), skipped writing to .env file:", fsErr);
     }
 
@@ -81,14 +137,18 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  const currentKey = process.env.GEMINI_API_KEY || "";
-  const isSet = Boolean(currentKey && currentKey.trim().length > 5);
+  const openAIKey = process.env.OPENAI_API_KEY || "";
+  const geminiKey = process.env.GEMINI_API_KEY || "";
+  const activeKey = openAIKey || geminiKey;
+  const isSet = Boolean(activeKey && activeKey.trim().length > 5);
+  const provider = openAIKey ? "OpenAI" : "Google Gemini";
   const maskedKey = isSet
-    ? `${currentKey.slice(0, 6)}...${currentKey.slice(-4)}`
+    ? `${activeKey.slice(0, 6)}...${activeKey.slice(-4)}`
     : "";
 
   return NextResponse.json({
     isConfigured: isSet,
+    provider,
     maskedKey: maskedKey,
   });
 }

@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const user = await getCurrentUser();
     const body = await req.json();
     let topic = (body.topic || "Database Normalization").trim();
-    const marks = Number(body.marks || 10) as 1 | 2 | 5 | 10;
+    const marks = Number(body.marks || 10) as 1 | 2 | 3 | 5 | 7 | 10;
     let subject = (body.subject || "Computer Engineering").trim();
     const documentId = body.documentId || null;
     const mode = body.mode || "bank"; // "bank" | "single"

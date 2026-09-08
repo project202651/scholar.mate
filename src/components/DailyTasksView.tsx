@@ -147,7 +147,7 @@ export default function DailyTasksView() {
               required
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="e.g. Practice 5-Mark Question on Banker's Algorithm"
+              placeholder="e.g. Practice 7-Mark Question on Banker's Algorithm"
               className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs text-white placeholder-slate-500 focus:border-cyan-500 focus:outline-none"
             />
           </div>

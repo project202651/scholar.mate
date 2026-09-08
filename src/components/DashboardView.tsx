@@ -259,7 +259,7 @@ export default function DashboardView({
                 </div>
                 <div>
                   <span className="text-xs font-bold text-slate-200">Scheduled Spaced Review Break</span>
-                  <p className="text-[10px] text-slate-400">10-minute memory consolidation before drilling 5-mark questions</p>
+                  <p className="text-[10px] text-slate-400">10-minute memory consolidation before drilling 7-mark questions</p>
                 </div>
               </div>
               <span className="text-[11px] font-mono font-bold text-[#54d6c7]">10 min break</span>
@@ -274,7 +274,7 @@ export default function DashboardView({
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-white">Task 3: Practice Question: Gantt Chart Scheduling</span>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-[#70d6a8]/20 text-[#70d6a8] font-bold">
-                    5-Mark Drill
+                    7-Mark Drill
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-300">Operating Systems · 10 minutes</p>

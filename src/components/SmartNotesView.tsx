@@ -120,7 +120,7 @@ export default function SmartNotesView({ onOpenAISettings, initialDocId }: Smart
             <span>Smart Notes & Exam Summarizer</span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Auto-extract bullet points, concise chapter summaries, and high-yield 5-mark & 10-mark questions
+            Auto-extract bullet points, concise chapter summaries, and high-yield 3-mark, 7-mark & 10-mark questions
           </p>
         </div>
       </div>
