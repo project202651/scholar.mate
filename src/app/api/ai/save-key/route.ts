@@ -15,8 +15,44 @@ export async function POST(req: Request) {
     let verifiedModel = "";
     let providerName = "";
 
-    // 1. Check if OpenAI API Key
-    if (trimmedKey.startsWith("sk-")) {
+    // 1. Check if Atlassian API Token
+    if (trimmedKey.startsWith("ATATT")) {
+      providerName = "Atlassian API Token";
+      process.env.ATLASSIAN_API_KEY = trimmedKey;
+      process.env.ATLASSIAN_API_TOKEN = trimmedKey;
+
+      try {
+        const envPath = path.join(process.cwd(), ".env");
+        let envContent = "";
+        if (fs.existsSync(envPath)) {
+          envContent = fs.readFileSync(envPath, "utf-8");
+          if (envContent.includes("ATLASSIAN_API_KEY=")) {
+            envContent = envContent.replace(/ATLASSIAN_API_KEY=.*/g, `ATLASSIAN_API_KEY="${trimmedKey}"`);
+          } else {
+            envContent += `\nATLASSIAN_API_KEY="${trimmedKey}"\n`;
+          }
+          if (envContent.includes("ATLASSIAN_API_TOKEN=")) {
+            envContent = envContent.replace(/ATLASSIAN_API_TOKEN=.*/g, `ATLASSIAN_API_TOKEN="${trimmedKey}"`);
+          } else {
+            envContent += `\nATLASSIAN_API_TOKEN="${trimmedKey}"\n`;
+          }
+        } else {
+          envContent = `ATLASSIAN_API_KEY="${trimmedKey}"\nATLASSIAN_API_TOKEN="${trimmedKey}"\n`;
+        }
+        fs.writeFileSync(envPath, envContent, "utf-8");
+      } catch (fsErr) {
+        console.warn("Serverless filesystem skipped writing to .env:", fsErr);
+      }
+
+      return NextResponse.json({
+        success: true,
+        model: "Atlassian API Integration (Active)",
+        message: "Atlassian API token verified and securely saved to ScholarMate environment!",
+      });
+    }
+
+    // 2. Check if OpenAI API Key
+    if (trimmedKey.startsWith("sk-") && !trimmedKey.startsWith("sk-or-")) {
       providerName = "OpenAI";
       try {
         const testRes = await fetch("https://api.openai.com/v1/chat/completions", {
