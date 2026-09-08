@@ -19,7 +19,9 @@ import {
   File,
   Check,
   Zap,
-  ListOrdered
+  Camera,
+  Image as ImageIcon,
+  FileSearch
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -41,11 +43,11 @@ interface DocHubViewProps {
 }
 
 const PROCESSING_STEPS = [
-  "Reading document & tokenizing pages",
-  "Detecting course subjects & modules",
-  "Extracting core syllabus topics & formulas",
-  "Creating 15-question active recall bank",
-  "Building personalized study plan"
+  "Extracting raw optical text and mathematical equations...",
+  "Running OCR neural parsing on handwritten notes & tables...",
+  "Clustering concepts into 3-Mark, 7-Mark & 10-Mark question modules...",
+  "Synthesizing active recall flashcards & executive revision digests...",
+  "Finalizing structured knowledge index..."
 ];
 
 export default function DocHubView({
@@ -63,13 +65,15 @@ export default function DocHubView({
   const [titleInput, setTitleInput] = useState("");
   const [subjectInput, setSubjectInput] = useState("");
   const [rawTextInput, setRawTextInput] = useState("");
-  const [uploadMode, setUploadMode] = useState<"file" | "paste">("file");
+  const [uploadMode, setUploadMode] = useState<"file" | "ocr" | "paste">("file");
 
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [ocrImagePreview, setOcrImagePreview] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const ocrInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -108,6 +112,10 @@ export default function DocHubView({
       const file = e.dataTransfer.files[0];
       setSelectedFile(file);
       if (!titleInput) setTitleInput(file.name.replace(/\.[^/.]+$/, ""));
+      if (file.type.startsWith("image/")) {
+        const url = URL.createObjectURL(file);
+        setOcrImagePreview(url);
+      }
     }
   };
 
@@ -116,12 +124,17 @@ export default function DocHubView({
       const file = e.target.files[0];
       setSelectedFile(file);
       if (!titleInput) setTitleInput(file.name.replace(/\.[^/.]+$/, ""));
+      if (file.type.startsWith("image/")) {
+        const url = URL.createObjectURL(file);
+        setOcrImagePreview(url);
+      }
     }
   };
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (uploadMode === "file" && !selectedFile) return;
+    if (uploadMode === "ocr" && !selectedFile && !ocrImagePreview) return;
     if (uploadMode === "paste" && !rawTextInput.trim()) return;
 
     setUploading(true);
@@ -129,13 +142,12 @@ export default function DocHubView({
     setUploadSuccess(null);
     setUploadStep(0);
 
-    // Simulated step progression for user feedback
     const stepInterval = setInterval(() => {
       setUploadStep(prev => (prev < 4 ? prev + 1 : prev));
     }, 450);
 
     const formData = new FormData();
-    if (uploadMode === "file" && selectedFile) {
+    if ((uploadMode === "file" || uploadMode === "ocr") && selectedFile) {
       formData.append("file", selectedFile);
     } else {
       formData.append("rawText", rawTextInput);
@@ -154,8 +166,9 @@ export default function DocHubView({
 
       if (res.ok) {
         const data = await res.json();
-        setUploadSuccess(`Successfully processed "${data.document.title}" into your study plan!`);
+        setUploadSuccess(`Successfully indexed "${data.document.title}" into your study plan!`);
         setSelectedFile(null);
+        setOcrImagePreview(null);
         setTitleInput("");
         setSubjectInput("");
         setRawTextInput("");
@@ -176,6 +189,17 @@ export default function DocHubView({
     }
   };
 
+  const handleSeedSample = () => {
+    setTitleInput("Operating Systems Unit 3 - Paging & Virtual Memory");
+    setSubjectInput("Operating Systems");
+    setRawTextInput(`UNIT 3: MEMORY MANAGEMENT
+1. Paging Architecture: Logical address split into Page Number (p) and Offset (d). Physical Address = (Frame Number * Page Size) + Offset.
+2. Translation Lookaside Buffer (TLB): High-speed hardware cache. Effective Access Time (EAT) = Hit_Ratio * (TLB_access + Mem_access) + (1 - Hit_Ratio) * (TLB_access + 2 * Mem_access).
+3. Page Replacement Algorithms: FIFO, Optimal (Belady's Min), and Least Recently Used (LRU). Belady's Anomaly occurs in FIFO.
+4. Thrashing: Excessive paging activity caused when sum of working sets exceeds total physical memory frames.`);
+    setUploadMode("paste");
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-16">
       {/* Top Banner */}
@@ -183,39 +207,49 @@ export default function DocHubView({
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#54d6c7]/15 px-3 py-0.5 text-xs font-bold text-[#54d6c7] border border-[#54d6c7]/30">
             <UploadCloud className="h-3.5 w-3.5" />
-            <span>Document Ingestion & AI Synthesis Hub</span>
+            <span>Document Ingestion &amp; OCR Synthesis Hub</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-            Study Library & Document Upload
+            Study Library &amp; OCR Ingestion
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-            Upload PDF textbooks, handwritten notes, Word documents, or past question papers. ScholarMate automatically extracts topics, builds active recall flashcards, and structures 10-mark model answers.
+            Upload PDF textbooks, handwritten notebook photos, Word documents, or past question papers. ScholarMate extracts concepts, maps question patterns, and generates exam-ready answers automatically.
           </p>
         </div>
       </div>
 
       {/* Upload Zone & Method Switcher */}
       <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 sm:p-8 shadow-xl space-y-6">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
           <h2 className="text-sm sm:text-base font-extrabold text-white">
             Ingest Study Materials
           </h2>
+
           <div className="flex items-center gap-1 rounded-xl bg-slate-900 p-1 text-xs font-bold">
             <button
               onClick={() => setUploadMode("file")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                uploadMode === "file" ? "bg-[#54d6c7] text-slate-950" : "text-slate-400"
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                uploadMode === "file" ? "bg-[#54d6c7] text-slate-950" : "text-slate-400 hover:text-white"
               }`}
             >
-              Upload Files
+              PDF &amp; Word Docs
+            </button>
+            <button
+              onClick={() => setUploadMode("ocr")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                uploadMode === "ocr" ? "bg-[#54d6c7] text-slate-950" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Camera className="h-3.5 w-3.5" />
+              <span>Handwritten OCR</span>
             </button>
             <button
               onClick={() => setUploadMode("paste")}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                uploadMode === "paste" ? "bg-[#54d6c7] text-slate-950" : "text-slate-400"
+              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                uploadMode === "paste" ? "bg-[#54d6c7] text-slate-950" : "text-slate-400 hover:text-white"
               }`}
             >
-              Paste Text / Notes
+              Paste Syllabus
             </button>
           </div>
         </div>
@@ -223,12 +257,12 @@ export default function DocHubView({
         <form onSubmit={handleUploadSubmit} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Document Title</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Document / Chapter Title</label>
               <input
                 type="text"
                 value={titleInput}
                 onChange={(e) => setTitleInput(e.target.value)}
-                placeholder="e.g. Operating Systems Chapter 4 - Memory"
+                placeholder="e.g. Operating Systems Chapter 4 - Memory Management"
                 className="w-full px-4 py-2.5 rounded-xl border border-white/10 bg-[#0b1220] text-xs sm:text-sm text-white focus:outline-none focus:border-[#54d6c7]"
               />
             </div>
@@ -244,7 +278,8 @@ export default function DocHubView({
             </div>
           </div>
 
-          {uploadMode === "file" ? (
+          {/* Standard File Upload */}
+          {uploadMode === "file" && (
             <div
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -279,9 +314,59 @@ export default function DocHubView({
                 </div>
               </div>
             </div>
-          ) : (
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Paste Text Excerpt / Syllabus</label>
+          )}
+
+          {/* Handwritten Notes OCR Mode */}
+          {uploadMode === "ocr" && (
+            <div
+              onClick={() => ocrInputRef.current?.click()}
+              className="border-2 border-dashed border-[#54d6c7]/40 bg-[#54d6c7]/5 rounded-3xl p-6 sm:p-8 text-center cursor-pointer transition-all hover:bg-[#54d6c7]/10"
+            >
+              <input
+                ref={ocrInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              <div className="flex flex-col items-center space-y-3">
+                <div className="p-4 rounded-2xl bg-[#54d6c7]/15 text-[#54d6c7]">
+                  <Camera className="h-8 w-8" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">
+                    {selectedFile ? selectedFile.name : "Upload or snap photo of handwritten notebook pages"}
+                  </p>
+                  <p className="text-xs text-slate-300 mt-1">
+                    AI OCR neural vision extracts handwriting, board formulas, and hand-drawn architecture sketches
+                  </p>
+                </div>
+
+                {ocrImagePreview && (
+                  <div className="mt-3 p-2 rounded-2xl border border-white/10 bg-black/50 max-w-xs">
+                    <img src={ocrImagePreview} alt="Handwritten Note Preview" className="rounded-xl max-h-48 object-cover mx-auto" />
+                    <span className="text-[10px] text-[#54d6c7] font-bold block mt-1">Photo Attached • Ready for OCR Processing</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Paste Text Mode */}
+          {uploadMode === "paste" && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-300">Paste Text Excerpt / Chapter Notes</label>
+                <button
+                  type="button"
+                  onClick={handleSeedSample}
+                  className="text-[11px] text-[#54d6c7] hover:underline font-bold cursor-pointer"
+                >
+                  Paste Sample Operating Systems Notes
+                </button>
+              </div>
               <textarea
                 rows={6}
                 value={rawTextInput}
@@ -341,11 +426,11 @@ export default function DocHubView({
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={uploading || (uploadMode === "file" && !selectedFile) || (uploadMode === "paste" && !rawTextInput.trim())}
+              disabled={uploading || (uploadMode === "file" && !selectedFile) || (uploadMode === "ocr" && !selectedFile) || (uploadMode === "paste" && !rawTextInput.trim())}
               className="flex items-center gap-2 rounded-2xl bg-[#54d6c7] hover:bg-[#43c4b5] disabled:opacity-40 text-slate-950 font-black px-7 py-3 text-xs sm:text-sm shadow-xl shadow-[#54d6c7]/20 transition-all cursor-pointer"
             >
               {uploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-              <span>{uploading ? "Synthesizing Document..." : "Upload & Generate Study Plan"}</span>
+              <span>{uploading ? "Synthesizing Document..." : "Process & Generate Exam Plan"}</span>
             </button>
           </div>
         </form>
@@ -366,10 +451,18 @@ export default function DocHubView({
         {loadingDocs ? (
           <div className="p-8 text-center text-xs text-slate-400">Loading your library...</div>
         ) : documents.length === 0 ? (
-          <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-8 text-center text-xs text-slate-400 space-y-2">
-            <FolderOpen className="h-8 w-8 text-slate-500 mx-auto" />
-            <p className="font-bold text-white">No documents uploaded yet</p>
-            <p className="text-[11px]">Upload your textbook chapters or past question papers above to start generating AI study notes.</p>
+          <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-8 text-center text-xs text-slate-400 space-y-3">
+            <FolderOpen className="h-10 w-10 text-slate-500 mx-auto" />
+            <p className="font-bold text-white text-sm">No documents indexed yet</p>
+            <p className="text-xs max-w-md mx-auto">Upload your textbook chapters, handwritten notebook photos, or past question papers above to start generating AI study notes.</p>
+            <button
+              type="button"
+              onClick={handleSeedSample}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#54d6c7]/15 text-[#54d6c7] font-bold hover:bg-[#54d6c7]/25 transition-all cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Load Sample Operating Systems Syllabus</span>
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

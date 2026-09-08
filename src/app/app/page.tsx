@@ -7,6 +7,8 @@ import AuthModal from '@/components/AuthModal';
 import AISettingsModal from '@/components/AISettingsModal';
 import EmergencyModeModal from '@/components/EmergencyModeModal';
 import OnboardingModal from '@/components/OnboardingModal';
+import MistakeNotebookModal from '@/components/MistakeNotebookModal';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import ThreeBackground from '@/components/ThreeBackground';
 import NexaFloatingButton from '@/components/NexaFloatingButton';
 
@@ -34,7 +36,9 @@ function StudentWorkspaceContent() {
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isMistakeNotebookOpen, setIsMistakeNotebookOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [is3DDisabled, setIs3DDisabled] = useState(false);
 
   // Shared active focus context for inter-view transitions
   const [selectedTopic, setSelectedTopic] = useState<string>('Banker\'s Algorithm for Deadlock Avoidance');
@@ -57,6 +61,8 @@ function StudentWorkspaceContent() {
       if (savedTheme) {
         setTheme(savedTheme);
       }
+      const stored3D = localStorage.getItem('scholarmate_disable_3d') === 'true';
+      if (stored3D) setIs3DDisabled(true);
     } catch (e) {}
 
     const shouldOnboard = searchParams.get('onboarding') === 'true';
@@ -106,6 +112,15 @@ function StudentWorkspaceContent() {
     } catch (e) {}
   };
 
+  const toggle3D = () => {
+    const next = !is3DDisabled;
+    setIs3DDisabled(next);
+    try {
+      localStorage.setItem('scholarmate_disable_3d', String(next));
+      window.dispatchEvent(new CustomEvent('scholarmate:toggle-3d', { detail: { disabled: next } }));
+    } catch (e) {}
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -119,6 +134,12 @@ function StudentWorkspaceContent() {
   const handleTopicSelect = (topic: string, subject?: string) => {
     setSelectedTopic(topic);
     if (subject) setSelectedSubject(subject);
+  };
+
+  const handleReTestMistake = (topic: string, subject: string) => {
+    setSelectedTopic(topic);
+    setSelectedSubject(subject);
+    setActiveTab('practice');
   };
 
   return (
@@ -138,12 +159,15 @@ function StudentWorkspaceContent() {
         onOpenAISettings={() => setIsAISettingsOpen(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
+        onOpenMistakeNotebook={() => setIsMistakeNotebookOpen(true)}
         theme={theme}
         onToggleTheme={toggleTheme}
+        is3DDisabled={is3DDisabled}
+        onToggle3D={toggle3D}
       />
 
       {/* Main Content Workspace */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 relative z-10">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 relative z-10 pb-28 lg:pb-12">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -159,6 +183,7 @@ function StudentWorkspaceContent() {
                 onOpenAuth={() => setIsAuthOpen(true)}
                 onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
                 onOpenOnboarding={() => setIsOnboardingOpen(true)}
+                onOpenMistakeNotebook={() => setIsMistakeNotebookOpen(true)}
                 onSelectTopic={handleTopicSelect}
                 theme={theme}
               />
@@ -279,13 +304,21 @@ function StudentWorkspaceContent() {
         </AnimatePresence>
       </main>
 
-      {/* Floating Nexa AI Assistant */}
-      <NexaFloatingButton
-        activeTopic={selectedTopic}
-        activeSubject={selectedSubject}
-        activeDocId={selectedDocId}
-        activeDocTitle={selectedDocTitle}
-        onNavigateToTab={setActiveTab}
+      {/* Floating Nexa AI Assistant (Desktop) */}
+      <div className="hidden lg:block">
+        <NexaFloatingButton
+          activeTopic={selectedTopic}
+          activeSubject={selectedSubject}
+          activeDocId={selectedDocId}
+          activeDocTitle={selectedDocTitle}
+          onNavigateToTab={setActiveTab}
+        />
+      </div>
+
+      {/* Mobile Sticky Bottom Navigation */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
 
       {/* Modals */}
@@ -320,6 +353,12 @@ function StudentWorkspaceContent() {
         onComplete={() => {
           setActiveTab('dashboard');
         }}
+      />
+
+      <MistakeNotebookModal
+        isOpen={isMistakeNotebookOpen}
+        onClose={() => setIsMistakeNotebookOpen(false)}
+        onReTestQuestion={handleReTestMistake}
       />
     </div>
   );

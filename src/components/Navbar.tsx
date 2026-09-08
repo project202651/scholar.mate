@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { 
   GraduationCap, LogOut, User as UserIcon, 
   Cpu, Target, Bot, BookOpen, FileCheck2, Award, Layers, BarChart3, Clock,
-  Sparkles, ChevronDown, Menu, X, Calendar, Plus, UploadCloud
+  Sparkles, ChevronDown, Menu, X, Calendar, Plus, UploadCloud, Sun, Moon, Eye, EyeOff, BookMarked
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,8 +28,11 @@ interface NavbarProps {
   onOpenAISettings: () => void;
   onOpenOnboarding?: () => void;
   onOpenEmergencyModal?: () => void;
+  onOpenMistakeNotebook?: () => void;
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
+  is3DDisabled?: boolean;
+  onToggle3D?: () => void;
 }
 
 export default function Navbar({
@@ -40,6 +43,11 @@ export default function Navbar({
   onLogout,
   onOpenAISettings,
   onOpenOnboarding,
+  onOpenMistakeNotebook,
+  theme = 'dark',
+  onToggleTheme,
+  is3DDisabled = false,
+  onToggle3D
 }: NavbarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -213,6 +221,44 @@ export default function Navbar({
               >
                 <Sparkles className="h-3.5 w-3.5 text-[#54d6c7]" />
                 <span>Build Study Plan</span>
+              </button>
+            )}
+
+            {/* Mistake Vault Shortcut */}
+            {onOpenMistakeNotebook && (
+              <button
+                onClick={onOpenMistakeNotebook}
+                title="Mistake Notebook & Error Vault"
+                className="hidden sm:flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-300 hover:bg-rose-500/20 transition-all cursor-pointer"
+              >
+                <BookMarked className="h-3.5 w-3.5" />
+                <span className="hidden xl:inline">Mistakes</span>
+              </button>
+            )}
+
+            {/* 3D Effects Pause/Disable Toggle */}
+            {onToggle3D && (
+              <button
+                onClick={onToggle3D}
+                title={is3DDisabled ? "Enable 3D Background Effects" : "Pause / Disable 3D Effects for Accessibility"}
+                className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                  is3DDisabled 
+                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' 
+                    : 'border-white/10 bg-[#111c2e] text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {is3DDisabled ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5 text-[#54d6c7]" />}
+              </button>
+            )}
+
+            {/* Light/Dark Theme Switch */}
+            {onToggleTheme && (
+              <button
+                onClick={onToggleTheme}
+                title="Toggle Dark / Light Theme"
+                className="p-2 rounded-xl border border-white/10 bg-[#111c2e] text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              >
+                {theme === 'dark' ? <Sun className="h-3.5 w-3.5 text-[#54d6c7]" /> : <Moon className="h-3.5 w-3.5 text-slate-700" />}
               </button>
             )}
 

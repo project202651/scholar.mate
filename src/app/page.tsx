@@ -101,6 +101,22 @@ export default function LandingPage() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
+            {/* 3D Motion Toggle Button */}
+            <button
+              onClick={() => {
+                try {
+                  const current = localStorage.getItem('scholarmate_disable_3d') === 'true';
+                  localStorage.setItem('scholarmate_disable_3d', String(!current));
+                  window.location.reload();
+                } catch (e) {}
+              }}
+              title="Toggle 3D Motion"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-[11px] font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-[#54d6c7]" />
+              <span>3D FX</span>
+            </button>
+
             <button
               onClick={toggleTheme}
               aria-label="Toggle Theme"
@@ -128,7 +144,7 @@ export default function LandingPage() {
       </header>
 
       {/* 1. HERO SECTION */}
-      <section className="relative z-10 mx-auto max-w-7xl px-4 pt-12 pb-20 sm:px-6 lg:pt-16">
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pt-12 pb-12 sm:px-6 lg:pt-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           {/* Left Column: Messaging & Dominant CTA */}
           <div className="lg:col-span-7 space-y-6">
@@ -189,6 +205,32 @@ export default function LandingPage() {
           <div className="lg:col-span-5 flex items-center justify-center">
             <InteractiveStudyScene />
           </div>
+        </div>
+      </section>
+
+      {/* BRANDING CLARIFICATION BANNER */}
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pb-12 sm:px-6">
+        <div className="rounded-3xl border border-[#54d6c7]/25 bg-gradient-to-r from-[#54d6c7]/10 via-[#111c2e] to-[#8b5cf6]/10 p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-lg shadow-black/30">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/30 shadow-inner">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-bold text-white">
+                <span className="text-[#54d6c7]">ScholarMate</span> is your exam preparation workspace. <span className="text-[#a78bfa]">Nexa</span> is the AI tutor inside ScholarMate.
+              </p>
+              <p className="text-[11px] sm:text-xs text-slate-300 pt-0.5">
+                One unified platform for syllabus intelligence, structured active recall, and instant AI examiner diagnostics.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/signup"
+            className="shrink-0 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2 text-xs font-bold text-[#54d6c7] hover:text-white transition-all flex items-center gap-1.5"
+          >
+            <span>Get Started</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
         </div>
       </section>
 

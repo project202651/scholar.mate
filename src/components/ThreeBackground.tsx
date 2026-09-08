@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 interface ThreeBackgroundProps {
@@ -9,21 +9,50 @@ interface ThreeBackgroundProps {
 
 export default function ThreeBackground({ theme = "dark" }: ThreeBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   useEffect(() => {
+    // Check user preference or OS reduced motion
+    try {
+      const stored = localStorage.getItem("scholarmate_disable_3d");
+      const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (stored === "true" || prefersReduced) {
+        setIsDisabled(true);
+      }
+    } catch (e) {}
+
+    const handleToggle = (e: any) => {
+      if (e.detail && typeof e.detail.disabled === "boolean") {
+        setIsDisabled(e.detail.disabled);
+      }
+    };
+    window.addEventListener("scholarmate:toggle-3d", handleToggle);
+    return () => window.removeEventListener("scholarmate:toggle-3d", handleToggle);
+  }, []);
+
+  useEffect(() => {
+    if (isDisabled) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: false,
+        powerPreference: "low-power",
+      });
+    } catch (e) {
+      console.warn("WebGL not supported or context lost, falling back to CSS aura:", e);
+      setIsDisabled(true);
+      return;
+    }
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 45;
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      alpha: true,
-      antialias: false,
-      powerPreference: "low-power",
-    });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 
@@ -102,19 +131,32 @@ export default function ThreeBackground({ theme = "dark" }: ThreeBackgroundProps
     animate();
 
     return () => {
+      cancelAnimationFrame(animationId);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
-      cancelAnimationFrame(animationId);
       geometry.dispose();
       material.dispose();
       renderer.dispose();
     };
-  }, [theme]);
+  }, [theme, isDisabled]);
+
+  if (isDisabled) {
+    return (
+      <div 
+        aria-hidden="true" 
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      >
+        <div className="absolute top-1/4 left-1/3 h-96 w-96 rounded-full bg-[#54d6c7]/5 blur-[120px]" />
+        <div className="absolute bottom-1/3 right-1/4 h-80 w-80 rounded-full bg-[#8b5cf6]/5 blur-[120px]" />
+      </div>
+    );
+  }
 
   return (
     <canvas
       ref={canvasRef}
-      className="pointer-events-none fixed inset-0 -z-10 h-full w-full opacity-60 dark:opacity-75"
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-60 transition-opacity duration-1000"
     />
   );
 }

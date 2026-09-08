@@ -28,7 +28,10 @@ import {
   RotateCcw,
   Plus,
   RefreshCw,
-  Sliders
+  Sliders,
+  BookMarked,
+  BarChart3,
+  Info
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -51,8 +54,10 @@ interface DashboardViewProps {
   onOpenAuth: () => void;
   onOpenEmergencyModal?: () => void;
   onOpenOnboarding?: () => void;
+  onOpenMistakeNotebook?: () => void;
   onSelectTopic?: (topic: string, subject?: string) => void;
   theme?: 'dark' | 'light';
+  isDemoMode?: boolean;
 }
 
 export default function DashboardView({
@@ -61,11 +66,14 @@ export default function DashboardView({
   onOpenAuth,
   onOpenEmergencyModal,
   onOpenOnboarding,
+  onOpenMistakeNotebook,
   onSelectTopic,
+  isDemoMode = false,
 }: DashboardViewProps) {
   const [quickPrompt, setQuickPrompt] = useState('');
+  const [isDemo, setIsDemo] = useState(isDemoMode);
 
-  // Real or default student exam plan
+  // Real or calibrated student exam plan
   const [studentPlan, setStudentPlan] = useState({
     branch: 'Artificial Intelligence & ML',
     examName: 'Semester End University Examination',
@@ -86,7 +94,12 @@ export default function DashboardView({
       'Data Structures & Algorithms': 'low',
       'Artificial Intelligence & Machine Learning': 'high'
     } as Record<string, 'low' | 'medium' | 'high'>,
-    lastStudiedTopic: 'Memory Management & Paging Algorithms'
+    lastStudiedTopic: 'Memory Management & Paging Algorithms',
+    topicsMastered: 14,
+    topicsTotal: 20,
+    topicsAtRisk: 3,
+    estimatedLow: 84,
+    estimatedHigh: 92
   });
 
   // Actionable Daily Tasks with Progress States
@@ -133,11 +146,35 @@ export default function DashboardView({
     }
   ]);
 
+  // 7-day readiness trend data
+  const weeklyTrend = [
+    { day: 'Mon', score: 68 },
+    { day: 'Tue', score: 70 },
+    { day: 'Wed', score: 71 },
+    { day: 'Thu', score: 73 },
+    { day: 'Fri', score: 74 },
+    { day: 'Sat', score: 76 },
+    { day: 'Today', score: 78 }
+  ];
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem('scholarmate_student_plan');
+      const isGuestDemo = localStorage.getItem('scholarmate_demo_mode') === 'true';
+      if (isGuestDemo) setIsDemo(true);
+
       if (stored) {
         const parsed = JSON.parse(stored);
+        
+        // Calculate dynamic days remaining
+        let days = 18;
+        if (parsed.examDate) {
+          const examTime = new Date(parsed.examDate).getTime();
+          const nowTime = new Date().getTime();
+          const diff = Math.ceil((examTime - nowTime) / (1000 * 60 * 60 * 24));
+          days = diff > 0 ? diff : 7;
+        }
+
         setStudentPlan(prev => ({
           ...prev,
           branch: parsed.branch || prev.branch,
@@ -145,7 +182,7 @@ export default function DashboardView({
           subjects: parsed.subjects && parsed.subjects.length > 0 ? parsed.subjects : prev.subjects,
           subject: parsed.subjects && parsed.subjects.length > 0 ? parsed.subjects[0] : prev.subject,
           examDate: parsed.examDate || prev.examDate,
-          daysRemaining: parsed.daysRemaining || prev.daysRemaining,
+          daysRemaining: days,
           targetGrade: parsed.targetGrade || prev.targetGrade,
           targetScore: parsed.targetScore || prev.targetScore,
           dailyHours: parsed.dailyHours || prev.dailyHours,
@@ -219,58 +256,146 @@ export default function DashboardView({
   const progressPercent = Math.round((completedCount / tasks.length) * 100);
 
   return (
-    <div className="space-y-8 pb-16">
-      {/* 1. Student Command Header & Quick Status Bar */}
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#111c2e] via-[#0b1220] to-[#17253a] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+    <div className="space-y-8 pb-20">
+      {/* 0. BRANDING & TUTOR RELATIONSHIP CLARIFICATION */}
+      <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-indigo-500/10 to-transparent p-3.5 px-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-slate-200 font-medium">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#54d6c7]/20 text-[#54d6c7] font-black shrink-0">
+            <Info className="h-3.5 w-3.5" />
+          </span>
+          <span>
+            <strong className="text-white">ScholarMate</strong> is your complete exam preparation workspace. <strong className="text-[#54d6c7]">Nexa</strong> is the AI tutor inside ScholarMate.
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {onOpenMistakeNotebook && (
+            <button
+              onClick={onOpenMistakeNotebook}
+              className="flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1 text-[11px] font-bold text-rose-300 transition-all cursor-pointer"
+            >
+              <BookMarked className="h-3.5 w-3.5" />
+              <span>Mistake Vault (3)</span>
+            </button>
+          )}
+
+          {isDemo && (
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              Sample Demo Mode
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* 1. EXAM FORECAST & READINESS COMMAND CENTER */}
+      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#111c2e] via-[#0b1220] to-[#17253a] p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-6">
         <div className="absolute top-0 right-1/4 -mt-20 w-80 h-80 rounded-full bg-[#54d6c7]/10 blur-[100px] pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
+          <div className="space-y-1.5 max-w-xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#54d6c7]/30 bg-[#54d6c7]/10 px-3.5 py-1 text-xs font-bold text-[#54d6c7]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>Student Workspace · {user?.name || 'Active Scholar'}</span>
+              <span>Student Track: {studentPlan.branch}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white">
               {studentPlan.examName}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300">
-              Target: <span className="text-[#54d6c7] font-bold">{studentPlan.targetGrade}</span> • Daily Schedule: <span className="text-white font-bold">{studentPlan.recommendedHoursPerDay}</span>
+            <p className="text-xs text-slate-300">
+              Target: <span className="text-[#54d6c7] font-bold">{studentPlan.targetGrade}</span> • Daily Hours: <span className="text-white font-bold">{studentPlan.recommendedHoursPerDay}</span>
             </p>
           </div>
 
-          {/* Quick Metrics & Plan Calibration Button */}
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-2xl border border-white/10 bg-[#0b1220]/80 px-4 py-3 text-center">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Exam Countdown</span>
-              <span className="text-xl font-black text-[#54d6c7]">{studentPlan.daysRemaining} Days</span>
-            </div>
+          {onOpenOnboarding && (
+            <button
+              onClick={onOpenOnboarding}
+              className="flex items-center gap-2 rounded-2xl border border-[#54d6c7]/30 bg-[#54d6c7]/10 hover:bg-[#54d6c7]/20 px-4 py-2.5 text-xs font-bold text-[#54d6c7] transition-all cursor-pointer"
+            >
+              <Sliders className="h-4 w-4" />
+              <span>Calibrate Target &amp; Exam</span>
+            </button>
+          )}
+        </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#0b1220]/80 px-4 py-3 text-center">
-              <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Target Score</span>
-              <span className="text-xl font-black text-[#70d6a8]">{studentPlan.targetScore}%</span>
-            </div>
+        {/* 6-Metric Dynamic Readiness Forecast Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2">
+          {/* 1. Days Remaining */}
+          <div className="rounded-2xl border border-white/10 bg-[#0b1220]/80 p-3.5 text-center space-y-1">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Days Remaining</span>
+            <span className="text-xl font-black text-[#54d6c7]">{studentPlan.daysRemaining} Days</span>
+            <span className="block text-[9px] text-slate-500">Till Board Exam</span>
+          </div>
 
-            {onOpenOnboarding && (
-              <button
-                onClick={onOpenOnboarding}
-                className="flex items-center gap-2 rounded-2xl border border-[#54d6c7]/30 bg-[#54d6c7]/10 hover:bg-[#54d6c7]/20 px-4 py-3 text-xs font-bold text-[#54d6c7] transition-all cursor-pointer"
-              >
-                <Sliders className="h-4 w-4" />
-                <span>Adjust Plan</span>
-              </button>
-            )}
+          {/* 2. Topics Mastered */}
+          <div className="rounded-2xl border border-white/10 bg-[#0b1220]/80 p-3.5 text-center space-y-1">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Mastered Topics</span>
+            <span className="text-xl font-black text-emerald-400">{studentPlan.topicsMastered} / {studentPlan.topicsTotal}</span>
+            <span className="block text-[9px] text-emerald-400/80">70% Syllabus Covered</span>
+          </div>
+
+          {/* 3. Topics At Risk */}
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-3.5 text-center space-y-1">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-rose-400">Topics At Risk</span>
+            <span className="text-xl font-black text-rose-400">{studentPlan.topicsAtRisk} Topics</span>
+            <span className="block text-[9px] text-rose-400/80">Need Revision Drills</span>
+          </div>
+
+          {/* 4. Estimated Mark Range */}
+          <div className="rounded-2xl border border-white/10 bg-[#0b1220]/80 p-3.5 text-center space-y-1">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Expected Score</span>
+            <span className="text-xl font-black text-[#70d6a8]">{studentPlan.estimatedLow}–{studentPlan.estimatedHigh}%</span>
+            <span className="block text-[9px] text-[#70d6a8]/80">Distinction Range</span>
+          </div>
+
+          {/* 5. Recommended Study Time Today */}
+          <div className="rounded-2xl border border-white/10 bg-[#0b1220]/80 p-3.5 text-center space-y-1">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Study Time Today</span>
+            <span className="text-xl font-black text-[#8b5cf6]">{studentPlan.recommendedHoursPerDay}</span>
+            <span className="block text-[9px] text-[#8b5cf6]/80">35m Tasks + Break</span>
+          </div>
+
+          {/* 6. 7-Day Growth Trend */}
+          <div className="rounded-2xl border border-white/10 bg-[#0b1220]/80 p-3.5 text-center space-y-1">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">7-Day Trend</span>
+            <span className="text-xl font-black text-cyan-400">+6.2%</span>
+            <span className="block text-[9px] text-cyan-400/80">Growth this week</span>
           </div>
         </div>
 
-        {/* Quick Concept AI Query */}
-        <form onSubmit={handleSearch} className="mt-6 max-w-xl">
+        {/* Predictive AI Coaching Insight */}
+        <div className="rounded-2xl border border-dashed border-[#54d6c7]/30 bg-[#54d6c7]/5 p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#54d6c7]/20 text-[#54d6c7] shrink-0">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase text-[#54d6c7] block">Nexa AI Readiness Insight</span>
+              <p className="text-xs text-slate-200 font-medium leading-relaxed">
+                You have <strong className="text-white">{studentPlan.daysRemaining} days left</strong>. Complete 2 more <strong className="text-[#54d6c7]">Deadlocks &amp; Memory Management</strong> sessions to move Operating Systems from <strong className="text-amber-400">82%</strong> to approximately <strong className="text-emerald-400">88%</strong>.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (onSelectTopic) onSelectTopic('Banker\'s Algorithm for Deadlock Avoidance', 'Operating Systems');
+              setActiveTab('nexa');
+            }}
+            className="flex items-center gap-1 rounded-xl bg-[#54d6c7] hover:bg-[#43c4b5] px-3.5 py-2 text-xs font-black text-slate-950 transition-all cursor-pointer shrink-0 hidden sm:flex"
+          >
+            <span>Start Topic</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Quick Concept AI Search */}
+        <form onSubmit={handleSearch} className="max-w-xl">
           <div className="relative flex items-center rounded-2xl border border-white/10 bg-[#0b1220]/90 px-4 py-2.5 shadow-lg focus-within:border-[#54d6c7]">
             <Search className="h-4 w-4 text-slate-400 mr-2.5 shrink-0" />
             <input
               type="text"
               value={quickPrompt}
               onChange={(e) => setQuickPrompt(e.target.value)}
-              placeholder="Ask Nexa AI any formula, concept, or exam question..."
+              placeholder="Ask Nexa AI any formula, concept, or exam derivation..."
               className="w-full bg-transparent text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none"
             />
             <button
@@ -283,7 +408,7 @@ export default function DashboardView({
         </form>
       </section>
 
-      {/* 2. Top High-Action Shortcuts (Obvious Direct Actions) */}
+      {/* 2. TOP HIGH-ACTION SHORTCUTS (Obvious Direct Study Actions) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
@@ -300,7 +425,7 @@ export default function DashboardView({
               if (onSelectTopic) onSelectTopic(tasks[0].topicParam, studentPlan.subject);
               setActiveTab('timer');
             }}
-            className="flex flex-col justify-between p-4 rounded-2xl border border-[#54d6c7]/30 bg-gradient-to-br from-[#111c2e] to-[#17253a] hover:border-[#54d6c7] text-left transition-all hover:scale-[1.02] cursor-pointer group"
+            className="flex flex-col justify-between p-4 rounded-2xl border border-[#54d6c7]/30 bg-gradient-to-br from-[#111c2e] to-[#17253a] hover:border-[#54d6c7] text-left transition-all hover:scale-[1.02] cursor-pointer group min-h-[120px]"
           >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -328,7 +453,7 @@ export default function DashboardView({
               if (onSelectTopic) onSelectTopic('Paging, Segmentation & TLB Effective Access Time', studentPlan.subject);
               setActiveTab('flashcards');
             }}
-            className="flex flex-col justify-between p-4 rounded-2xl border border-white/10 bg-[#111c2e] hover:border-[#8b5cf6]/50 text-left transition-all hover:scale-[1.02] cursor-pointer group"
+            className="flex flex-col justify-between p-4 rounded-2xl border border-white/10 bg-[#111c2e] hover:border-[#8b5cf6]/50 text-left transition-all hover:scale-[1.02] cursor-pointer group min-h-[120px]"
           >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -356,7 +481,7 @@ export default function DashboardView({
               if (onSelectTopic) onSelectTopic('CPU Scheduling (Round Robin & Priority)', studentPlan.subject);
               setActiveTab('practice');
             }}
-            className="flex flex-col justify-between p-4 rounded-2xl border border-white/10 bg-[#111c2e] hover:border-[#70d6a8]/50 text-left transition-all hover:scale-[1.02] cursor-pointer group"
+            className="flex flex-col justify-between p-4 rounded-2xl border border-white/10 bg-[#111c2e] hover:border-[#70d6a8]/50 text-left transition-all hover:scale-[1.02] cursor-pointer group min-h-[120px]"
           >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -384,7 +509,7 @@ export default function DashboardView({
               if (onSelectTopic) onSelectTopic('AVL Tree Rotations (LL, RR, LR, RL) & B-Trees', 'Data Structures & Algorithms');
               setActiveTab('nexa');
             }}
-            className="flex flex-col justify-between p-4 rounded-2xl border border-rose-500/30 bg-rose-500/5 hover:border-rose-500/60 text-left transition-all hover:scale-[1.02] cursor-pointer group"
+            className="flex flex-col justify-between p-4 rounded-2xl border border-rose-500/30 bg-rose-500/5 hover:border-rose-500/60 text-left transition-all hover:scale-[1.02] cursor-pointer group min-h-[120px]"
           >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -401,7 +526,7 @@ export default function DashboardView({
               </p>
             </div>
             <div className="flex items-center gap-1 text-[10px] font-bold text-rose-400 pt-2">
-              <span>Open AI Coach</span>
+              <span>Open Nexa AI Coach</span>
               <ArrowRight className="h-3 w-3" />
             </div>
           </button>
@@ -412,7 +537,7 @@ export default function DashboardView({
               if (onSelectTopic) onSelectTopic(studentPlan.lastStudiedTopic, studentPlan.subject);
               setActiveTab('nexa');
             }}
-            className="flex flex-col justify-between p-4 rounded-2xl border border-white/10 bg-[#111c2e] hover:border-[#54d6c7]/50 text-left transition-all hover:scale-[1.02] cursor-pointer group"
+            className="flex flex-col justify-between p-4 rounded-2xl border border-white/10 bg-[#111c2e] hover:border-[#54d6c7]/50 text-left transition-all hover:scale-[1.02] cursor-pointer group min-h-[120px]"
           >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -436,7 +561,7 @@ export default function DashboardView({
         </div>
       </section>
 
-      {/* 3. Today's Actionable Study Plan with Progress Toggles */}
+      {/* 3. TODAY'S ACTIONABLE STUDY PLAN & READINESS MATRIX */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Actionable Tasks List (7 Cols) */}
         <div className="lg:col-span-7 space-y-4">
@@ -497,27 +622,50 @@ export default function DashboardView({
             ))}
           </div>
 
-          {/* Quick Add Custom Task */}
+          {/* Quick Add Custom Task from Exam Center */}
           <button
             onClick={() => setActiveTab('exam_center')}
             className="w-full flex items-center justify-center gap-2 p-3 rounded-2xl border border-dashed border-white/15 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer"
           >
             <Plus className="h-4 w-4 text-[#54d6c7]" />
-            <span>Add Task from Exam Center Blueprint</span>
+            <span>Add Task from Syllabus Blueprint</span>
           </button>
         </div>
 
-        {/* Right: Exam Readiness & Subject Confidence Matrix (5 Cols) */}
+        {/* Right: Exam Readiness Matrix & Weekly Trend (5 Cols) */}
         <div className="lg:col-span-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
               <Award className="h-4 w-4 text-[#8b5cf6]" />
               <span>Exam Readiness Matrix</span>
             </h2>
-            <span className="text-xs font-bold text-[#8b5cf6]">Overall: 76%</span>
+            <span className="text-xs font-bold text-[#8b5cf6]">Overall: 78%</span>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-5 space-y-4">
+            {/* 7-Day Sparkline Bar Chart */}
+            <div className="space-y-1.5 pb-2 border-b border-white/10">
+              <div className="flex items-center justify-between text-[11px] text-slate-400">
+                <span>7-Day Readiness Growth</span>
+                <span className="text-emerald-400 font-bold">+10% since Monday</span>
+              </div>
+              <div className="flex items-end justify-between gap-1 h-12 pt-2">
+                {weeklyTrend.map((t, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                    <div 
+                      className={`w-full rounded-t-md transition-all ${
+                        t.day === 'Today' ? 'bg-[#54d6c7]' : 'bg-slate-700 hover:bg-slate-600'
+                      }`}
+                      style={{ height: `${(t.score / 100) * 36}px` }}
+                      title={`${t.day}: ${t.score}%`}
+                    />
+                    <span className="text-[9px] text-slate-500">{t.day}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Subject Readiness Breakdown */}
             <div className="space-y-3">
               {studentPlan.subjects.map((sub) => {
                 const conf = studentPlan.confidenceMap[sub] || 'medium';
@@ -546,17 +694,17 @@ export default function DashboardView({
             </div>
 
             <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
-              <span className="text-slate-400">Target Score: {studentPlan.targetScore}%</span>
+              <span className="text-slate-400">Target Goal: {studentPlan.targetScore}%</span>
               <button
                 onClick={() => setActiveTab('progress')}
                 className="text-[#54d6c7] font-bold hover:underline cursor-pointer"
               >
-                View Full Analytics →
+                Full Analytics &amp; PDF Report →
               </button>
             </div>
           </div>
 
-          {/* Quick Navigation to Key Views */}
+          {/* Quick Shortcuts */}
           <div className="grid grid-cols-2 gap-3 pt-1">
             <button
               onClick={() => setActiveTab('exam_center')}
