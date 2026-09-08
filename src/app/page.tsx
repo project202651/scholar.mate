@@ -5,11 +5,10 @@ import Navbar from '@/components/Navbar';
 import AuthModal from '@/components/AuthModal';
 import AISettingsModal from '@/components/AISettingsModal';
 import EmergencyModeModal from '@/components/EmergencyModeModal';
-import StartingAnimation from '@/components/StartingAnimation';
-import CustomCursor from '@/components/CustomCursor';
 import ThreeBackground from '@/components/ThreeBackground';
+import NexaFloatingButton from '@/components/NexaFloatingButton';
 
-// 9 Blueprint Views
+// 9 Core Blueprint Views
 import DashboardView from '@/components/DashboardView';
 import ExamCenterView from '@/components/ExamCenterView';
 import NexaCoachView from '@/components/NexaCoachView';
@@ -20,8 +19,8 @@ import FlashcardsView from '@/components/FlashcardsView';
 import ProgressAndWeaknessView from '@/components/ProgressAndWeaknessView';
 import StudyTimerView from '@/components/StudyTimerView';
 
-import { GraduationCap, Play, Sparkles } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+import { GraduationCap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -29,7 +28,6 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
-  const [showStartingAnimation, setShowStartingAnimation] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Shared active focus context for inter-view transitions
@@ -49,10 +47,6 @@ export default function Home() {
 
   useEffect(() => {
     try {
-      const hasSeen = localStorage.getItem('has_seen_intro');
-      if (!hasSeen) {
-        setShowStartingAnimation(true);
-      }
       const savedTheme = localStorage.getItem('scholarmate_theme') as 'dark' | 'light' | null;
       if (savedTheme) {
         setTheme(savedTheme);
@@ -78,14 +72,8 @@ export default function Home() {
       const root = document.documentElement;
       if (theme === 'light') {
         root.classList.remove('dark');
-        root.classList.add('light');
-        root.classList.add('light-theme');
-        document.body.className = "min-h-full flex flex-col bg-slate-50 text-slate-900 light-theme";
       } else {
-        root.classList.remove('light');
-        root.classList.remove('light-theme');
         root.classList.add('dark');
-        document.body.className = "min-h-full flex flex-col bg-slate-950 text-slate-100 dark";
       }
     }
   }, [theme]);
@@ -114,50 +102,19 @@ export default function Home() {
   };
 
   return (
-    <div
-      className={`relative min-h-screen ${
-        theme === 'light'
-          ? 'light-theme bg-gradient-to-br from-white via-sky-50/80 to-blue-50/60 text-slate-900'
-          : 'dark bg-slate-950 text-slate-100'
-      } selection:bg-emerald-500 selection:text-white font-sans transition-colors duration-200`}
-    >
-      {/* 3D WebGL architectural background & Clean Cursor */}
+    <div className={`relative min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-white ${
+      theme === 'dark' ? 'dark bg-[#060a12] text-slate-100' : 'bg-slate-50 text-slate-900'
+    }`}>
+      {/* 3D WebGL Background */}
       <ThreeBackground theme={theme} />
-      <CustomCursor />
 
-      {/* Ambient Glassmorphic Color Orbs for Rich Frosted Refraction */}
+      {/* Subtle Ambient Refractive Glows */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div
-          className={`absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full blur-[130px] animate-orb-1 ${
-            theme === 'light'
-              ? 'bg-gradient-to-tr from-emerald-400/20 via-teal-400/20 to-transparent'
-              : 'bg-gradient-to-tr from-emerald-500/25 via-teal-600/20 to-transparent'
-          }`}
-        />
-        <div
-          className={`absolute top-1/4 -right-32 w-[650px] h-[650px] rounded-full blur-[140px] animate-orb-2 ${
-            theme === 'light'
-              ? 'bg-gradient-to-bl from-purple-400/20 via-indigo-400/20 to-transparent'
-              : 'bg-gradient-to-bl from-indigo-500/25 via-purple-600/20 to-transparent'
-          }`}
-        />
-        <div
-          className={`absolute top-2/3 -left-20 w-[550px] h-[550px] rounded-full blur-[130px] animate-orb-3 ${
-            theme === 'light'
-              ? 'bg-gradient-to-tr from-cyan-400/20 via-sky-400/20 to-transparent'
-              : 'bg-gradient-to-tr from-cyan-500/20 via-blue-600/20 to-transparent'
-          }`}
-        />
+        <div className="absolute -top-40 -left-40 w-[550px] h-[550px] rounded-full blur-[140px] animate-orb-1 bg-emerald-500/10 dark:bg-emerald-500/15" />
+        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] animate-orb-2 bg-cyan-500/10 dark:bg-cyan-500/15" />
       </div>
 
-      {/* Starting Animation Splash Screen */}
-      <AnimatePresence>
-        {showStartingAnimation && (
-          <StartingAnimation onComplete={() => setShowStartingAnimation(false)} />
-        )}
-      </AnimatePresence>
-
-      {/* Navigation Bar (9 Views) */}
+      {/* Navigation Header */}
       <Navbar
         user={user}
         activeTab={activeTab}
@@ -170,127 +127,144 @@ export default function Home() {
         onToggleTheme={toggleTheme}
       />
 
-      {/* Main App Container */}
-      <main className="mx-auto max-w-7xl px-3 py-6 sm:px-6 relative z-10">
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            user={user}
-            setActiveTab={setActiveTab}
-            onOpenAuth={() => setIsAuthOpen(true)}
-            onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
-            onSelectTopic={handleTopicSelect}
-            theme={theme}
-          />
-        )}
+      {/* Main Container */}
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 relative z-10">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                user={user}
+                setActiveTab={setActiveTab}
+                onOpenAuth={() => setIsAuthOpen(true)}
+                onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
+                onSelectTopic={handleTopicSelect}
+                theme={theme}
+              />
+            )}
 
-        {activeTab === 'exam_center' && (
-          <ExamCenterView
-            onSelectTopicAction={(topic, action) => {
-              setSelectedTopic(topic);
-              if (action === 'study') setActiveTab('nexa');
-              else if (action === 'practice') setActiveTab('practice');
-              else if (action === 'test') setActiveTab('mock_exams');
-              else if (action === 'review') setActiveTab('flashcards');
-            }}
-          />
-        )}
+            {activeTab === 'exam_center' && (
+              <ExamCenterView
+                onSelectTopicAction={(topic, action) => {
+                  setSelectedTopic(topic);
+                  if (action === 'study') setActiveTab('nexa');
+                  else if (action === 'practice') setActiveTab('practice');
+                  else if (action === 'test') setActiveTab('mock_exams');
+                  else if (action === 'review') setActiveTab('flashcards');
+                }}
+              />
+            )}
 
-        {activeTab === 'nexa' && (
-          <NexaCoachView
-            initialTopic={selectedTopic}
-            initialSubject={selectedSubject}
-            initialDocumentId={selectedDocId}
-            onNavigateToPractice={(topic) => {
-              setSelectedTopic(topic);
-              setActiveTab('practice');
-            }}
-            onNavigateToMock={() => setActiveTab('mock_exams')}
-          />
-        )}
+            {activeTab === 'nexa' && (
+              <NexaCoachView
+                initialTopic={selectedTopic}
+                initialSubject={selectedSubject}
+                initialDocumentId={selectedDocId}
+                onNavigateToPractice={(topic) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('practice');
+                }}
+                onNavigateToMock={() => setActiveTab('mock_exams')}
+              />
+            )}
 
-        {activeTab === 'library' && (
-          <StudyLibraryView
-            initialSubject={selectedSubject}
-            initialTopic={selectedTopic}
-            initialDocId={selectedDocId}
-            onSelectDocument={handleDocumentSelect}
-            setActiveMainTab={setActiveTab}
-          />
-        )}
+            {activeTab === 'library' && (
+              <StudyLibraryView
+                initialSubject={selectedSubject}
+                initialTopic={selectedTopic}
+                initialDocId={selectedDocId}
+                onSelectDocument={handleDocumentSelect}
+                setActiveMainTab={setActiveTab}
+              />
+            )}
 
-        {activeTab === 'practice' && (
-          <PracticeAnswerView
-            initialTopic={selectedTopic}
-            initialSubject={selectedSubject}
-            initialDocumentId={selectedDocId}
-          />
-        )}
+            {activeTab === 'practice' && (
+              <PracticeAnswerView
+                initialTopic={selectedTopic}
+                initialSubject={selectedSubject}
+                initialDocumentId={selectedDocId}
+              />
+            )}
 
-        {activeTab === 'mock_exams' && (
-          <MockExamSimulatorView
-            initialDocumentId={selectedDocId}
-            initialSubject={selectedSubject}
-            onNavigateToNexa={(topic) => {
-              setSelectedTopic(topic);
-              setActiveTab('nexa');
-            }}
-            onNavigateToPractice={(topic) => {
-              setSelectedTopic(topic);
-              setActiveTab('practice');
-            }}
-          />
-        )}
+            {activeTab === 'mock_exams' && (
+              <MockExamSimulatorView
+                initialDocumentId={selectedDocId}
+                initialSubject={selectedSubject}
+                onNavigateToNexa={(topic) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('nexa');
+                }}
+                onNavigateToPractice={(topic) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('practice');
+                }}
+              />
+            )}
 
-        {activeTab === 'flashcards' && (
-          <FlashcardsView
-            initialDocumentId={selectedDocId}
-            initialSubject={selectedSubject}
-            initialTopic={selectedTopic}
-          />
-        )}
+            {activeTab === 'flashcards' && (
+              <FlashcardsView
+                initialDocumentId={selectedDocId}
+                initialSubject={selectedSubject}
+                initialTopic={selectedTopic}
+              />
+            )}
 
-        {activeTab === 'progress' && (
-          <ProgressAndWeaknessView
-            onNavigateToNexa={(topic) => {
-              setSelectedTopic(topic);
-              setActiveTab('nexa');
-            }}
-            onNavigateToPractice={(topic) => {
-              setSelectedTopic(topic);
-              setActiveTab('practice');
-            }}
-            onNavigateToFocus={(topic) => {
-              setSelectedTopic(topic);
-              setActiveTab('focus');
-            }}
-          />
-        )}
+            {activeTab === 'progress' && (
+              <ProgressAndWeaknessView
+                onNavigateToNexa={(topic) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('nexa');
+                }}
+                onNavigateToPractice={(topic) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('practice');
+                }}
+                onNavigateToFocus={(topic) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('focus');
+                }}
+              />
+            )}
 
-        {activeTab === 'focus' && (
-          <StudyTimerView
-            initialTopic={selectedTopic}
-            onNavigateToPractice={(topic) => {
-              setSelectedTopic(topic);
-              setActiveTab('practice');
-            }}
-          />
-        )}
+            {activeTab === 'focus' && (
+              <StudyTimerView
+                initialTopic={selectedTopic}
+                onNavigateToPractice={(topic) => {
+                  setSelectedTopic(topic);
+                  setActiveTab('practice');
+                }}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      {/* Auth Modal */}
+      {/* Persistent Floating Nexa AI Assistant (accessible on all tabs) */}
+      <NexaFloatingButton
+        activeTopic={selectedTopic}
+        activeSubject={selectedSubject}
+        activeDocId={selectedDocId}
+        activeDocTitle={selectedDocTitle}
+        onNavigateToTab={(tab) => setActiveTab(tab)}
+      />
+
+      {/* Modals */}
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         onSuccess={(newUser) => setUser(newUser)}
       />
 
-      {/* AI Settings Modal */}
       <AISettingsModal
         isOpen={isAISettingsOpen}
         onClose={() => setIsAISettingsOpen(false)}
       />
 
-      {/* 24-Hour Emergency Mode Modal */}
       <EmergencyModeModal
         isOpen={isEmergencyModalOpen}
         onClose={() => setIsEmergencyModalOpen(false)}
@@ -300,32 +274,16 @@ export default function Home() {
         }}
       />
 
-      {/* Institutional Footer */}
-      <footer className="relative z-10 border-t border-slate-200 dark:border-slate-900 bg-white/60 dark:bg-slate-950/80 py-6 text-center text-xs text-slate-500">
+      {/* Institutional Minimal Footer */}
+      <footer className="relative z-10 border-t border-slate-200/80 dark:border-white/5 bg-white/60 dark:bg-slate-950/60 py-6 text-center text-xs text-slate-500">
         <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex flex-col sm:flex-row items-center gap-2">
-            <div className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-emerald-500" />
-              <span className="font-semibold text-slate-800 dark:text-slate-300">ScholarMate 2.0</span>
-              <span>• Final Year Major Project (2026-2027)</span>
-            </div>
-            <span className="hidden sm:inline text-slate-400">|</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
-              AI & ML: Vastav (Lead Architect), Vishnu (3D Graphics), Nikhileswar (Backend), Sathvik (Active Recall)
-            </span>
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4 text-emerald-500" />
+            <span className="font-semibold text-slate-800 dark:text-slate-300">ScholarMate 2.0</span>
+            <span>• AANM & VVRSR Polytechnic College</span>
           </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <p className="text-slate-500 dark:text-slate-400 font-medium">
-              AANM & VVRSR Polytechnic College
-            </p>
-            <button
-              onClick={() => setShowStartingAnimation(true)}
-              className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-            >
-              <Play className="h-3 w-3" />
-              <span>Replay Intro</span>
-            </button>
+          <div className="text-[11px] text-slate-400">
+            Final Year Major Project • Computer Engineering
           </div>
         </div>
       </footer>
