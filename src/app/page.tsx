@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import AuthModal from '@/components/AuthModal';
 import AISettingsModal from '@/components/AISettingsModal';
 import EmergencyModeModal from '@/components/EmergencyModeModal';
+import OnboardingModal from '@/components/OnboardingModal';
 import ThreeBackground from '@/components/ThreeBackground';
 import NexaFloatingButton from '@/components/NexaFloatingButton';
 import StartingAnimation from '@/components/StartingAnimation';
@@ -29,6 +30,7 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [showStartingAnimation, setShowStartingAnimation] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -64,7 +66,11 @@ export default function Home() {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
-          if (data.user) setUser(data.user);
+          if (data.user) {
+            setUser(data.user);
+            const hasPlan = localStorage.getItem('scholarmate_student_plan');
+            if (!hasPlan) setIsOnboardingOpen(true);
+          }
         }
       } catch (e) {
         console.error('Auth check failed:', e);
@@ -78,7 +84,9 @@ export default function Home() {
       const root = document.documentElement;
       if (theme === 'light') {
         root.classList.remove('dark');
+        root.classList.add('light');
       } else {
+        root.classList.remove('light');
         root.classList.add('dark');
       }
     }
@@ -108,17 +116,11 @@ export default function Home() {
   };
 
   return (
-    <div className={`relative min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-white ${
-      theme === 'dark' ? 'dark bg-[#060a12] text-slate-100' : 'bg-slate-50 text-slate-900'
+    <div className={`relative min-h-screen font-sans antialiased selection:bg-[#54d6c7] selection:text-slate-950 ${
+      theme === 'dark' ? 'bg-[#0b1220] text-[#f5f7fb]' : 'bg-[#f8fafc] text-[#0f172a]'
     }`}>
-      {/* 3D WebGL Background */}
+      {/* 3D WebGL Particle Field */}
       <ThreeBackground theme={theme} />
-
-      {/* Subtle Ambient Refractive Glows */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-40 -left-40 w-[550px] h-[550px] rounded-full blur-[140px] animate-orb-1 bg-emerald-500/10 dark:bg-emerald-500/15" />
-        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] animate-orb-2 bg-cyan-500/10 dark:bg-cyan-500/15" />
-      </div>
 
       {/* Starting Splash Animation */}
       <AnimatePresence>
@@ -135,19 +137,20 @@ export default function Home() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
         onOpenAISettings={() => setIsAISettingsOpen(true)}
+        onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
 
-      {/* Main Container */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 relative z-10">
+      {/* Main Content Workspace */}
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 relative z-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
           >
             {activeTab === 'dashboard' && (
@@ -156,6 +159,7 @@ export default function Home() {
                 setActiveTab={setActiveTab}
                 onOpenAuth={() => setIsAuthOpen(true)}
                 onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
+                onOpenOnboarding={() => setIsOnboardingOpen(true)}
                 onSelectTopic={handleTopicSelect}
                 theme={theme}
               />
@@ -257,7 +261,7 @@ export default function Home() {
         </AnimatePresence>
       </main>
 
-      {/* Persistent Floating Nexa AI Assistant (accessible on all tabs) */}
+      {/* Persistent Floating Nexa AI Assistant (accessible across all tabs) */}
       <NexaFloatingButton
         activeTopic={selectedTopic}
         activeSubject={selectedSubject}
@@ -270,7 +274,18 @@ export default function Home() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
-        onSuccess={(newUser) => setUser(newUser)}
+        onSuccess={(newUser) => {
+          setUser(newUser);
+          setIsOnboardingOpen(true);
+        }}
+      />
+
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onComplete={(plan) => {
+          setIsOnboardingOpen(false);
+        }}
       />
 
       <AISettingsModal
@@ -288,18 +303,18 @@ export default function Home() {
       />
 
       {/* Institutional Minimal Footer */}
-      <footer className="relative z-10 border-t border-slate-200/80 dark:border-white/5 bg-white/60 dark:bg-slate-950/60 py-6 text-center text-xs text-slate-500">
-        <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="relative z-10 border-t border-white/[0.08] bg-[#0b1220] py-8 text-center text-xs text-slate-400">
+        <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-4 w-4 text-emerald-500" />
-            <span className="font-bold text-slate-800 dark:text-slate-200">ScholarMate</span>
+            <GraduationCap className="h-4 w-4 text-[#54d6c7]" />
+            <span className="font-extrabold text-white">ScholarMate</span>
             <span>• AANM & VVRSR Polytechnic College</span>
           </div>
-          <div className="flex items-center gap-4 text-[11px] text-slate-400">
-            <span>Final Year Major Project • Computer Engineering</span>
+          <div className="flex items-center gap-4 text-[11px]">
+            <span>Final Year Major Project · Computer Engineering</span>
             <button
               onClick={() => setShowStartingAnimation(true)}
-              className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+              className="flex items-center gap-1 text-[#54d6c7] hover:underline cursor-pointer"
             >
               <Play className="h-3 w-3" />
               <span>Replay Intro</span>

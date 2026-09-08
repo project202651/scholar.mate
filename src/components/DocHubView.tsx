@@ -1,324 +1,421 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { Upload, FileText, Sparkles, BookOpen, Brain, Award, CheckCircle2, AlertCircle, Layers, Zap } from "lucide-react";
-import AILoadingPulse from "./AILoadingPulse";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  UploadCloud,
+  FileText,
+  Trash2,
+  BookOpen,
+  Sparkles,
+  Layers,
+  Award,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  FolderOpen,
+  ArrowRight,
+  Eye,
+  RefreshCw,
+  File,
+  Check,
+  Zap,
+  ListOrdered
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface Document {
+  id: string;
+  title: string;
+  subject: string;
+  fileType: string;
+  createdAt: string;
+  textPreview?: string;
+}
 
 interface DocHubViewProps {
   setActiveTab?: (tab: string) => void;
   onSelectDocument?: (docId: string, title?: string, subject?: string) => void;
-  onNavigateToNotes?: () => void;
+  onNavigateToNotes?: (docId: string) => void;
+  onNavigateToFlashcards?: (docId: string) => void;
+  onNavigateToMock?: (docId: string) => void;
 }
 
-export default function DocHubView({ setActiveTab, onSelectDocument, onNavigateToNotes }: DocHubViewProps) {
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [title, setTitle] = useState("");
-  const [subject, setSubject] = useState("DCME - Core Polytechnic");
-  const [rawText, setRawText] = useState("");
+const PROCESSING_STEPS = [
+  "Reading document & tokenizing pages",
+  "Detecting course subjects & modules",
+  "Extracting core syllabus topics & formulas",
+  "Creating 15-question active recall bank",
+  "Building personalized study plan"
+];
+
+export default function DocHubView({
+  onSelectDocument,
+  onNavigateToNotes,
+  onNavigateToFlashcards,
+  onNavigateToMock
+}: DocHubViewProps) {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [uploadStep, setUploadStep] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
+
+  const [titleInput, setTitleInput] = useState("");
+  const [subjectInput, setSubjectInput] = useState("");
+  const [rawTextInput, setRawTextInput] = useState("");
+  const [uploadMode, setUploadMode] = useState<"file" | "paste">("file");
+
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const [error, setError] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchDocs();
+    fetchDocuments();
   }, []);
 
-  const fetchDocs = async () => {
+  const fetchDocuments = async () => {
     try {
+      setLoadingDocs(true);
       const res = await fetch("/api/documents/upload");
       if (res.ok) {
         const data = await res.json();
-        if (data.documents) setDocuments(data.documents);
+        setDocuments(data.documents || []);
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoadingDocs(false);
     }
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
+  const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
-    if (!selectedFile && !rawText.trim()) {
-      setError("Please choose a file or paste syllabus text");
-      return;
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
     }
+  };
 
-    setLoading(true);
-    setError("");
-    setUploadSuccess(false);
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      setSelectedFile(file);
+      if (!titleInput) setTitleInput(file.name.replace(/\.[^/.]+$/, ""));
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      if (!titleInput) setTitleInput(file.name.replace(/\.[^/.]+$/, ""));
+    }
+  };
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (uploadMode === "file" && !selectedFile) return;
+    if (uploadMode === "paste" && !rawTextInput.trim()) return;
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+    setUploadStep(0);
+
+    // Simulated step progression for user feedback
+    const stepInterval = setInterval(() => {
+      setUploadStep(prev => (prev < 4 ? prev + 1 : prev));
+    }, 450);
+
+    const formData = new FormData();
+    if (uploadMode === "file" && selectedFile) {
+      formData.append("file", selectedFile);
+    } else {
+      formData.append("rawText", rawTextInput);
+    }
+    formData.append("title", titleInput.trim() || (selectedFile ? selectedFile.name : "Study Material"));
+    formData.append("subject", subjectInput.trim() || "Computer Engineering");
 
     try {
-      const formData = new FormData();
-      if (selectedFile) formData.append("file", selectedFile);
-      if (rawText.trim()) formData.append("rawText", rawText);
-      formData.append("title", title || (selectedFile ? selectedFile.name : "Study Material"));
-      formData.append("subject", subject);
-
       const res = await fetch("/api/documents/upload", {
         method: "POST",
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      clearInterval(stepInterval);
+      setUploadStep(4);
 
-      setUploadSuccess(true);
-      setTitle("");
-      setRawText("");
-      setSelectedFile(null);
-      
-      // Fast optimistic update: immediately update state and notify listeners
-      if (data.document) {
-        setDocuments(prev => [data.document, ...prev.filter(d => d.id !== data.document.id)]);
-        onSelectDocument?.(data.document.id, data.document.title, data.document.subject);
+      if (res.ok) {
+        const data = await res.json();
+        setUploadSuccess(`Successfully processed "${data.document.title}" into your study plan!`);
+        setSelectedFile(null);
+        setTitleInput("");
+        setSubjectInput("");
+        setRawTextInput("");
+        fetchDocuments();
+
+        if (onSelectDocument) {
+          onSelectDocument(data.document.id, data.document.title, data.document.subject);
+        }
+      } else {
+        const errData = await res.json();
+        setUploadError(errData.error || "Failed to upload document. Please login first.");
       }
-      fetchDocs();
     } catch (err: any) {
-      setError(err.message || "Failed to process document");
+      clearInterval(stepInterval);
+      setUploadError(err.message || "Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <FileText className="h-6 w-6 text-blue-500 dark:text-blue-400" />
-            <span>Document Hub & Textbook Upload</span>
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-            Upload PDF lecture notes, syllabi, textbooks, and handwritten notes for instant AI study workflows
+    <div className="max-w-6xl mx-auto space-y-8 pb-16">
+      {/* Top Banner */}
+      <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-[#17253a] via-[#111c2e] to-[#0b1220] p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <div className="relative z-10 space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#54d6c7]/15 px-3 py-0.5 text-xs font-bold text-[#54d6c7] border border-[#54d6c7]/30">
+            <UploadCloud className="h-3.5 w-3.5" />
+            <span>Document Ingestion & AI Synthesis Hub</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            Study Library & Document Upload
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
+            Upload PDF textbooks, handwritten notes, Word documents, or past question papers. ScholarMate automatically extracts topics, builds active recall flashcards, and structures 10-mark model answers.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Form: Uploader */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-5 shadow-xl backdrop-blur-md">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-              <Upload className="h-4 w-4 text-cyan-500 dark:text-cyan-400" />
-              <span>Upload Study Material</span>
-            </h3>
-
-            {uploadSuccess && (
-              <div className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-2 text-xs text-emerald-800 dark:text-emerald-300">
-                <div className="flex items-center gap-2 font-bold">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                  <span>Textbook indexed successfully! Instant study actions:</span>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab?.("flashcards")}
-                    className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-sm cursor-pointer"
-                  >
-                    ⚡ Study 20+ Flashcards
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onNavigateToNotes ? onNavigateToNotes() : setActiveTab?.("library")}
-                    className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shadow-sm cursor-pointer"
-                  >
-                    📚 10-Part Notes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab?.("mock_exams")}
-                    className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] shadow-sm cursor-pointer"
-                  >
-                    🏆 University Exam
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-4 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-700 dark:text-rose-300">
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Document / Chapter Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Unit 3 - Memory Management & Paging"
-                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Course / Subject
-                </label>
-                <input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g. DCME - Operating Systems"
-                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
-
-              {/* File Dropzone */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Select File (PDF, TXT, DOCX, Note Photo)
-                </label>
-                <div className="rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4 text-center hover:border-cyan-500 transition-colors">
-                  <input
-                    type="file"
-                    accept=".pdf,.txt,.md,.png,.jpg,.jpeg"
-                    id="fileUpload"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setSelectedFile(e.target.files[0]);
-                        if (!title) setTitle(e.target.files[0].name.replace(/\.[^/.]+$/, ""));
-                      }
-                    }}
-                    className="hidden"
-                  />
-                  <label htmlFor="fileUpload" className="cursor-pointer block">
-                    <Upload className="mx-auto h-8 w-8 text-slate-400 mb-2" />
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                      {selectedFile ? selectedFile.name : "Click to choose or drag & drop"}
-                    </p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">PDF, Text files, or Images</p>
-                  </label>
-                </div>
-              </div>
-
-              {/* Or paste syllabus text directly */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Or Paste Text / Chapter Excerpt
-                </label>
-                <textarea
-                  rows={3}
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  placeholder="Paste lecture notes, definitions, or textbook content directly..."
-                  className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3 text-xs text-slate-900 dark:text-white focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-2.5 text-xs font-bold text-white shadow-lg hover:brightness-110 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
-              >
-                <Upload className="h-4 w-4" />
-                <span>{loading ? "Processing Document..." : "Upload & Extract Text"}</span>
-              </button>
-            </form>
+      {/* Upload Zone & Method Switcher */}
+      <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <h2 className="text-sm sm:text-base font-extrabold text-white">
+            Ingest Study Materials
+          </h2>
+          <div className="flex items-center gap-1 rounded-xl bg-slate-900 p-1 text-xs font-bold">
+            <button
+              onClick={() => setUploadMode("file")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                uploadMode === "file" ? "bg-[#54d6c7] text-slate-950" : "text-slate-400"
+              }`}
+            >
+              Upload Files
+            </button>
+            <button
+              onClick={() => setUploadMode("paste")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                uploadMode === "paste" ? "bg-[#54d6c7] text-slate-950" : "text-slate-400"
+              }`}
+            >
+              Paste Text / Notes
+            </button>
           </div>
         </div>
 
-        {/* Right Column: Uploaded Documents Library */}
-        <div className="lg:col-span-7">
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 p-6 shadow-xl backdrop-blur-md space-y-4">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-blue-500 dark:text-blue-400" />
-              <span>Uploaded Library & Knowledge Base ({documents.length})</span>
-            </h3>
-
-            {loading && <AILoadingPulse message="Extracting and parsing document contents..." />}
-
-            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 no-scrollbar">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 p-4 transition-all hover:border-slate-300 dark:hover:border-slate-700 space-y-3"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                        <FileText className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{doc.title}</h4>
-                        <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                          {doc.subject} • Format: <span className="uppercase text-slate-800 dark:text-slate-300 font-semibold">{doc.fileType}</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Fast Action Buttons Across All Platforms */}
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800/80">
-                    <button
-                      onClick={() => {
-                        onSelectDocument?.(doc.id, doc.title, doc.subject);
-                        setActiveTab?.("flashcards");
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/25 transition-colors cursor-pointer"
-                    >
-                      <Layers className="h-3 w-3" />
-                      <span>Study Flashcards</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onSelectDocument?.(doc.id, doc.title, doc.subject);
-                        setActiveTab?.("mock_exams");
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 px-3 py-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 transition-colors cursor-pointer"
-                    >
-                      <Award className="h-3 w-3" />
-                      <span>Mock University Exam</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onSelectDocument?.(doc.id, doc.title, doc.subject);
-                        setActiveTab?.("practice");
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-purple-500/15 border border-purple-500/30 px-3 py-1.5 text-[11px] font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-500/25 transition-colors cursor-pointer"
-                    >
-                      <Zap className="h-3 w-3" />
-                      <span>5/10M Model Answers</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onSelectDocument?.(doc.id, doc.title, doc.subject);
-                        setActiveTab?.("nexa");
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 px-3 py-1.5 text-[11px] font-semibold text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/25 transition-colors cursor-pointer"
-                    >
-                      <Brain className="h-3 w-3" />
-                      <span>Ask Nexa Tutor</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        onSelectDocument?.(doc.id, doc.title, doc.subject);
-                        if (onNavigateToNotes) onNavigateToNotes();
-                        else setActiveTab?.("library");
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/30 px-3 py-1.5 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/25 transition-colors cursor-pointer"
-                    >
-                      <BookOpen className="h-3 w-3" />
-                      <span>AI Revision Notes</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              {documents.length === 0 && !loading && (
-                <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/30 p-8 text-center text-slate-500 dark:text-slate-400 text-xs">
-                  No documents uploaded yet. Upload your first textbook chapter or lecture notes on the left!
-                </div>
-              )}
+        <form onSubmit={handleUploadSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Document Title</label>
+              <input
+                type="text"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                placeholder="e.g. Operating Systems Chapter 4 - Memory"
+                className="w-full px-4 py-2.5 rounded-xl border border-white/10 bg-[#0b1220] text-xs sm:text-sm text-white focus:outline-none focus:border-[#54d6c7]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Subject / Course</label>
+              <input
+                type="text"
+                value={subjectInput}
+                onChange={(e) => setSubjectInput(e.target.value)}
+                placeholder="e.g. Operating Systems, Machine Learning"
+                className="w-full px-4 py-2.5 rounded-xl border border-white/10 bg-[#0b1220] text-xs sm:text-sm text-white focus:outline-none focus:border-[#54d6c7]"
+              />
             </div>
           </div>
+
+          {uploadMode === "file" ? (
+            <div
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center cursor-pointer transition-all ${
+                dragActive
+                  ? "border-[#54d6c7] bg-[#54d6c7]/10"
+                  : "border-white/15 bg-[#0b1220]/70 hover:border-white/30"
+              }`}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+
+              <div className="flex flex-col items-center space-y-3">
+                <div className="p-4 rounded-2xl bg-[#54d6c7]/10 text-[#54d6c7]">
+                  <UploadCloud className="h-8 w-8" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-white">
+                    {selectedFile ? selectedFile.name : "Drag & drop your textbook, notes, or past papers here"}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Supports PDF, Word (.docx), Images, and TXT files (Max 50MB)
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">Paste Text Excerpt / Syllabus</label>
+              <textarea
+                rows={6}
+                value={rawTextInput}
+                onChange={(e) => setRawTextInput(e.target.value)}
+                placeholder="Paste chapter notes, syllabus bullet points, or past exam questions..."
+                className="w-full p-4 rounded-2xl border border-white/10 bg-[#0b1220] text-xs sm:text-sm text-white focus:outline-none focus:border-[#54d6c7]"
+              />
+            </div>
+          )}
+
+          {/* 5-Step Processing Progress Workflow State */}
+          {uploading && (
+            <div className="rounded-2xl border border-[#54d6c7]/30 bg-[#54d6c7]/5 p-5 space-y-4">
+              <div className="flex items-center justify-between text-xs text-[#54d6c7] font-bold">
+                <span>AI Ingestion Workflow Active</span>
+                <span>Step {uploadStep + 1} of 5</span>
+              </div>
+
+              <div className="space-y-2">
+                {PROCESSING_STEPS.map((stepText, idx) => {
+                  const isDone = uploadStep > idx;
+                  const isCurrent = uploadStep === idx;
+                  return (
+                    <div key={idx} className="flex items-center gap-3 text-xs">
+                      {isDone ? (
+                        <CheckCircle2 className="h-4 w-4 text-[#70d6a8] shrink-0" />
+                      ) : isCurrent ? (
+                        <RefreshCw className="h-4 w-4 animate-spin text-[#54d6c7] shrink-0" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full border border-slate-600 shrink-0" />
+                      )}
+                      <span className={isCurrent ? "font-bold text-white" : isDone ? "text-slate-400" : "text-slate-600"}>
+                        {stepText}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Feedback messages */}
+          {uploadSuccess && (
+            <div className="p-4 rounded-2xl bg-[#70d6a8]/15 border border-[#70d6a8]/30 text-xs text-[#70d6a8] flex items-center gap-2">
+              <Check className="h-4 w-4 shrink-0" />
+              <span>{uploadSuccess}</span>
+            </div>
+          )}
+
+          {uploadError && (
+            <div className="p-4 rounded-2xl bg-[#f47c7c]/15 border border-[#f47c7c]/30 text-xs text-[#f47c7c] flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{uploadError}</span>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={uploading || (uploadMode === "file" && !selectedFile) || (uploadMode === "paste" && !rawTextInput.trim())}
+              className="flex items-center gap-2 rounded-2xl bg-[#54d6c7] hover:bg-[#43c4b5] disabled:opacity-40 text-slate-950 font-black px-7 py-3 text-xs sm:text-sm shadow-xl shadow-[#54d6c7]/20 transition-all cursor-pointer"
+            >
+              {uploading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              <span>{uploading ? "Synthesizing Document..." : "Upload & Generate Study Plan"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Uploaded Documents List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-extrabold text-white uppercase tracking-wider">
+            Your Indexed Documents ({documents.length})
+          </h3>
+          <button onClick={fetchDocuments} className="text-xs text-[#54d6c7] hover:underline flex items-center gap-1 cursor-pointer">
+            <RefreshCw className="h-3 w-3" />
+            <span>Refresh</span>
+          </button>
         </div>
+
+        {loadingDocs ? (
+          <div className="p-8 text-center text-xs text-slate-400">Loading your library...</div>
+        ) : documents.length === 0 ? (
+          <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-8 text-center text-xs text-slate-400 space-y-2">
+            <FolderOpen className="h-8 w-8 text-slate-500 mx-auto" />
+            <p className="font-bold text-white">No documents uploaded yet</p>
+            <p className="text-[11px]">Upload your textbook chapters or past question papers above to start generating AI study notes.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="rounded-2xl border border-white/10 bg-[#111c2e] p-5 space-y-3 hover:border-[#54d6c7]/40 transition-all shadow-sm"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="p-2.5 rounded-xl bg-white/5 text-[#54d6c7]">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <span className="text-[10px] rounded px-2 py-0.5 bg-white/5 text-slate-400 font-mono">
+                    {doc.fileType.toUpperCase()}
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-1">{doc.title}</h4>
+                  <p className="text-[11px] text-[#54d6c7] font-medium">{doc.subject}</p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-white/5 text-xs">
+                  <button
+                    onClick={() => {
+                      if (onSelectDocument) onSelectDocument(doc.id, doc.title, doc.subject);
+                      if (onNavigateToNotes) onNavigateToNotes(doc.id);
+                    }}
+                    className="flex-1 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white font-bold text-[11px] transition-all cursor-pointer text-center"
+                  >
+                    View Notes
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (onSelectDocument) onSelectDocument(doc.id, doc.title, doc.subject);
+                      if (onNavigateToFlashcards) onNavigateToFlashcards(doc.id);
+                    }}
+                    className="flex-1 py-1.5 rounded-lg bg-[#54d6c7]/15 hover:bg-[#54d6c7]/25 text-[#54d6c7] font-bold text-[11px] transition-all cursor-pointer text-center"
+                  >
+                    Flashcards
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

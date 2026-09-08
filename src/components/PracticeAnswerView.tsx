@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   FileCheck2, Sparkles, CheckSquare, AlertCircle, Edit3, Send, RefreshCw, 
   HelpCircle, ChevronRight, Award, Zap, BookOpen, CheckCircle, XCircle,
-  ListFilter, Target, Layers, FileText
+  ListFilter, Target, Layers, FileText, Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,8 +19,13 @@ interface QuestionBankItem {
   marks: number;
   category: string;
   question: string;
+  simpleExplanation: string;
   idealAnswer: string;
   keyPoints: string[];
+  diagramText: string;
+  commonMistakes: string[];
+  markingScheme: Array<{ criterion: string; marksAllocated: number; description: string }>;
+  quickRevision: string;
   examinerTip: string;
 }
 
@@ -46,58 +51,81 @@ export default function PracticeAnswerView({
 }: PracticeAnswerViewProps) {
   const [topic, setTopic] = useState(initialTopic || 'Database Normalization (1NF, 2NF, 3NF, BCNF)');
   const [subject, setSubject] = useState(initialSubject || 'Database Management Systems');
-  const [selectedDocId, setSelectedDocId] = useState(initialDocumentId || '');
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [selectedMarks, setSelectedMarks] = useState<5 | 10>(10);
+  const [activeTab, setActiveTab] = useState<
+    'simple' | 'exam' | 'keypoints' | 'diagram' | 'mistakes' | 'marking' | 'revision' | 'compare'
+  >('exam');
 
-  // 15-Question Bank
-  const [questionBank, setQuestionBank] = useState<QuestionBankItem[]>([]);
-  const [loadingBank, setLoadingBank] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | '2m' | '5m' | '10m'>('all');
-  const [selectedQuestion, setSelectedQuestion] = useState<QuestionBankItem | null>(null);
-
-  // Student Evaluation Sandbox
+  const [loading, setLoading] = useState(false);
   const [studentAnswer, setStudentAnswer] = useState('');
   const [evaluating, setEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
-  const [showIdealAnswer, setShowIdealAnswer] = useState(false);
+
+  // Model Question Data State
+  const [currentQuestion, setCurrentQuestion] = useState<QuestionBankItem>({
+    id: "q_demo",
+    marks: 10,
+    category: "10-Mark Comprehensive Question",
+    question: "Explain the concept of Database Normalization with 1NF, 2NF, 3NF, and BCNF with a suitable schema example.",
+    simpleExplanation: "Normalization is like organizing your study desk: you separate your textbooks, notebooks, and pens into different dedicated drawers so you don't repeat the same item and avoid messy clutter.",
+    idealAnswer: `### 1. Definition of Normalization
+Database Normalization is the systematic technique of organizing relational tables to minimize data redundancy and prevent insertion, update, and deletion anomalies.
+
+### 2. First Normal Form (1NF)
+- **Rule:** Every column must contain atomic (indivisible) values. No repeating groups.
+- **Example:** Split multi-valued \`Phone_Numbers\` into separate rows.
+
+### 3. Second Normal Form (2NF)
+- **Rule:** Must be in 1NF AND have no partial dependency (every non-prime attribute must depend on the whole candidate key).
+
+### 4. Third Normal Form (3NF)
+- **Rule:** Must be in 2NF AND have no transitive dependency ($X \\rightarrow Y, Y \\rightarrow Z$).
+
+### 5. Boyce-Codd Normal Form (BCNF)
+- **Rule:** For every functional dependency $X \\rightarrow Y$, $X$ must be a super key.`,
+    keyPoints: [
+      "Atomicity of attributes (1NF)",
+      "Removal of partial functional dependencies (2NF)",
+      "Removal of transitive dependencies (3NF)",
+      "Determinant must be a Super Key (BCNF)"
+    ],
+    diagramText: `[Unnormalized Relation] 
+         │ (Eliminate repeating groups)
+         ▼
+       [1NF] ──► (Remove Partial Dependencies) 
+         │
+         ▼
+       [2NF] ──► (Remove Transitive Dependencies)
+         │
+         ▼
+       [3NF] ──► (Strict Determinant Superkey Check)
+         │
+         ▼
+      [BCNF]`,
+    commonMistakes: [
+      "Forgetting to state that 2NF applies only when candidate key is composite.",
+      "Confusing transitive dependency with partial dependency.",
+      "Omitting the formal definition of functional dependency $X \\rightarrow Y$."
+    ],
+    markingScheme: [
+      { criterion: "Formal definition of Normalization & anomalies", marksAllocated: 2, description: "State insertion, deletion, and update anomalies." },
+      { criterion: "1NF, 2NF & 3NF definitions with rules", marksAllocated: 4, description: "Detail atomic values, partial & transitive dependency." },
+      { criterion: "BCNF explanation & strict superkey constraint", marksAllocated: 2, description: "Explain why BCNF is stronger than 3NF." },
+      { criterion: "Schema breakdown / diagrammatic transition", marksAllocated: 2, description: "Clear flow diagram or schema transformation." }
+    ],
+    quickRevision: "1NF = Atomic values · 2NF = 1NF + No Partial Dependency · 3NF = 2NF + No Transitive Dependency · BCNF = For $X \\rightarrow Y$, $X$ is Superkey.",
+    examinerTip: "Always write the formal functional dependency arrow notation $X \\rightarrow Y$."
+  });
 
   useEffect(() => {
-    fetchDocs();
-    handleGenerateBank(topic, subject);
-  }, []);
-
-  useEffect(() => {
-    if (initialDocumentId) setSelectedDocId(initialDocumentId);
+    if (initialTopic) setTopic(initialTopic);
     if (initialSubject) setSubject(initialSubject);
-    if (initialTopic) {
-      setTopic(initialTopic);
-      handleGenerateBank(initialTopic, initialSubject || subject);
-    }
-  }, [initialDocumentId, initialSubject, initialTopic]);
+  }, [initialTopic, initialSubject]);
 
-  const fetchDocs = async () => {
-    try {
-      const res = await fetch('/api/documents/upload');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.documents) {
-          setDocuments(data.documents);
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleGenerateBank = async (customTopic?: string, customSubject?: string) => {
-    const targetTopic = (customTopic || topic).trim();
-    const targetSubject = (customSubject || subject).trim();
-    if (!targetTopic) return;
-
-    setLoadingBank(true);
+  const handleGenerateAnswer = async () => {
+    if (!topic.trim()) return;
+    setLoading(true);
     setEvaluation(null);
-    setShowIdealAnswer(false);
-    setStudentAnswer('');
 
     try {
       const customKey = typeof window !== 'undefined' ? localStorage.getItem('scholarmate_gemini_key') || '' : '';
@@ -108,30 +136,47 @@ export default function PracticeAnswerView({
         method: 'POST',
         headers,
         body: JSON.stringify({
-          topic: targetTopic,
-          subject: targetSubject,
-          mode: 'bank',
-          documentId: selectedDocId || undefined,
+          topic,
+          subject,
+          marks: selectedMarks,
+          mode: 'single',
+          documentId: initialDocumentId || undefined,
         })
       });
 
       if (res.ok) {
         const data = await res.json();
-        if (data.bank && Array.isArray(data.bank.questions) && data.bank.questions.length > 0) {
-          setQuestionBank(data.bank.questions);
-          setSelectedQuestion(data.bank.questions[0]);
-          return;
+        if (data.practice) {
+          const p = data.practice;
+          setCurrentQuestion({
+            id: `q_${Date.now()}`,
+            marks: selectedMarks,
+            category: `${selectedMarks}-Mark University Question`,
+            question: p.question || `${selectedMarks}-Mark Question on ${topic}`,
+            simpleExplanation: `Intuitive explanation: ${topic} functions to ensure systematic consistency, efficiency, and predictable execution across all standard operations.`,
+            idealAnswer: p.idealAnswer || "Complete structured model answer.",
+            keyPoints: p.keyPoints || ["Core Definition", "Operational Rule", "Derivation Steps"],
+            diagramText: `[Input System State] ──► [Processing / Algorithm] ──► [Verified Output State]`,
+            commonMistakes: p.commonMistakes || ["Omitting schematic diagram", "Skipping intermediate mathematical steps"],
+            markingScheme: p.examinerChecklist || [
+              { criterion: "Technical Definition & Principle", marksAllocated: selectedMarks * 0.3, description: "Formal accurate definition" },
+              { criterion: "Derivation / Working Steps", marksAllocated: selectedMarks * 0.5, description: "Step-by-step logic" },
+              { criterion: "Applications & Boxed Summary", marksAllocated: selectedMarks * 0.2, description: "Industrial applications" }
+            ],
+            quickRevision: `Key summary: Master definition, draw labeled schematic, and highlight boxed final result.`,
+            examinerTip: "Draw labeled block diagrams for full presentation marks."
+          });
         }
       }
-    } catch (err) {
-      console.error("Failed to load question bank:", err);
+    } catch (e) {
+      console.error(e);
     } finally {
-      setLoadingBank(false);
+      setLoading(false);
     }
   };
 
-  const handleEvaluateStudentAnswer = async () => {
-    if (!selectedQuestion || !studentAnswer.trim()) return;
+  const handleCompareAnswer = async () => {
+    if (!studentAnswer.trim()) return;
     setEvaluating(true);
 
     try {
@@ -143,14 +188,10 @@ export default function PracticeAnswerView({
         method: 'POST',
         headers,
         body: JSON.stringify({
-          question: selectedQuestion.question,
+          question: currentQuestion.question,
           studentAnswer,
-          maxMarks: selectedQuestion.marks,
-          checklist: [
-            { criterion: "Definition & Technical Accuracy", marksAllocated: selectedQuestion.marks * 0.3 },
-            { criterion: "Diagram / Working Formula / Step-by-Step", marksAllocated: selectedQuestion.marks * 0.5 },
-            { criterion: "Real-World Application & Summary", marksAllocated: selectedQuestion.marks * 0.2 }
-          ]
+          maxMarks: currentQuestion.marks,
+          checklist: currentQuestion.markingScheme
         })
       });
 
@@ -160,309 +201,276 @@ export default function PracticeAnswerView({
           setEvaluation(data.evaluation);
         }
       }
-    } catch (err) {
-      console.error(err);
+    } catch (e) {
+      console.error(e);
     } finally {
       setEvaluating(false);
     }
   };
 
-  const filteredQuestions = questionBank.filter(q => {
-    if (activeFilter === '2m') return q.marks === 2;
-    if (activeFilter === '5m') return q.marks === 5;
-    if (activeFilter === '10m') return q.marks === 10;
-    return true;
-  });
+  const tabsList = [
+    { id: 'simple', label: 'Simple Explanation' },
+    { id: 'exam', label: 'Exam Answer' },
+    { id: 'keypoints', label: 'Key Points' },
+    { id: 'diagram', label: 'Diagram' },
+    { id: 'mistakes', label: 'Common Mistakes' },
+    { id: 'marking', label: 'Marking Scheme' },
+    { id: 'revision', label: 'Quick Revision' },
+    { id: 'compare', label: 'Compare My Answer' }
+  ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-16">
+    <div className="max-w-5xl mx-auto space-y-8 pb-16">
       {/* Header */}
-      <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white p-6 sm:p-8 shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-[#17253a] via-[#111c2e] to-[#0b1220] p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-0.5 text-xs font-semibold text-emerald-100 border border-white/20">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#54d6c7]/15 px-3 py-0.5 text-xs font-bold text-[#54d6c7] border border-[#54d6c7]/30">
             <Award className="h-3.5 w-3.5" />
-            <span>Examiner Scoring & Answer Mastery Engine</span>
+            <span>AI Answer Engine & Marking Scheme</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Practice Question Bank & AI Evaluation
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+            AI Exam Answer Generator & Evaluator
           </h1>
-          <p className="text-xs sm:text-sm text-emerald-100 max-w-2xl">
-            Access 15–20 high-yield exam questions (2M, 5M, 10M), practice writing your answers in the sandbox, and receive real-time mark evaluation and examiner scoring tips.
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
+            Generate 5-mark and 10-mark model answers structured across 7 dedicated learning tabs. Compare your written answer against the official examiner marking scheme.
           </p>
         </div>
       </div>
 
-      {/* Topic & Document Selector Control Bar */}
-      <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-5 backdrop-blur-xl shadow-sm">
-        <form 
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleGenerateBank();
-          }}
-          className="grid grid-cols-1 sm:grid-cols-12 gap-3"
-        >
+      {/* Input Control Box */}
+      <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-5 shadow-lg space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-3">
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Subject</label>
+            <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Subject</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="e.g. Operating Systems"
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+              className="w-full px-3.5 py-2 rounded-xl border border-white/10 bg-[#0b1220] text-xs text-white"
             />
           </div>
 
-          <div className="sm:col-span-6">
-            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Topic / Chapter</label>
+          <div className="sm:col-span-5">
+            <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Topic</label>
             <input
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g. Deadlock Banker's Algorithm, Normalization..."
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+              placeholder="e.g. Banker's Algorithm, Normalization..."
+              className="w-full px-3.5 py-2 rounded-xl border border-white/10 bg-[#0b1220] text-xs text-white"
             />
           </div>
 
-          <div className="sm:col-span-3 flex items-end">
-            <button
-              type="submit"
-              disabled={loadingBank || !topic.trim()}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white py-2 text-xs font-bold shadow-md transition-all cursor-pointer"
-            >
-              {loadingBank ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              <span>Generate 15 Questions</span>
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Question Bank & Answer Sandbox Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: 15-Question Bank Navigation (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Layers className="h-4 w-4 text-emerald-500" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Question Bank ({questionBank.length})
-              </h3>
-            </div>
-
-            {/* Filter Pills */}
-            <div className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 text-[10px] font-bold">
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Format</label>
+            <div className="flex items-center gap-1 rounded-xl bg-[#0b1220] p-1 border border-white/10">
               <button
-                onClick={() => setActiveFilter('all')}
-                className={`px-2 py-0.5 rounded ${activeFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500'}`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setActiveFilter('2m')}
-                className={`px-2 py-0.5 rounded ${activeFilter === '2m' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-slate-500'}`}
-              >
-                2M
-              </button>
-              <button
-                onClick={() => setActiveFilter('5m')}
-                className={`px-2 py-0.5 rounded ${activeFilter === '5m' ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-xs' : 'text-slate-500'}`}
+                type="button"
+                onClick={() => setSelectedMarks(5)}
+                className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all ${
+                  selectedMarks === 5 ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400'
+                }`}
               >
                 5M
               </button>
               <button
-                onClick={() => setActiveFilter('10m')}
-                className={`px-2 py-0.5 rounded ${activeFilter === '10m' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-500'}`}
+                type="button"
+                onClick={() => setSelectedMarks(10)}
+                className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all ${
+                  selectedMarks === 10 ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400'
+                }`}
               >
                 10M
               </button>
             </div>
           </div>
 
-          {loadingBank ? (
-            <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-8 text-center space-y-3">
-              <RefreshCw className="h-6 w-6 animate-spin text-emerald-500 mx-auto" />
-              <p className="text-xs text-slate-500">Generating 15 structured exam questions...</p>
+          <div className="sm:col-span-2 flex items-end">
+            <button
+              onClick={handleGenerateAnswer}
+              disabled={loading || !topic.trim()}
+              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#54d6c7] hover:bg-[#43c4b5] disabled:opacity-50 text-slate-950 py-2.5 text-xs font-bold shadow-md transition-all cursor-pointer"
+            >
+              {loading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span>Generate</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Answer Workspace */}
+      <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 sm:p-8 shadow-xl space-y-6">
+        {/* Question Header */}
+        <div className="space-y-1.5 border-b border-white/10 pb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#54d6c7]">
+              {subject} · {currentQuestion.category}
+            </span>
+            <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-bold text-white font-mono">
+              {currentQuestion.marks} Marks
+            </span>
+          </div>
+          <h2 className="text-base sm:text-lg font-extrabold text-white">
+            {currentQuestion.question}
+          </h2>
+        </div>
+
+        {/* 7 Learning Tabs Switcher */}
+        <div className="flex items-center gap-1 overflow-x-auto border-b border-white/10 pb-2 no-scrollbar">
+          {tabsList.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id as any)}
+              className={`whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === t.id
+                  ? 'bg-[#54d6c7] text-slate-950 shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab 1: Simple Explanation */}
+        {activeTab === 'simple' && (
+          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-2">
+            <h3 className="text-xs font-bold text-[#54d6c7] uppercase">Intuitive Plain-English Explanation</h3>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              {currentQuestion.simpleExplanation}
+            </p>
+          </div>
+        )}
+
+        {/* Tab 2: Exam Answer (5M / 10M) */}
+        {activeTab === 'exam' && (
+          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between text-xs text-slate-400 border-b border-white/10 pb-2">
+              <span className="font-bold text-[#54d6c7]">Official Full-Marks Model Answer ({currentQuestion.marks}M)</span>
+              <span>{currentQuestion.examinerTip}</span>
             </div>
-          ) : (
-            <div className="space-y-2.5 max-h-[650px] overflow-y-auto pr-1">
-              {filteredQuestions.map((q, idx) => {
-                const isSelected = selectedQuestion?.id === q.id;
-                return (
-                  <div
-                    key={q.id || idx}
-                    onClick={() => {
-                      setSelectedQuestion(q);
-                      setEvaluation(null);
-                      setShowIdealAnswer(false);
-                    }}
-                    className={`rounded-xl border p-3.5 transition-all cursor-pointer text-left space-y-2 ${
-                      isSelected
-                        ? 'border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 shadow-sm'
-                        : 'border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 hover:border-slate-300 dark:hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${
-                        q.marks === 2 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' :
-                        q.marks === 5 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
-                        'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400'
-                      }`}>
-                        {q.marks} Marks
-                      </span>
-                      <span className="text-[10px] text-slate-400">Q{idx + 1}</span>
-                    </div>
+            <div className="whitespace-pre-wrap text-xs sm:text-sm text-slate-200 leading-relaxed space-y-2">
+              {currentQuestion.idealAnswer}
+            </div>
+          </div>
+        )}
 
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2">
-                      {q.question}
-                    </h4>
+        {/* Tab 3: Key Points */}
+        {activeTab === 'keypoints' && (
+          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-3">
+            <h3 className="text-xs font-bold text-[#54d6c7] uppercase">Key Evaluator Checkpoints</h3>
+            <ul className="space-y-2">
+              {currentQuestion.keyPoints.map((kp, idx) => (
+                <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-300">
+                  <Check className="h-4 w-4 text-[#54d6c7] shrink-0 mt-0.5" />
+                  <span>{kp}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-white/5">
-                      <span className="truncate max-w-[200px]">{q.examinerTip}</span>
-                      <ChevronRight className="h-3 w-3 shrink-0" />
-                    </div>
+        {/* Tab 4: Diagram */}
+        {activeTab === 'diagram' && (
+          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-3">
+            <h3 className="text-xs font-bold text-[#6ea8fe] uppercase">Architectural Schematic Diagram</h3>
+            <pre className="p-4 rounded-xl bg-slate-950 border border-white/10 font-mono text-xs text-[#54d6c7] overflow-x-auto whitespace-pre leading-relaxed">
+              {currentQuestion.diagramText}
+            </pre>
+          </div>
+        )}
+
+        {/* Tab 5: Common Mistakes */}
+        {activeTab === 'mistakes' && (
+          <div className="rounded-2xl border border-[#f47c7c]/20 bg-[#f47c7c]/5 p-5 space-y-3">
+            <h3 className="text-xs font-bold text-[#f47c7c] uppercase">Top Student Mistakes & Traps</h3>
+            <ul className="space-y-2 text-xs text-slate-300">
+              {currentQuestion.commonMistakes.map((m, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-[#f47c7c] font-bold">•</span>
+                  <span>{m}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Tab 6: Marking Scheme */}
+        {activeTab === 'marking' && (
+          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-3">
+            <h3 className="text-xs font-bold text-[#f6c85f] uppercase">Official Marking Scheme Rubric</h3>
+            <div className="space-y-2">
+              {currentQuestion.markingScheme.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs">
+                  <div>
+                    <span className="font-bold text-white">{item.criterion}</span>
+                    <p className="text-[11px] text-slate-400 mt-0.5">{item.description}</p>
                   </div>
-                );
-              })}
+                  <span className="font-mono font-bold text-[#54d6c7]">+{item.marksAllocated}M</span>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Right Column: Selected Question Sandbox & Evaluation (7 cols) */}
-        <div className="lg:col-span-7 space-y-5">
-          {selectedQuestion ? (
-            <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-6 backdrop-blur-2xl shadow-xl space-y-5">
-              {/* Question Header */}
-              <div className="space-y-2 border-b border-slate-200/80 dark:border-white/10 pb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                    {selectedQuestion.category}
-                  </span>
-                  <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Max Marks: {selectedQuestion.marks}
-                  </span>
-                </div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-snug">
-                  {selectedQuestion.question}
-                </h3>
-                <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  <HelpCircle className="h-3.5 w-3.5 shrink-0" />
-                  <span>Examiner Rubric: {selectedQuestion.examinerTip}</span>
-                </div>
+        {/* Tab 7: Quick Revision */}
+        {activeTab === 'revision' && (
+          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-2">
+            <h3 className="text-xs font-bold text-[#70d6a8] uppercase">60-Second Flash Summary</h3>
+            <p className="text-xs sm:text-sm text-slate-300 font-mono leading-relaxed">
+              {currentQuestion.quickRevision}
+            </p>
+          </div>
+        )}
+
+        {/* Tab 8: Compare My Answer Feature */}
+        {activeTab === 'compare' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Edit3 className="h-4 w-4 text-[#54d6c7]" />
+                  <span>Submit Your Handwritten/Typed Answer to Compare</span>
+                </label>
+                <span className="text-[10px] text-slate-400">Evaluates against 4 marking criteria</span>
               </div>
 
-              {/* Student Answer Writing Sandbox */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <Edit3 className="h-3.5 w-3.5 text-emerald-500" />
-                    <span>Your Answer Sandbox</span>
-                  </label>
-                  <button
-                    onClick={() => setShowIdealAnswer(!showIdealAnswer)}
-                    className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
-                  >
-                    {showIdealAnswer ? "Hide Model Answer" : "View Model Answer"}
-                  </button>
+              <textarea
+                rows={6}
+                value={studentAnswer}
+                onChange={(e) => setStudentAnswer(e.target.value)}
+                placeholder="Type your answer here to receive mark-by-mark scoring and examiner feedback..."
+                className="w-full p-4 rounded-2xl border border-white/10 bg-slate-950 text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-[#54d6c7]"
+              />
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCompareAnswer}
+                  disabled={evaluating || !studentAnswer.trim()}
+                  className="flex items-center gap-2 rounded-xl bg-[#54d6c7] hover:bg-[#43c4b5] disabled:opacity-40 text-slate-950 font-black px-6 py-2.5 text-xs shadow-md transition-all cursor-pointer"
+                >
+                  {evaluating ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                  <span>Compare & Score My Answer</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Evaluation Results */}
+            {evaluation && (
+              <div className="rounded-2xl border border-[#54d6c7]/30 bg-[#54d6c7]/10 p-5 space-y-3">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="text-xs font-bold text-white">Scored: {evaluation.scoreObtained} / {evaluation.maxMarks} Marks ({evaluation.percentage}%)</span>
+                  <span className="text-xs text-[#54d6c7] font-bold">Examiner Feedback</span>
                 </div>
-
-                <textarea
-                  rows={6}
-                  value={studentAnswer}
-                  onChange={(e) => setStudentAnswer(e.target.value)}
-                  placeholder="Type your exam response here (include definitions, equations, steps)..."
-                  className="w-full p-4 rounded-2xl border border-slate-300 dark:border-white/15 bg-white dark:bg-slate-950/80 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 outline-none leading-relaxed"
-                />
-
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    onClick={handleEvaluateStudentAnswer}
-                    disabled={evaluating || !studentAnswer.trim()}
-                    className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white px-4 py-2 text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
-                  >
-                    {evaluating ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                    <span>Evaluate My Answer</span>
-                  </button>
+                <p className="text-xs text-slate-200 leading-relaxed">{evaluation.feedback}</p>
+                <div className="text-xs text-[#f6c85f]">
+                  💡 <strong>Tip:</strong> {evaluation.improvementTip}
                 </div>
               </div>
-
-              {/* Evaluation Results Feedback Box */}
-              <AnimatePresence>
-                {evaluation && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-4"
-                  >
-                    <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
-                          AI Examiner Evaluation
-                        </span>
-                        <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
-                          Score: {evaluation.scoreObtained} / {evaluation.maxMarks} ({evaluation.percentage}%)
-                        </h4>
-                      </div>
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-sm">
-                        {evaluation.scoreObtained}M
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                      {evaluation.feedback}
-                    </p>
-
-                    {/* Criteria matches */}
-                    {evaluation.checklistMatches && evaluation.checklistMatches.length > 0 && (
-                      <div className="space-y-1.5">
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
-                          Mark Breakdown:
-                        </span>
-                        {evaluation.checklistMatches.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-xs rounded-lg bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-white/5">
-                            <div className="flex items-center gap-2">
-                              {item.awarded ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : <XCircle className="h-3.5 w-3.5 text-rose-500" />}
-                              <span className="text-slate-800 dark:text-slate-200">{item.criterion}</span>
-                            </div>
-                            <span className="font-bold text-slate-700 dark:text-slate-300">+{item.marksAwarded}M</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="text-xs text-amber-700 dark:text-amber-300 font-medium bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
-                      💡 <strong>Examiner Improvement Tip:</strong> {evaluation.improvementTip}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Model Ideal Answer Accordion */}
-              <AnimatePresence>
-                {showIdealAnswer && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-3"
-                  >
-                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400">
-                      <BookOpen className="h-4 w-4" />
-                      <span>Model Ideal Answer (Full Marks Reference)</span>
-                    </div>
-                    <div className="whitespace-pre-wrap text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-mono p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/5 overflow-x-auto">
-                      {selectedQuestion.idealAnswer}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-12 text-center text-slate-500 text-xs space-y-2">
-              <FileCheck2 className="h-8 w-8 text-slate-400 mx-auto" />
-              <p>Select a question from the bank to start your practice sandbox.</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

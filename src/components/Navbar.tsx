@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   GraduationCap, LogOut, User as UserIcon, 
-  Cpu, Sun, Moon, Target, Bot, BookOpen, FileCheck2, Award, Layers, BarChart3, Clock, Sparkles
+  Cpu, Sun, Moon, Target, Bot, BookOpen, FileCheck2, Award, Layers, BarChart3, Clock,
+  Sparkles, ChevronDown, Menu, X, Calendar, Settings, Compass, ShieldAlert, Check
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface User {
   id: string;
@@ -25,6 +26,7 @@ interface NavbarProps {
   onOpenAuth: () => void;
   onLogout: () => void;
   onOpenAISettings: () => void;
+  onOpenOnboarding?: () => void;
   onOpenEmergencyModal?: () => void;
   theme?: 'dark' | 'light';
   onToggleTheme?: () => void;
@@ -37,110 +39,193 @@ export default function Navbar({
   onOpenAuth,
   onLogout,
   onOpenAISettings,
+  onOpenOnboarding,
   theme = 'dark',
   onToggleTheme,
 }: NavbarProps) {
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: GraduationCap },
-    { id: 'exam_center', label: 'Exam Center', icon: Target },
-    { id: 'nexa', label: 'Nexa AI', icon: Bot },
-    { id: 'library', label: 'Library', icon: BookOpen },
-    { id: 'practice', label: 'Practice', icon: FileCheck2 },
-    { id: 'mock_exams', label: 'Mock Exams', icon: Award },
-    { id: 'flashcards', label: 'Flashcards', icon: Layers },
-    { id: 'progress', label: 'Analytics', icon: BarChart3 },
-    { id: 'focus', label: 'Focus', icon: Clock },
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+
+  // Grouped Navigation Architecture
+  const navGroups = [
+    {
+      id: 'learn',
+      label: 'Learn',
+      icon: BookOpen,
+      items: [
+        { id: 'nexa', label: 'Nexa AI Coach', desc: 'Ask doubts & concept breakdowns', icon: Bot },
+        { id: 'library', label: 'Study Library', desc: 'Synthesized textbook notes & docs', icon: BookOpen },
+        { id: 'exam_center', label: 'Syllabus & Blueprint', desc: '5-unit mark weightage maps', icon: Target },
+      ]
+    },
+    {
+      id: 'practice',
+      label: 'Practice',
+      icon: FileCheck2,
+      items: [
+        { id: 'practice', label: 'Practice Questions', desc: '15-question bank with AI scoring', icon: FileCheck2 },
+        { id: 'mock_exams', label: 'Mock Exam Simulator', desc: 'Full-length timed examinations', icon: Award },
+        { id: 'flashcards', label: 'Active Recall Flashcards', desc: 'Spaced repetition memory deck', icon: Layers },
+      ]
+    },
+    {
+      id: 'improve',
+      label: 'Improve',
+      icon: BarChart3,
+      items: [
+        { id: 'progress', label: 'Progress & Analytics', desc: 'Study streak & readiness breakdown', icon: BarChart3 },
+        { id: 'focus', label: 'Focus Timer', desc: 'Custom Pomodoro study blocks', icon: Clock },
+      ]
+    }
   ];
+
+  const handleNavClick = (tabId: string) => {
+    setActiveTab(tabId);
+    setOpenDropdown(null);
+    setIsMobileDrawerOpen(false);
+  };
+
+  const isCurrentGroupActive = (items: { id: string }[]) => {
+    return items.some(item => item.id === activeTab);
+  };
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 dark:border-white/5 bg-white/80 dark:bg-slate-950/75 backdrop-blur-2xl transition-colors">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-2.5">
+      <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] dark:border-white/[0.08] bg-[#0b1220]/90 dark:bg-[#0b1220]/90 backdrop-blur-2xl transition-colors">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
           {/* Brand Identity */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleNavClick('dashboard')}
               className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none"
             >
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-cyan-500 shadow-md shadow-emerald-500/20">
-                <GraduationCap className="h-4 w-4 text-white" />
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#54d6c7] via-[#2dd4bf] to-[#06b6d4] shadow-md shadow-[#54d6c7]/20">
+                <GraduationCap className="h-5 w-5 text-slate-950 font-black" />
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  Scholar<span className="text-emerald-500">Mate</span>
+              <div>
+                <span className="text-base font-extrabold tracking-tight text-white">
+                  Scholar<span className="text-[#54d6c7]">Mate</span>
                 </span>
+                <p className="text-[10px] text-slate-400 leading-none hidden sm:block">AI Exam Preparation System</p>
               </div>
             </button>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden xl:flex items-center gap-1 rounded-full bg-slate-100/80 dark:bg-white/[0.04] p-1 border border-slate-200/60 dark:border-white/5">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+          {/* Desktop Grouped Navigation */}
+          <nav className="hidden lg:flex items-center gap-1.5 rounded-full bg-[#111c2e]/90 p-1 border border-white/10">
+            {/* Dashboard Link */}
+            <button
+              onClick={() => handleNavClick('dashboard')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'dashboard'
+                  ? 'bg-[#54d6c7] text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              Home
+            </button>
+
+            {/* Dropdown Groups: Learn, Practice, Improve */}
+            {navGroups.map((grp) => {
+              const isActive = isCurrentGroupActive(grp.items);
+              const isOpen = openDropdown === grp.id;
+              const GrpIcon = grp.icon;
+
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`relative flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                    isActive
-                      ? 'text-white'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5'
-                  }`}
+                <div 
+                  key={grp.id}
+                  className="relative"
+                  onMouseEnter={() => setOpenDropdown(grp.id)}
+                  onMouseLeave={() => setOpenDropdown(null)}
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeNavPill"
-                      className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 shadow-md shadow-emerald-600/25"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{tab.label}</span>
-                  </span>
-                </button>
+                  <button
+                    onClick={() => setOpenDropdown(isOpen ? null : grp.id)}
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-[#17253a] text-[#54d6c7] border border-[#54d6c7]/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <GrpIcon className="w-3.5 h-3.5" />
+                    <span>{grp.label}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown Panel */}
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute top-full left-0 mt-1.5 w-64 rounded-2xl border border-white/10 bg-[#111c2e] p-2 shadow-2xl backdrop-blur-2xl z-50 space-y-1"
+                      >
+                        {grp.items.map((item) => {
+                          const ItemIcon = item.icon;
+                          const isItemActive = activeTab === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => handleNavClick(item.id)}
+                              className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                                isItemActive
+                                  ? 'bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/20'
+                                  : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                              }`}
+                            >
+                              <div className="p-1.5 rounded-lg bg-white/5 shrink-0 mt-0.5">
+                                <ItemIcon className="w-4 h-4 text-[#54d6c7]" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold">{item.label}</div>
+                                <div className="text-[10px] text-slate-400 line-clamp-1">{item.desc}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </nav>
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2">
+            {/* Onboarding / Study Plan Setup */}
+            {onOpenOnboarding && (
+              <button
+                onClick={onOpenOnboarding}
+                title="Setup Study Plan & Exam Target"
+                className="hidden sm:flex items-center gap-1.5 rounded-full border border-white/10 bg-[#17253a] px-3 py-1.5 text-xs font-bold text-[#54d6c7] hover:bg-white/10 transition-all cursor-pointer"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-[#54d6c7]" />
+                <span>My Exam Plan</span>
+              </button>
+            )}
+
             {/* AI Config */}
             <button
               onClick={onOpenAISettings}
               title="Configure AI Engine"
-              className="flex items-center gap-1.5 rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-white/10 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-[#111c2e] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10 transition-all cursor-pointer"
             >
-              <Cpu className="h-3.5 w-3.5 text-emerald-500" />
+              <Cpu className="h-3.5 w-3.5 text-[#54d6c7]" />
               <span className="hidden md:inline">AI Config</span>
             </button>
 
-            {/* Theme Toggle */}
-            {onToggleTheme && (
-              <button
-                onClick={onToggleTheme}
-                title="Toggle Theme"
-                className="p-1.5 rounded-full border border-slate-200/80 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.04] text-slate-700 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-white/10 transition-all cursor-pointer"
-              >
-                {theme === 'light' ? (
-                  <Moon className="h-3.5 w-3.5 text-indigo-500" />
-                ) : (
-                  <Sun className="h-3.5 w-3.5 text-amber-400" />
-                )}
-              </button>
-            )}
-
-            {/* User Profile */}
+            {/* User Profile / Auth */}
             {user ? (
               <div className="flex items-center gap-2 pl-1">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-xs font-bold text-white shadow-sm">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-[#54d6c7] to-[#06b6d4] text-xs font-black text-slate-950 shadow-sm">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <button
                   onClick={onLogout}
                   title="Log Out"
-                  className="rounded-lg p-1.5 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                  className="rounded-lg p-1.5 text-slate-400 hover:text-[#f47c7c] transition-colors cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -148,29 +233,84 @@ export default function Navbar({
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="flex items-center gap-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 rounded-full bg-[#54d6c7] hover:bg-[#43c4b5] px-4 py-1.5 text-xs font-black text-slate-950 shadow-md shadow-[#54d6c7]/20 transition-all cursor-pointer"
               >
                 <UserIcon className="h-3.5 w-3.5" />
                 <span>Login</span>
               </button>
             )}
+
+            {/* Mobile Drawer Toggle */}
+            <button
+              onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+              className="lg:hidden p-2 rounded-xl border border-white/10 bg-[#111c2e] text-slate-300 hover:text-white"
+            >
+              {isMobileDrawerOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation Bar (iOS style) */}
-      <div className="xl:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-950/90 backdrop-blur-xl px-2 py-1.5 flex items-center justify-around shadow-lg">
-        {tabs.slice(0, 5).map((tab) => {
+      {/* Mobile Menu Drawer */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden fixed top-14 left-0 right-0 z-40 border-b border-white/10 bg-[#0b1220] p-4 space-y-4 shadow-2xl backdrop-blur-2xl"
+          >
+            <div className="space-y-3">
+              {navGroups.map((grp) => (
+                <div key={grp.id} className="space-y-1.5">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">
+                    {grp.label}
+                  </div>
+                  <div className="grid grid-cols-1 gap-1">
+                    {grp.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleNavClick(item.id)}
+                          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-left ${
+                            isActive
+                              ? 'bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/30'
+                              : 'text-slate-300 hover:bg-white/5'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4 text-[#54d6c7]" />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Bottom Navigation Bar (Home, Learn, Practice, Progress) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0b1220]/95 backdrop-blur-xl px-4 py-2 flex items-center justify-around shadow-2xl">
+        {[
+          { id: 'dashboard', label: 'Home', icon: GraduationCap },
+          { id: 'nexa', label: 'Learn', icon: Bot },
+          { id: 'practice', label: 'Practice', icon: FileCheck2 },
+          { id: 'progress', label: 'Progress', icon: BarChart3 }
+        ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
+              onClick={() => handleNavClick(tab.id)}
+              className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer ${
                 isActive
-                  ? 'text-emerald-500 font-bold'
-                  : 'text-slate-500 dark:text-slate-400'
+                  ? 'text-[#54d6c7] font-bold'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Icon className="h-4 w-4" />
