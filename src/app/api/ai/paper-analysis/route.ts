@@ -12,9 +12,9 @@ export async function POST(req: Request) {
     const subject = body.subject || 'Engineering Subject';
     const paperTexts = body.paperTexts || [];
 
-    const cacheKey = `paper_analysis_${subject}_${paperTexts.length}`;
+    const cacheKey = `paper_analysis_50q_v3_${subject}_${paperTexts.length}`;
     const cached = getCachedAIResponse<any>(cacheKey);
-    if (cached) {
+    if (cached && Array.isArray(cached.guaranteedQuestions) && cached.guaranteedQuestions.length >= 50) {
       return NextResponse.json({ analysis: cached, cached: true });
     }
 

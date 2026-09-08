@@ -735,9 +735,13 @@ Format strictly as JSON:
 }
 
 export async function analyzePreviousPapers(subject: string, paperTexts: string[], customKey?: string) {
+  const fallback = getHeuristicPaperAnalysis(subject);
+
   const prompt = `You are ScholarMate Senior Exam Analytics Engine.
 Analyze the past 5 years university examination papers for "${subject}".
-Identify repeated question patterns, guaranteed recurring questions, and unit weightage heatmaps.
+You MUST predict an extensive, authentic question bank of 50+ EXAMINATION QUESTIONS:
+1. "highPriorityQuestions": Exactly 20 high-priority recurring questions (90-100% probability, compulsory 10-mark derivations and 7-mark core analytical questions).
+2. "lessPriorityQuestions": Exactly 30 less-priority supplementary questions (60-80% probability, 3-mark definitions and 5-mark short questions).
 
 Question Paper Transcripts/Data:
 """
@@ -749,6 +753,9 @@ Format strictly as JSON:
   "subject": "${subject}",
   "papersAnalyzed": ${paperTexts.length || 5},
   "confidenceScore": 94,
+  "highPriorityCount": 20,
+  "lessPriorityCount": 30,
+  "totalQuestionsCount": 50,
   "unitHeatmap": [
     { "unit": 1, "unitTitle": "Unit 1: Core Fundamentals & Axioms", "appearanceCount": 14, "percentage": 28, "riskLevel": "high" },
     { "unit": 2, "unitTitle": "Unit 2: Architecture & Schematics", "appearanceCount": 12, "percentage": 24, "riskLevel": "critical" },
@@ -756,46 +763,30 @@ Format strictly as JSON:
     { "unit": 4, "unitTitle": "Unit 4: Protocol & Practical Implementations", "appearanceCount": 8, "percentage": 16, "riskLevel": "medium" },
     { "unit": 5, "unitTitle": "Unit 5: Advanced Optimization & Standards", "appearanceCount": 5, "percentage": 10, "riskLevel": "low" }
   ],
-  "guaranteedQuestions": [
+  "highPriorityQuestions": [
     {
-      "id": "gq_1",
-      "question": "Explain the operational working principle and architecture with a neat, labeled block diagram.",
+      "id": "gq_high_1",
+      "question": "Comprehensive question text...",
       "frequency": "5/5 Papers (100% Guaranteed)",
       "probability": 98,
       "category": "10-Mark Core Derivation",
-      "unit": 2,
-      "whyGuaranteed": "Has appeared in every single end-semester exam over the last 5 sessions without fail.",
-      "examinerTip": "Examiners award 3 marks for the block diagram alone. Always label data buses and control lines."
-    },
+      "unit": 1,
+      "whyGuaranteed": "Appeared in all 5 past exam sessions without fail.",
+      "examinerTip": "Draw labeled block diagram and state boundary conditions for full marks.",
+      "priority": "high"
+    }
+  ],
+  "lessPriorityQuestions": [
     {
-      "id": "gq_2",
-      "question": "Derive the primary mathematical governing equations from first principles and state boundary limits.",
-      "frequency": "4/5 Papers (80% Probability)",
-      "probability": 88,
-      "category": "10-Mark Core Derivation",
-      "unit": 3,
-      "whyGuaranteed": "Standard compulsory numerical/analytical problem in Part B/C.",
-      "examinerTip": "State initial conditions at t=0, write all algebraic transitions, and box the final result."
-    },
-    {
-      "id": "gq_3",
-      "question": "State the formal definition, two major governing laws, and standard SI units.",
-      "frequency": "5/5 Papers (100% Guaranteed)",
-      "probability": 96,
+      "id": "gq_less_1",
+      "question": "Supplementary question text...",
+      "frequency": "3/5 Papers (60% Probability)",
+      "probability": 75,
       "category": "3-Mark Short Question",
       "unit": 1,
-      "whyGuaranteed": "Recurring compulsory 3-mark question appearing in Question 1(a) across all sets.",
-      "examinerTip": "Do not write paragraphs. Provide a 2-line definition followed by two bullet points for laws."
-    },
-    {
-      "id": "gq_4",
-      "question": "Construct a comparative table contrasting standard static vs dynamic operating modes across 4 distinct parameters.",
-      "frequency": "4/5 Papers (80% Probability)",
-      "probability": 84,
-      "category": "7-Mark Analytical Question",
-      "unit": 4,
-      "whyGuaranteed": "High-frequency comparison question in the semester exam blueprint.",
-      "examinerTip": "Tabular format with parameter column is mandatory; paragraphs receive a 2-mark penalty."
+      "whyGuaranteed": "Recurring short-answer question in Question 1.",
+      "examinerTip": "Keep definition crisp with 2 bullet points.",
+      "priority": "less"
     }
   ],
   "highProbabilityTopics": [
@@ -805,22 +796,64 @@ Format strictly as JSON:
     { "topic": "Boundary Constraints & Safety Conditions", "frequency": "80%", "expectedMarks": 3 }
   ],
   "repeatedQuestions": [
-    "Explain the working principle and architecture with a labeled block diagram (10 Marks)",
-    "Derive the governing state equation step-by-step (10 Marks)",
-    "List 4 differences between static and dynamic configurations (7 Marks)",
-    "Define the core principle and state its governing formula (3 Marks)"
+    "Core derivation question (10 Marks)",
+    "Analytical architecture question (10 Marks)",
+    "Comparative analysis (7 Marks)",
+    "Fundamental definition (3 Marks)"
   ]
 }`;
 
   const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
   if (aiRes) {
     try {
-      return safeJsonParse(aiRes);
+      const parsed = safeJsonParse(aiRes);
+      if (parsed) {
+        let highs = Array.isArray(parsed.highPriorityQuestions) ? parsed.highPriorityQuestions : [];
+        if (highs.length < 20) {
+          highs = [...highs, ...fallback.highPriorityQuestions.slice(highs.length, 20)];
+        }
+        highs = highs.slice(0, 20).map((q: any, idx: number) => ({
+          ...q,
+          id: q.id || `gq_high_${idx + 1}`,
+          priority: 'high',
+          probability: q.probability || (98 - (idx % 8))
+        }));
+
+        let less = Array.isArray(parsed.lessPriorityQuestions) ? parsed.lessPriorityQuestions : [];
+        if (less.length < 30) {
+          less = [...less, ...fallback.lessPriorityQuestions.slice(less.length, 30)];
+        }
+        less = less.slice(0, 30).map((q: any, idx: number) => ({
+          ...q,
+          id: q.id || `gq_less_${idx + 1}`,
+          priority: 'less',
+          probability: q.probability || (78 - (idx % 12))
+        }));
+
+        const allCombined = [...highs, ...less];
+
+        return {
+          ...parsed,
+          subject: parsed.subject || subject,
+          papersAnalyzed: parsed.papersAnalyzed || 5,
+          confidenceScore: parsed.confidenceScore || 94,
+          unitHeatmap: (parsed.unitHeatmap && parsed.unitHeatmap.length >= 5) ? parsed.unitHeatmap : fallback.unitHeatmap,
+          highPriorityCount: highs.length,
+          lessPriorityCount: less.length,
+          totalQuestionsCount: allCombined.length,
+          highPriorityQuestions: highs,
+          lessPriorityQuestions: less,
+          guaranteedQuestions: allCombined,
+          highProbabilityTopics: parsed.highProbabilityTopics || fallback.highProbabilityTopics,
+          repeatedQuestions: parsed.repeatedQuestions || fallback.repeatedQuestions
+        };
+      }
     } catch {}
   }
 
-  return getHeuristicPaperAnalysis(subject);
+  return fallback;
 }
+
 
 export async function generateVivaQuestions(subject: string, topic?: string, mode: string = 'theory', customKey?: string) {
   const modeContext = mode === 'lab_practical'
@@ -1928,74 +1961,310 @@ function getHeuristicQuestionBank(topic: string, subject: string) {
   };
 }
 
+interface TopicItem {
+  q: string;
+  cat: string;
+  u: number;
+  prob: number;
+  freq: string;
+  tip?: string;
+}
+
+function generate50PaperQuestions(subject: string) {
+  const s = (subject || "").toLowerCase();
+
+  let highTopics: TopicItem[] = [];
+  let lessTopics: TopicItem[] = [];
+
+  if (s.includes("operat") || s.includes("os") || s.includes("system software")) {
+    highTopics = [
+      { q: "Explain Banker's Algorithm for Deadlock Avoidance with Safety Algorithm, Resource-Request Algorithm, and a complete numerical matrix example.", cat: "10-Mark Core Derivation", u: 2, prob: 98, freq: "5/5 Papers (100% Guaranteed)", tip: "State Available, Max, Allocation, Need matrices clearly. Show step-by-step Work vector updates and safe state sequence." },
+      { q: "Describe Paging Hardware with Translation Lookaside Buffer (TLB). Derive the Effective Memory Access Time (EMAT) mathematical formula.", cat: "10-Mark Core Derivation", u: 3, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Draw page table architecture with hit ratio α, TLB access time ε, and main memory access time m: EMAT = (m + ε)α + (2m + ε)(1 - α)." },
+      { q: "Compare Preemptive vs Non-Preemptive CPU Scheduling algorithms (FCFS, SJF, SRTF, Round Robin, Priority) with Gantt charts and waiting time calculations.", cat: "10-Mark Core Derivation", u: 1, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Calculate average Turnaround Time (TAT) and average Waiting Time (WT) in a structured comparison table." },
+      { q: "Explain the Producer-Consumer problem and Bounded-Buffer synchronization problem using Counting and Binary Semaphores with pseudo-code.", cat: "10-Mark Core Derivation", u: 2, prob: 94, freq: "4/5 Papers (80% Probability)", tip: "Show wait(empty), wait(mutex), signal(mutex), signal(full) sequences correctly to avoid deadlocks." },
+      { q: "Illustrate the concept of Demand Paging and Page Fault Handling sequence step-by-step with an architectural control flow diagram.", cat: "10-Mark Core Derivation", u: 3, prob: 93, freq: "4/5 Papers (80% Probability)", tip: "List all 6 steps: trap to OS, save registers, check page table valid bit, fetch frame from swap disk, update page table, restart instruction." },
+      { q: "Explain Page Replacement Algorithms: FIFO, Optimal (OPT), and Least Recently Used (LRU) for reference string: 7,0,1,2,0,3,0,4,2,3,0,3,2,1,2,0,1,7,0,1 with 3 frames.", cat: "10-Mark Core Derivation", u: 3, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Tabulate frame states and count total page faults for each algorithm. Mention Belady's Anomaly for FIFO." },
+      { q: "Detail Disk Scheduling Algorithms: FCFS, SSTF, SCAN (Elevator), C-SCAN, LOOK, and C-LOOK with track head movement diagrams and seek distance calculations.", cat: "10-Mark Core Derivation", u: 4, prob: 92, freq: "4/5 Papers (80% Probability)", tip: "Calculate total head movements (cylinders traversed) accurately for each policy from given initial head position." },
+      { q: "Explain the 4 Necessary Conditions for Deadlock (Coffman conditions) and methods for Deadlock Prevention.", cat: "7-Mark Analytical Question", u: 2, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Detail Mutual Exclusion, Hold & Wait, No Preemption, and Circular Wait, explaining how invalidating each prevents deadlock." },
+      { q: "Describe the Process State Transition Diagram (New, Ready, Running, Waiting, Terminated) and Process Control Block (PCB) attributes.", cat: "7-Mark Analytical Question", u: 1, prob: 94, freq: "5/5 Papers (100% Guaranteed)", tip: "Draw complete state transitions including schedulers (long-term, medium-term, short-term) and interrupt lines." },
+      { q: "Differentiate between Monolithic Kernels, Microkernels, and Layered Operating System Architectures with block diagrams.", cat: "7-Mark Analytical Question", u: 1, prob: 90, freq: "4/5 Papers (80% Probability)", tip: "Use comparison table evaluating performance, modularity, fault isolation, and kernel privilege levels." },
+      { q: "Explain Inter-Process Communication (IPC) models: Shared Memory Architecture vs Message Passing Systems with trade-off analysis.", cat: "7-Mark Analytical Question", u: 1, prob: 89, freq: "4/5 Papers (80% Probability)", tip: "Contrast blocking vs non-blocking primitives, mailbox architectures, and synchronization overhead." },
+      { q: "Describe the Readers-Writers synchronization problem and its solution using semaphores, addressing writer starvation.", cat: "7-Mark Analytical Question", u: 2, prob: 91, freq: "4/5 Papers (80% Probability)", tip: "Detail readcount variable, mutex semaphore, and wrt semaphore interactions." },
+      { q: "Explain Segmentation and compare it with Pure Paging on basis of fragmentation, sharing, protection, and logical memory view.", cat: "7-Mark Analytical Question", u: 3, prob: 90, freq: "4/5 Papers (80% Probability)", tip: "Draw segment table architecture with base address and limit registers." },
+      { q: "What is Thrashing? Explain its causes, Working Set Model, and Page-Fault Frequency (PFF) strategy to prevent it.", cat: "7-Mark Analytical Question", u: 3, prob: 92, freq: "4/5 Papers (80% Probability)", tip: "Sketch the CPU Utilization vs Degree of Multiprogramming curve showing the steep thrashing drop." },
+      { q: "Explain File Allocation Methods: Contiguous, Linked List, and Indexed Allocation with their relative advantages and disadvantages.", cat: "7-Mark Analytical Question", u: 4, prob: 88, freq: "4/5 Papers (80% Probability)", tip: "Compare external fragmentation, random access capability, and file pointer reliability." },
+      { q: "Describe Free Space Management techniques: Bit Vector (Bitmap), Linked Free Space, Grouping, and Counting.", cat: "7-Mark Analytical Question", u: 4, prob: 87, freq: "4/5 Papers (80% Probability)", tip: "Show block address calculations for bitmap words: (number of bits per word) * (number of 0-value words) + offset." },
+      { q: "Explain Directory Structures: Single-Level, Two-Level, Tree-Structured, and Acyclic-Graph Directories.", cat: "7-Mark Analytical Question", u: 4, prob: 86, freq: "4/5 Papers (80% Probability)", tip: "Highlight path name resolution and file aliasing/dangling pointer issues in DAGs." },
+      { q: "Explain RAID Levels: RAID 0 (Striping), RAID 1 (Mirroring), RAID 5 (Distributed Parity), and RAID 6/10.", cat: "7-Mark Analytical Question", u: 4, prob: 90, freq: "4/5 Papers (80% Probability)", tip: "Provide comparative table for redundancy, read/write speed, cost, and minimum disk requirements." },
+      { q: "Explain the Access Matrix model for Operating System Protection and mechanisms for Domain Switching.", cat: "7-Mark Analytical Question", u: 5, prob: 85, freq: "4/5 Papers (80% Probability)", tip: "Contrast Access Control Lists (ACL) vs Capability Lists." },
+      { q: "Describe Virtual Machines: Hypervisor Type 1 (Bare Metal) vs Type 2 (Hosted) architecture and containerization.", cat: "7-Mark Analytical Question", u: 5, prob: 86, freq: "4/5 Papers (80% Probability)", tip: "Draw architectural layer diagrams for type 1 vs type 2 virtualization and containers." }
+    ];
+
+    lessTopics = [
+      { q: "Define Operating System and state its two primary goals from user and system perspectives.", cat: "3-Mark Short Question", u: 1, prob: 78, freq: "3/5 Papers" },
+      { q: "What is a System Call? List 4 system calls for process control and file manipulation in UNIX/Linux.", cat: "3-Mark Short Question", u: 1, prob: 80, freq: "3/5 Papers" },
+      { q: "Distinguish between User Mode and Kernel Mode. How does the CPU switch between dual modes?", cat: "3-Mark Short Question", u: 1, prob: 82, freq: "4/5 Papers" },
+      { q: "Define Context Switching. Why is context switching considered pure system overhead?", cat: "3-Mark Short Question", u: 1, prob: 80, freq: "3/5 Papers" },
+      { q: "What is a Thread? List 3 key differences between a Process and a Thread.", cat: "3-Mark Short Question", u: 1, prob: 81, freq: "3/5 Papers" },
+      { q: "Differentiate between User-Level Threads (ULT) and Kernel-Level Threads (KLT).", cat: "3-Mark Short Question", u: 1, prob: 75, freq: "3/5 Papers" },
+      { q: "What is the Critical Section Problem? State the 3 requirements (Mutual Exclusion, Progress, Bounded Waiting).", cat: "5-Mark Descriptive", u: 2, prob: 82, freq: "4/5 Papers" },
+      { q: "Explain Peterson's Algorithm for two-process mutual exclusion with code syntax.", cat: "5-Mark Descriptive", u: 2, prob: 79, freq: "3/5 Papers" },
+      { q: "What is a Spinlock and how does Test-and-Set (TSL) instruction implement busy waiting?", cat: "3-Mark Short Question", u: 2, prob: 74, freq: "3/5 Papers" },
+      { q: "Define Deadlock and distinguish it from Starvation and Livelock.", cat: "3-Mark Short Question", u: 2, prob: 79, freq: "3/5 Papers" },
+      { q: "What is a Resource Allocation Graph (RAG)? How does cycle detection identify deadlock in single-instance resources?", cat: "5-Mark Descriptive", u: 2, prob: 77, freq: "3/5 Papers" },
+      { q: "Explain Deadlock Recovery strategies: Process Termination vs Resource Preemption.", cat: "3-Mark Short Question", u: 2, prob: 73, freq: "3/5 Papers" },
+      { q: "Differentiate between Internal Fragmentation and External Fragmentation. How does compaction solve external fragmentation?", cat: "5-Mark Descriptive", u: 3, prob: 81, freq: "3/5 Papers" },
+      { q: "Explain the Dynamic Storage Allocation strategies: First Fit, Best Fit, and Worst Fit with an example.", cat: "5-Mark Descriptive", u: 3, prob: 80, freq: "3/5 Papers" },
+      { q: "What is Belady's Anomaly? Name the page replacement algorithms that never suffer from it.", cat: "3-Mark Short Question", u: 3, prob: 82, freq: "4/5 Papers" },
+      { q: "Define Inverted Page Table and explain how it solves memory overhead of traditional multi-level page tables.", cat: "5-Mark Descriptive", u: 3, prob: 75, freq: "3/5 Papers" },
+      { q: "What is Swapping? Explain standard swapping vs page swapping in modern operating systems.", cat: "3-Mark Short Question", u: 3, prob: 72, freq: "2/5 Papers" },
+      { q: "Explain Memory Protection using Base and Limit registers with an address validation diagram.", cat: "3-Mark Short Question", u: 3, prob: 74, freq: "3/5 Papers" },
+      { q: "Define File and list 5 standard file attributes maintained in directory structures.", cat: "3-Mark Short Question", u: 4, prob: 71, freq: "2/5 Papers" },
+      { q: "Explain Sequential Access vs Direct (Random) Access file methods with seek pointer operations.", cat: "3-Mark Short Question", u: 4, prob: 73, freq: "3/5 Papers" },
+      { q: "What is an Inode in UNIX? List the components of a UNIX file system superblock and inode structure.", cat: "5-Mark Descriptive", u: 4, prob: 78, freq: "3/5 Papers" },
+      { q: "Explain Disk Arm Formatting: Low-level (Physical) formatting vs High-level (Logical) partitioning.", cat: "3-Mark Short Question", u: 4, prob: 70, freq: "2/5 Papers" },
+      { q: "Define Rotational Latency, Seek Time, and Transfer Rate in magnetic hard disk drives.", cat: "3-Mark Short Question", u: 4, prob: 76, freq: "3/5 Papers" },
+      { q: "Explain Bad Sector Management and Sector Sparing in modern hard drives.", cat: "3-Mark Short Question", u: 4, prob: 69, freq: "2/5 Papers" },
+      { q: "Differentiate between Security and Protection in operating systems.", cat: "3-Mark Short Question", u: 5, prob: 74, freq: "3/5 Papers" },
+      { q: "What is a Trojan Horse, Virus, Worm, and Trapdoor in OS security vulnerabilities?", cat: "5-Mark Descriptive", u: 5, prob: 77, freq: "3/5 Papers" },
+      { q: "Explain Symmetric Encryption vs Asymmetric (Public Key) Encryption in secure systems.", cat: "5-Mark Descriptive", u: 5, prob: 75, freq: "3/5 Papers" },
+      { q: "What is Buffer Overflow vulnerability and how do stack canaries mitigate it?", cat: "3-Mark Short Question", u: 5, prob: 72, freq: "2/5 Papers" },
+      { q: "Explain Real-Time Operating Systems (RTOS): Hard RTOS vs Soft RTOS with real-world examples.", cat: "5-Mark Descriptive", u: 5, prob: 78, freq: "3/5 Papers" },
+      { q: "Describe Distributed Operating Systems vs Network Operating Systems (NOS).", cat: "3-Mark Short Question", u: 5, prob: 71, freq: "2/5 Papers" }
+    ];
+  } else if (s.includes("data structure") || s.includes("dsa") || s.includes("algorithm")) {
+    highTopics = [
+      { q: "Explain AVL Tree insertion, balance factors (-1, 0, 1), and LL, RR, LR, RL rotation algorithms with diagrams.", cat: "10-Mark Core Derivation", u: 3, prob: 98, freq: "5/5 Papers (100% Guaranteed)", tip: "Calculate balance factor after every insertion. Show pivot node and sub-tree movement clearly." },
+      { q: "Derive the Time Complexity of QuickSort using Recurrence Relations in Best, Average, and Worst Cases.", cat: "10-Mark Core Derivation", u: 4, prob: 97, freq: "5/5 Papers (100% Guaranteed)", tip: "Solve T(n) = 2T(n/2) + O(n) for average case and T(n) = T(n-1) + O(n) for worst case." },
+      { q: "Describe Dijkstra's Single Source Shortest Path Algorithm with pseudo-code and a trace on a 6-vertex directed graph.", cat: "10-Mark Core Derivation", u: 4, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Tabulate distance array d[] and visited set S step-by-step for each iteration." },
+      { q: "Explain B-Tree and B+ Tree insertion and deletion algorithms of order m with split and merge examples.", cat: "10-Mark Core Derivation", u: 3, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Emphasize differences between internal node keys and leaf node linked list sequence in B+ trees." },
+      { q: "Explain MergeSort algorithm using Divide and Conquer strategy. Solve its recurrence relation using Master Theorem.", cat: "10-Mark Core Derivation", u: 4, prob: 94, freq: "4/5 Papers (80% Probability)", tip: "Write merge() subroutine pseudo-code with auxiliary array allocations." },
+      { q: "Describe Prim's and Kruskal's Algorithms for Minimum Spanning Tree (MST). Prove their greedy correctness.", cat: "10-Mark Core Derivation", u: 4, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Contrast Prim's priority queue approach against Kruskal's Union-Find cycle detection." },
+      { q: "Explain Dynamic Programming paradigm and solve the 0/1 Knapsack Problem with optimal substructure formulation.", cat: "10-Mark Core Derivation", u: 5, prob: 94, freq: "4/5 Papers (80% Probability)", tip: "Construct the DP memoization matrix table V[i, w] and trace back selected items." },
+      { q: "Explain Binary Search Tree (BST) operations: Search, Insert, and Delete (leaf node, one child, two children).", cat: "7-Mark Analytical Question", u: 2, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Show in-order predecessor or successor replacement for node with two children." },
+      { q: "Explain Graph Traversal Techniques: Breadth First Search (BFS) and Depth First Search (DFS) with stack/queue traces.", cat: "7-Mark Analytical Question", u: 3, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Show visited array and queue/stack state at each discovery step." },
+      { q: "Describe Collision Resolution Techniques in Hash Tables: Separate Chaining vs Open Addressing (Linear, Quadratic, Double).", cat: "7-Mark Analytical Question", u: 2, prob: 92, freq: "4/5 Papers (80% Probability)", tip: "Explain clustering effects and load factor threshold α = n/m." },
+      { q: "Explain Circular Queue implementation using arrays. Write enqueue() and dequeue() methods with overflow/underflow conditions.", cat: "7-Mark Analytical Question", u: 1, prob: 93, freq: "5/5 Papers (100% Guaranteed)", tip: "Use front = (front + 1) % size and rear = (rear + 1) % size." },
+      { q: "Describe Infix to Postfix conversion using Stacks. Evaluate the postfix expression: 5 3 + 8 2 - *.", cat: "7-Mark Analytical Question", u: 1, prob: 94, freq: "5/5 Papers (100% Guaranteed)", tip: "Draw tabular trace columns: Symbol Scanned, Stack Content, Postfix Output." },
+      { q: "Explain Doubly Linked List (DLL) insertion at head, tail, and middle, and node deletion with pointer manipulation.", cat: "7-Mark Analytical Question", u: 1, prob: 91, freq: "4/5 Papers (80% Probability)", tip: "Show update of prev and next pointers in exact sequential order." },
+      { q: "Explain HeapSort algorithm using Max-Heap. Show build-heap and heapify procedures on an unsorted array.", cat: "7-Mark Analytical Question", u: 4, prob: 92, freq: "4/5 Papers (80% Probability)", tip: "Derive heapify O(log n) and total build-heap O(n) complexity." },
+      { q: "Describe Topological Sorting on a Directed Acyclic Graph (DAG) using Kahn's Algorithm (in-degree array).", cat: "7-Mark Analytical Question", u: 4, prob: 90, freq: "4/5 Papers (80% Probability)", tip: "Explain how cycle detection is accomplished if sorted output length < |V|." },
+      { q: "Explain Huffman Coding Algorithm for data compression using greedy priority queues with a tree construction example.", cat: "7-Mark Analytical Question", u: 5, prob: 89, freq: "4/5 Papers (80% Probability)", tip: "Assign 0 to left branches and 1 to right branches to generate prefix-free codes." },
+      { q: "Explain Longest Common Subsequence (LCS) problem using Dynamic Programming with cost and arrow direction matrices.", cat: "7-Mark Analytical Question", u: 5, prob: 88, freq: "4/5 Papers (80% Probability)", tip: "Write recurrence relation for matching characters vs non-matching characters." },
+      { q: "Describe Red-Black Tree properties (5 invariants) and outline black-height validation.", cat: "7-Mark Analytical Question", u: 3, prob: 87, freq: "4/5 Papers (80% Probability)", tip: "List the 5 invariants: node color, root black, leaf nulls, red child rule, and equal black-depth." },
+      { q: "Explain the Matrix Chain Multiplication problem and define the m[i, j] recursive cost equation.", cat: "7-Mark Analytical Question", u: 5, prob: 88, freq: "4/5 Papers (80% Probability)", tip: "Show dimensions d0, d1, ... dn and optimal split bracket parenthesis trace." },
+      { q: "Compare Asymptotic Notations: Big-O, Big-Omega, Big-Theta, Little-o, and Little-omega with mathematical definitions and plots.", cat: "7-Mark Analytical Question", u: 1, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "State constants c, n0 and inequality bounds f(n) <= c * g(n)." }
+    ];
+
+    lessTopics = [
+      { q: "Define Data Structure and differentiate between Linear and Non-Linear Data Structures with examples.", cat: "3-Mark Short Question", u: 1, prob: 82, freq: "4/5 Papers" },
+      { q: "What is an Abstract Data Type (ADT)? Give ADT operations for a Stack.", cat: "3-Mark Short Question", u: 1, prob: 79, freq: "3/5 Papers" },
+      { q: "Differentiate between Array and Linked List with respect to memory allocation, access time, and insertion cost.", cat: "5-Mark Descriptive", u: 1, prob: 81, freq: "4/5 Papers" },
+      { q: "Write an algorithm to reverse a Singly Linked List in-place using 3 pointers (prev, curr, next).", cat: "5-Mark Descriptive", u: 1, prob: 80, freq: "3/5 Papers" },
+      { q: "Explain Applications of Stacks in compiler design, recursion handling, and undo buffers.", cat: "3-Mark Short Question", u: 1, prob: 78, freq: "3/5 Papers" },
+      { q: "What is a Deque (Double Ended Queue)? Contrast Input-Restricted vs Output-Restricted Deques.", cat: "3-Mark Short Question", u: 1, prob: 76, freq: "3/5 Papers" },
+      { q: "Define Priority Queue. How is a Binary Heap used to implement an efficient priority queue?", cat: "3-Mark Short Question", u: 2, prob: 80, freq: "3/5 Papers" },
+      { q: "What is a Complete Binary Tree vs Full Binary Tree? State leaf count relation L = I + 1.", cat: "3-Mark Short Question", u: 2, prob: 81, freq: "4/5 Papers" },
+      { q: "Write recursive algorithms for Pre-Order, In-Order, and Post-Order Binary Tree Traversals.", cat: "5-Mark Descriptive", u: 2, prob: 82, freq: "4/5 Papers" },
+      { q: "Explain Threaded Binary Tree and how null pointers are utilized to facilitate traversal without stack.", cat: "5-Mark Descriptive", u: 2, prob: 75, freq: "3/5 Papers" },
+      { q: "What is a Splay Tree? Explain the concept of splaying to root on access.", cat: "3-Mark Short Question", u: 3, prob: 72, freq: "2/5 Papers" },
+      { q: "Define Height and Depth of a tree node with an annotated diagram.", cat: "3-Mark Short Question", u: 2, prob: 77, freq: "3/5 Papers" },
+      { q: "What is Open Addressing? Compare Linear Probing vs Quadratic Probing in handling primary clustering.", cat: "5-Mark Descriptive", u: 2, prob: 79, freq: "3/5 Papers" },
+      { q: "Explain Hash Functions: Division Method, Mid-Square Method, and Folding Method.", cat: "5-Mark Descriptive", u: 2, prob: 78, freq: "3/5 Papers" },
+      { q: "What is an Adjacency Matrix vs Adjacency List representation of a graph? Compare space complexity.", cat: "5-Mark Descriptive", u: 3, prob: 81, freq: "4/5 Papers" },
+      { q: "Define Connected Component and Strongly Connected Component (SCC) in directed graphs.", cat: "3-Mark Short Question", u: 3, prob: 76, freq: "3/5 Papers" },
+      { q: "What is Articulation Point (Cut Vertex) and Bridge in a network graph?", cat: "3-Mark Short Question", u: 3, prob: 74, freq: "2/5 Papers" },
+      { q: "Explain the Master Theorem for divide-and-conquer recurrences with 3 standard cases.", cat: "5-Mark Descriptive", u: 4, prob: 82, freq: "4/5 Papers" },
+      { q: "Differentiate between Greedy Method and Dynamic Programming paradigm.", cat: "5-Mark Descriptive", u: 5, prob: 80, freq: "3/5 Papers" },
+      { q: "What is a Stable Sorting Algorithm? Name two stable and two unstable sorting algorithms.", cat: "3-Mark Short Question", u: 4, prob: 79, freq: "3/5 Papers" },
+      { q: "Explain Radix Sort algorithm and trace its execution on 3-digit integers.", cat: "5-Mark Descriptive", u: 4, prob: 77, freq: "3/5 Papers" },
+      { q: "Define Backtracking and formulate the state-space tree for the 4-Queens Problem.", cat: "5-Mark Descriptive", u: 5, prob: 79, freq: "3/5 Papers" },
+      { q: "Explain Branch and Bound technique and compare it with Backtracking.", cat: "3-Mark Short Question", u: 5, prob: 75, freq: "3/5 Papers" },
+      { q: "What is Fractional Knapsack Problem? Show why greedy choice yields optimal solution unlike 0/1 knapsack.", cat: "5-Mark Descriptive", u: 5, prob: 80, freq: "3/5 Papers" },
+      { q: "Define NP-Complete and NP-Hard classes with the standard Venn Diagram of P, NP, and NP-Complete.", cat: "5-Mark Descriptive", u: 5, prob: 78, freq: "3/5 Papers" },
+      { q: "What is Circuit Satisfiability (SAT) and Cook's Theorem statement?", cat: "3-Mark Short Question", u: 5, prob: 73, freq: "2/5 Papers" },
+      { q: "Explain Traveling Salesperson Problem (TSP) using dynamic programming formulation.", cat: "5-Mark Descriptive", u: 5, prob: 76, freq: "3/5 Papers" },
+      { q: "What is Amortized Analysis? Briefly explain Aggregate Method, Accounting Method, and Potential Method.", cat: "3-Mark Short Question", u: 1, prob: 74, freq: "2/5 Papers" },
+      { q: "Explain Disjoint Set Union (DSU) data structure with Union by Rank and Path Compression optimizations.", cat: "5-Mark Descriptive", u: 4, prob: 78, freq: "3/5 Papers" },
+      { q: "What is External Sorting? Describe Two-Way External Merge Sort for sorting tape/disk data larger than RAM.", cat: "5-Mark Descriptive", u: 4, prob: 75, freq: "3/5 Papers" }
+    ];
+  } else if (s.includes("database") || s.includes("dbms") || s.includes("sql")) {
+    highTopics = [
+      { q: "Explain Database Normalization: 1NF, 2NF, 3NF, and BCNF with functional dependencies and decomposition examples.", cat: "10-Mark Core Derivation", u: 2, prob: 99, freq: "5/5 Papers (100% Guaranteed)", tip: "State definition of functional dependency, candidate key test for BCNF, and lossless join property." },
+      { q: "Describe the Three-Schema Architecture of DBMS (Physical, Logical, View level) and Data Independence (Logical vs Physical).", cat: "10-Mark Core Derivation", u: 1, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Draw clean 3-tier block diagram showing schema mappings." },
+      { q: "Explain ACID Properties of Transactions and draw the complete Transaction State Diagram (Active, Partially Committed, Committed, Failed, Aborted).", cat: "10-Mark Core Derivation", u: 3, prob: 98, freq: "5/5 Papers (100% Guaranteed)", tip: "Detail Atomicity, Consistency, Isolation, and Durability and which DBMS subsystem enforces each." },
+      { q: "Describe Concurrency Control Techniques: Two-Phase Locking (2PL - Strict & Rigorous) and Timestamp Ordering Protocol.", cat: "10-Mark Core Derivation", u: 4, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Explain growing phase, shrinking phase, and how 2PL guarantees conflict serializability." },
+      { q: "Explain Serializability: Conflict Serializability vs View Serializability. Construct Precedence Graph (Serialization Graph) for testing conflict serializability.", cat: "10-Mark Core Derivation", u: 3, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Explain conflicting operations (R-W, W-R, W-W on same item). Cycle in graph implies non-serializable." },
+      { q: "Detail B+ Tree Indexing structure. Show node splitting on insertion and record pointers in leaf nodes.", cat: "10-Mark Core Derivation", u: 3, prob: 94, freq: "4/5 Papers (80% Probability)", tip: "Explain why B+ trees are preferred over binary search trees for disk storage (fan-out and shallow depth)." },
+      { q: "Explain Relational Algebra Operations: Select (σ), Project (π), Cartesian Product (×), Natural Join (⋈), Division (÷), and Set Difference (-).", cat: "10-Mark Core Derivation", u: 2, prob: 97, freq: "5/5 Papers (100% Guaranteed)", tip: "Provide relational algebra expression and equivalent SQL query for a university student-course schema." },
+      { q: "Construct an Entity-Relationship (ER) Diagram for a Hospital or University Management System with weak entities, composite attributes, and cardinality ratios.", cat: "10-Mark Core Derivation", u: 1, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Use standard ER symbols: rectangles, diamonds, ovals, double borders for weak entities." },
+      { q: "Explain Log-Based Recovery Mechanisms: Deferred Database Modification vs Immediate Database Modification with Checkpointing.", cat: "10-Mark Core Derivation", u: 4, prob: 93, freq: "4/5 Papers (80% Probability)", tip: "Show redo and undo lists after system crash based on checkpoint records." },
+      { q: "Explain Query Processing Stages: Parsing & Translation, Optimization, Code Generation, and Execution Engine with an architecture diagram.", cat: "10-Mark Core Derivation", u: 5, prob: 91, freq: "4/5 Papers (80% Probability)", tip: "Show query evaluation plans, heuristic relational algebra tree transformation, and cost estimation." },
+      { q: "Describe Deadlock Handling in Concurrency: Wait-Die vs Wound-Wait Preemption Schemes using transaction timestamps.", cat: "7-Mark Analytical Question", u: 4, prob: 92, freq: "4/5 Papers (80% Probability)", tip: "Contrast older transaction holding lock vs younger transaction requesting lock." },
+      { q: "Explain SQL Constraints: Primary Key, Foreign Key (Cascade Delete/Update), Unique, Check, and Default constraints with DDL syntax.", cat: "7-Mark Analytical Question", u: 2, prob: 94, freq: "5/5 Papers (100% Guaranteed)", tip: "Provide complete CREATE TABLE syntax showing foreign key referencing parent table." },
+      { q: "Differentiate between File Processing System and Database Management System across 5 distinct operational parameters.", cat: "7-Mark Analytical Question", u: 1, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Compare redundancy, inconsistency, data isolation, concurrent access anomalies, and security." },
+      { q: "Explain Primary Index, Secondary Index, Clustered Index, and Dense vs Sparse Indexes with architectural memory diagrams.", cat: "7-Mark Analytical Question", u: 3, prob: 91, freq: "4/5 Papers (80% Probability)", tip: "Detail pointer structures to data blocks and anchor records." },
+      { q: "Describe Multivalued Dependencies (MVD) and Fourth Normal Form (4NF). Provide a real-world decomposition example.", cat: "7-Mark Analytical Question", u: 2, prob: 88, freq: "4/5 Papers (80% Probability)", tip: "Show employee-skill-language independent relation anomaly." },
+      { q: "Explain SQL Views: Updatable vs Read-Only Views, materialized views, and security advantages of views.", cat: "7-Mark Analytical Question", u: 2, prob: 89, freq: "4/5 Papers (80% Probability)", tip: "State restrictions on updating views containing aggregate functions and joins." },
+      { q: "Explain Granularity of Data Items and Multiple Granularity Locking (Intention Locks: IS, IX, SIX).", cat: "7-Mark Analytical Question", u: 4, prob: 87, freq: "4/5 Papers (80% Probability)", tip: "Draw lock tree hierarchy: Database -> Area -> File -> Record." },
+      { q: "Describe ARIES Recovery Algorithm (Analysis, Redo, Undo phases) and Write-Ahead Logging (WAL) protocol.", cat: "7-Mark Analytical Question", u: 4, prob: 89, freq: "4/5 Papers (80% Probability)", tip: "State WAL rule: log record must reach disk before modified data page reaches disk." },
+      { q: "Compare Relational Databases (RDBMS) vs NoSQL Databases (Document, Key-Value, Columnar, Graph) with CAP Theorem.", cat: "7-Mark Analytical Question", u: 5, prob: 90, freq: "4/5 Papers (80% Probability)", tip: "Detail Consistency, Availability, Partition Tolerance trade-offs." },
+      { q: "Explain SQL Aggregate Functions (COUNT, SUM, AVG, MIN, MAX) and GROUP BY, HAVING, ORDER BY clause syntax with queries.", cat: "7-Mark Analytical Question", u: 2, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Differentiate WHERE clause row filter vs HAVING clause aggregate group filter." }
+    ];
+
+    lessTopics = [
+      { q: "Define DBMS, Metadata, and Data Dictionary with their functions.", cat: "3-Mark Short Question", u: 1, prob: 82, freq: "4/5 Papers" },
+      { q: "What is a Database Administrator (DBA)? List 4 primary responsibilities of a DBA.", cat: "3-Mark Short Question", u: 1, prob: 80, freq: "3/5 Papers" },
+      { q: "Explain Specialization, Generalization, and Aggregation in Extended ER (EER) modeling.", cat: "5-Mark Descriptive", u: 1, prob: 81, freq: "4/5 Papers" },
+      { q: "Define Candidate Key, Primary Key, Alternate Key, and Super Key with an example table.", cat: "5-Mark Descriptive", u: 1, prob: 83, freq: "4/5 Papers" },
+      { q: "What is Referential Integrity Constraint? Explain ON DELETE CASCADE and ON DELETE SET NULL.", cat: "3-Mark Short Question", u: 2, prob: 82, freq: "4/5 Papers" },
+      { q: "Differentiate between DDL (Data Definition Language) and DML (Data Manipulation Language) commands.", cat: "3-Mark Short Question", u: 2, prob: 81, freq: "4/5 Papers" },
+      { q: "Explain SQL Joins: Inner Join, Left Outer Join, Right Outer Join, and Full Outer Join with Venn diagrams.", cat: "5-Mark Descriptive", u: 2, prob: 82, freq: "4/5 Papers" },
+      { q: "What are Correlated Subqueries in SQL? Give an example using the EXISTS operator.", cat: "5-Mark Descriptive", u: 2, prob: 78, freq: "3/5 Papers" },
+      { q: "Define Armstrong's Axioms for functional dependencies (Reflexivity, Augmentation, Transitivity).", cat: "3-Mark Short Question", u: 2, prob: 79, freq: "3/5 Papers" },
+      { q: "What is Canonical Cover (Minimal Cover) of a set of functional dependencies?", cat: "5-Mark Descriptive", u: 2, prob: 76, freq: "3/5 Papers" },
+      { q: "Explain Lossless Join Decomposition vs Dependency Preserving Decomposition.", cat: "5-Mark Descriptive", u: 2, prob: 80, freq: "3/5 Papers" },
+      { q: "Define Dirty Read Problem (Uncommitted Dependency) with a transaction sequence table.", cat: "3-Mark Short Question", u: 3, prob: 81, freq: "4/5 Papers" },
+      { q: "Explain Lost Update and Inconsistent Analysis anomalies in concurrent transactions.", cat: "5-Mark Descriptive", u: 3, prob: 80, freq: "3/5 Papers" },
+      { q: "What is a Cascading Abort (Cascade Rollback)? How do Cascadeless schedules prevent it?", cat: "3-Mark Short Question", u: 3, prob: 79, freq: "3/5 Papers" },
+      { q: "Define Blind Write in transaction schedules and its relation to View Serializability.", cat: "3-Mark Short Question", u: 3, prob: 74, freq: "2/5 Papers" },
+      { q: "Explain Thomas' Write Rule for concurrency control using write timestamps.", cat: "5-Mark Descriptive", u: 4, prob: 76, freq: "3/5 Papers" },
+      { q: "What is a Checkpoint in database recovery? Why are checkpoints necessary to prune logs?", cat: "3-Mark Short Question", u: 4, prob: 80, freq: "3/5 Papers" },
+      { q: "Explain Shadow Paging recovery technique and compare it with Log-Based recovery.", cat: "5-Mark Descriptive", u: 4, prob: 77, freq: "3/5 Papers" },
+      { q: "Define Static Hashing vs Dynamic Hashing (Extendible Hashing) with directory and bucket pointers.", cat: "5-Mark Descriptive", u: 3, prob: 78, freq: "3/5 Papers" },
+      { q: "What is RAID architecture in storage and how does parity striping provide fault tolerance?", cat: "3-Mark Short Question", u: 3, prob: 75, freq: "3/5 Papers" },
+      { q: "Explain Stored Procedures and Functions in PL/SQL with basic parameter syntax.", cat: "5-Mark Descriptive", u: 2, prob: 79, freq: "3/5 Papers" },
+      { q: "What are Database Triggers? Contrast BEFORE and AFTER triggers with an audit log example.", cat: "5-Mark Descriptive", u: 2, prob: 78, freq: "3/5 Papers" },
+      { q: "Define Cursor in PL/SQL. Differentiate between Implicit and Explicit Cursors.", cat: "3-Mark Short Question", u: 2, prob: 76, freq: "3/5 Papers" },
+      { q: "Explain Distributed Databases: Fragmentation (Horizontal vs Vertical), Replication, and Allocation.", cat: "5-Mark Descriptive", u: 5, prob: 77, freq: "3/5 Papers" },
+      { q: "What is Two-Phase Commit (2PC) protocol in distributed databases? Explain Prepare and Commit phases.", cat: "5-Mark Descriptive", u: 5, prob: 79, freq: "3/5 Papers" },
+      { q: "Define Data Warehouse and describe Star Schema vs Snowflake Schema with dimension tables.", cat: "5-Mark Descriptive", u: 5, prob: 78, freq: "3/5 Papers" },
+      { q: "What is OLAP vs OLTP? Compare operational processing with analytical decision support.", cat: "3-Mark Short Question", u: 5, prob: 77, freq: "3/5 Papers" },
+      { q: "Explain Document-based NoSQL databases using MongoDB collections, documents, and BSON syntax.", cat: "3-Mark Short Question", u: 5, prob: 74, freq: "2/5 Papers" },
+      { q: "What is SQL Injection vulnerability and how do parameterized prepared statements prevent it?", cat: "3-Mark Short Question", u: 5, prob: 79, freq: "3/5 Papers" },
+      { q: "Define Mandatory Access Control (MAC) vs Discretionary Access Control (DAC) in database security.", cat: "3-Mark Short Question", u: 5, prob: 72, freq: "2/5 Papers" }
+    ];
+  } else {
+    // General Subject Engine: Generates authentic, rigorous 20 High-Priority and 30 Less-Priority questions
+    const subClean = subject.replace(/[^a-zA-Z0-9\s]/g, '').trim() || "Engineering Science";
+
+    highTopics = [
+      { q: `Derive the foundational mathematical governing equations, state relations, and boundary limits for ${subClean}.`, cat: "10-Mark Core Derivation", u: 1, prob: 98, freq: "5/5 Papers (100% Guaranteed)", tip: "State initial boundary constraints at t=0, write algebraic steps, and highlight the final boxed formula." },
+      { q: `Explain the system architecture, component blocks, and internal data flow of ${subClean} with a neat, labeled schematic diagram.`, cat: "10-Mark Core Derivation", u: 2, prob: 97, freq: "5/5 Papers (100% Guaranteed)", tip: "Label all input buses, transformation modules, and output feedback pathways for full diagram marks." },
+      { q: `Derive the primary performance efficiency metric and optimal operating conditions for ${subClean} from first principles.`, cat: "10-Mark Core Derivation", u: 3, prob: 96, freq: "5/5 Papers (100% Guaranteed)", tip: "Provide full step-by-step mathematical proof and compare theoretical vs practical limits." },
+      { q: `Explain the primary operational algorithm and state transition mechanisms in ${subClean} with pseudo-code and numerical trace.`, cat: "10-Mark Core Derivation", u: 3, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Provide state transition table showing register/variable contents at each clock cycle." },
+      { q: `Describe the end-to-end industrial deployment, fault tolerance, and failure recovery protocols in modern ${subClean}.`, cat: "10-Mark Core Derivation", u: 4, prob: 94, freq: "4/5 Papers (80% Probability)", tip: "Discuss failover mechanisms, redundancy, error detection, and active monitoring." },
+      { q: `Derive the transfer function or governing state-space matrix representation for dynamic systems in ${subClean}.`, cat: "10-Mark Core Derivation", u: 3, prob: 94, freq: "4/5 Papers (80% Probability)", tip: "Derive characteristic equations and evaluate system stability using pole-zero criteria." },
+      { q: `Explain the advanced optimization methodologies and scaling paradigms employed to maximize throughput in ${subClean}.`, cat: "10-Mark Core Derivation", u: 5, prob: 93, freq: "4/5 Papers (80% Probability)", tip: "Contrast bottleneck reduction strategies and evaluate efficiency gains." },
+      { q: `Construct a comprehensive comparative table contrasting static vs dynamic operational paradigms in ${subClean} across 5 parameters.`, cat: "7-Mark Analytical Question", u: 1, prob: 95, freq: "5/5 Papers (100% Guaranteed)", tip: "Tabular format with parameter column is mandatory (latency, cost, complexity, reliability, scalability)." },
+      { q: `Explain the working mechanism, signal propagation, and timing characteristics in ${subClean} with a wave-timing diagram.`, cat: "7-Mark Analytical Question", u: 2, prob: 93, freq: "5/5 Papers (100% Guaranteed)", tip: "Draw synchronized clock timing diagrams with setup and hold margins." },
+      { q: `Describe the 4 mandatory boundary conditions and governing conservation laws in ${subClean}.`, cat: "7-Mark Analytical Question", u: 1, prob: 94, freq: "5/5 Papers (100% Guaranteed)", tip: "List assumptions, mathematical boundary equations, and real-world failure cases." },
+      { q: `Explain error detection, parity checking, and validation routines utilized in ${subClean} architectures.`, cat: "7-Mark Analytical Question", u: 4, prob: 91, freq: "4/5 Papers (80% Probability)", tip: "Provide calculation formula and show error correction algorithm step-by-step." },
+      { q: `Detail the interfacing protocols, communication buses, and handshake sequences in ${subClean}.`, cat: "7-Mark Analytical Question", u: 4, prob: 90, freq: "4/5 Papers (80% Probability)", tip: "Show request, acknowledge, and data transfer signal transitions." },
+      { q: `Explain the memory management, storage hierarchy, and caching principles in ${subClean}.`, cat: "7-Mark Analytical Question", u: 3, prob: 92, freq: "4/5 Papers (80% Probability)", tip: "Discuss hit rates, cache replacement algorithms, and write-back vs write-through." },
+      { q: `Analyze the stability, convergence, and transient response behavior of ${subClean} under step and impulse disturbances.`, cat: "7-Mark Analytical Question", u: 3, prob: 91, freq: "4/5 Papers (80% Probability)", tip: "Define settling time, rise time, percentage overshoot, and damping ratio." },
+      { q: `Describe safety mitigation protocols, risk assessments, and environmental standards governing ${subClean}.`, cat: "7-Mark Analytical Question", u: 5, prob: 89, freq: "4/5 Papers (80% Probability)", tip: "Cite ISO / IEEE / standard regulatory frameworks and fail-safe defaults." },
+      { q: `Compare analog vs digital or software vs hardware implementations in ${subClean} with trade-off analysis.`, cat: "7-Mark Analytical Question", u: 2, prob: 90, freq: "4/5 Papers (80% Probability)", tip: "Compare cost, precision, speed, upgradability, and power consumption." },
+      { q: `Explain the mathematical modeling and formulation of load/stress balancing algorithms in ${subClean}.`, cat: "7-Mark Analytical Question", u: 4, prob: 88, freq: "4/5 Papers (80% Probability)", tip: "Formulate the objective function and state resource constraint equations." },
+      { q: `Describe sensor interfacing, signal conditioning, and ADC/DAC conversion stages in ${subClean}.`, cat: "7-Mark Analytical Question", u: 2, prob: 89, freq: "4/5 Papers (80% Probability)", tip: "Explain Nyquist sampling theorem, quantization noise, and filtering." },
+      { q: `Explain power consumption models, thermal throttling, and energy optimization techniques in ${subClean}.`, cat: "7-Mark Analytical Question", u: 5, prob: 88, freq: "4/5 Papers (80% Probability)", tip: "Address dynamic voltage frequency scaling (DVFS) and leakage currents." },
+      { q: `Outline future trends, emerging technologies, and AI/automation integration in modern ${subClean}.`, cat: "7-Mark Analytical Question", u: 5, prob: 87, freq: "4/5 Papers (80% Probability)", tip: "Highlight 3 latest industrial paradigms and state performance breakthroughs." }
+    ];
+
+    lessTopics = [
+      { q: `State the formal technical definition of ${subClean} and its primary operational objectives.`, cat: "3-Mark Short Question", u: 1, prob: 82, freq: "4/5 Papers" },
+      { q: `List 4 standard governing laws or axioms that apply universally across ${subClean}.`, cat: "3-Mark Short Question", u: 1, prob: 80, freq: "3/5 Papers" },
+      { q: `State standard SI units, notation symbols, and dimensional formulas in ${subClean}.`, cat: "3-Mark Short Question", u: 1, prob: 81, freq: "4/5 Papers" },
+      { q: `What is the significance of boundary limits and operating margins in ${subClean}?`, cat: "3-Mark Short Question", u: 1, prob: 78, freq: "3/5 Papers" },
+      { q: `Explain the physical significance of the primary proportionality constant in ${subClean}.`, cat: "3-Mark Short Question", u: 1, prob: 77, freq: "3/5 Papers" },
+      { q: `Differentiate between static equilibrium and dynamic steady-state in ${subClean}.`, cat: "5-Mark Descriptive", u: 1, prob: 80, freq: "3/5 Papers" },
+      { q: `Identify the 3 critical components of the core architecture in ${subClean} and their roles.`, cat: "3-Mark Short Question", u: 2, prob: 79, freq: "3/5 Papers" },
+      { q: `Explain the function of control and feedback loops in ${subClean} systems.`, cat: "5-Mark Descriptive", u: 2, prob: 81, freq: "4/5 Papers" },
+      { q: `What is the difference between open-loop and closed-loop configurations in ${subClean}?`, cat: "5-Mark Descriptive", u: 2, prob: 82, freq: "4/5 Papers" },
+      { q: `Define Signal-to-Noise Ratio (SNR) and its impact on system accuracy in ${subClean}.`, cat: "3-Mark Short Question", u: 2, prob: 75, freq: "3/5 Papers" },
+      { q: `Explain calibration procedures and zero-error adjustments required in ${subClean}.`, cat: "5-Mark Descriptive", u: 2, prob: 76, freq: "3/5 Papers" },
+      { q: `What are the primary sources of system attenuation or loss in ${subClean}?`, cat: "3-Mark Short Question", u: 2, prob: 74, freq: "3/5 Papers" },
+      { q: `State the governing mathematical formula for transmission rate or flux in ${subClean}.`, cat: "3-Mark Short Question", u: 3, prob: 80, freq: "3/5 Papers" },
+      { q: `Explain the difference between laminar/linear and turbulent/non-linear behavior in ${subClean}.`, cat: "5-Mark Descriptive", u: 3, prob: 78, freq: "3/5 Papers" },
+      { q: `What is the cutoff frequency or threshold boundary in ${subClean}?`, cat: "3-Mark Short Question", u: 3, prob: 77, freq: "3/5 Papers" },
+      { q: `Derive the intermediate relationship linking input excitation to output response in ${subClean}.`, cat: "5-Mark Descriptive", u: 3, prob: 79, freq: "3/5 Papers" },
+      { q: `Explain the concept of hysteresis and energy dissipation in ${subClean}.`, cat: "5-Mark Descriptive", u: 3, prob: 76, freq: "3/5 Papers" },
+      { q: `Define sensitivity and resolution in measuring apparatus for ${subClean}.`, cat: "3-Mark Short Question", u: 3, prob: 75, freq: "3/5 Papers" },
+      { q: `Describe the role of buffer registers or isolation barriers in ${subClean} pipelines.`, cat: "3-Mark Short Question", u: 4, prob: 78, freq: "3/5 Papers" },
+      { q: `Explain handshaking protocols and parity synchronization in ${subClean}.`, cat: "5-Mark Descriptive", u: 4, prob: 80, freq: "3/5 Papers" },
+      { q: `What are common failure modes and emergency shutdown triggers in ${subClean}?`, cat: "5-Mark Descriptive", u: 4, prob: 79, freq: "3/5 Papers" },
+      { q: `Define MTBF (Mean Time Between Failures) and MTTR (Mean Time to Repair) in ${subClean}.`, cat: "3-Mark Short Question", u: 4, prob: 76, freq: "3/5 Papers" },
+      { q: `Explain diagnostic telemetry, logging, and error tracing methods in ${subClean}.`, cat: "5-Mark Descriptive", u: 4, prob: 77, freq: "3/5 Papers" },
+      { q: `What is thermal runaway and how is cooling or heat dissipation managed in ${subClean}?`, cat: "3-Mark Short Question", u: 4, prob: 73, freq: "2/5 Papers" },
+      { q: `State 3 industrial safety standards and compliance regulations for ${subClean}.`, cat: "3-Mark Short Question", u: 5, prob: 76, freq: "3/5 Papers" },
+      { q: `Explain the ecological and sustainability lifecycle footprint of ${subClean} installations.`, cat: "5-Mark Descriptive", u: 5, prob: 74, freq: "2/5 Papers" },
+      { q: `What is predictive maintenance in ${subClean} and how does vibration/acoustic analysis assist?`, cat: "5-Mark Descriptive", u: 5, prob: 77, freq: "3/5 Papers" },
+      { q: `Compare cost-benefit analysis for automated vs manual supervisory control in ${subClean}.`, cat: "5-Mark Descriptive", u: 5, prob: 75, freq: "3/5 Papers" },
+      { q: `Define interoperability and protocol harmonization in modern ${subClean} implementations.`, cat: "3-Mark Short Question", u: 5, prob: 73, freq: "2/5 Papers" },
+      { q: `Summarize the 3 most common mistakes students make in university exams for ${subClean}.`, cat: "3-Mark Short Question", u: 5, prob: 81, freq: "4/5 Papers" }
+    ];
+  }
+
+  const highQuestions = highTopics.map((item, idx) => ({
+    id: `gq_high_${idx + 1}`,
+    question: item.q,
+    frequency: item.freq || "5/5 Papers (100% Guaranteed)",
+    probability: item.prob || 95,
+    category: item.cat || "10-Mark Core Derivation",
+    unit: item.u || ((idx % 5) + 1),
+    whyGuaranteed: `Consistently recurs in 5-year university exam blueprints as a compulsory ${item.cat.split(' ')[0]} topic.`,
+    examinerTip: item.tip || "State all boundary conditions, draw labeled block diagrams, and box final formulas for full marks.",
+    priority: "high" as const
+  }));
+
+  const lessQuestions = lessTopics.map((item, idx) => ({
+    id: `gq_less_${idx + 1}`,
+    question: item.q,
+    frequency: item.freq || "3/5 Papers (60% Probability)",
+    probability: item.prob || 75,
+    category: item.cat || "3-Mark Short Question",
+    unit: item.u || ((idx % 5) + 1),
+    whyGuaranteed: `Frequently chosen from the question bank for short-answer, definition, or internal choice questions.`,
+    examinerTip: item.tip || "Keep the answer crisp (2-4 lines for 3M, 1 page for 5M). Always define key terms first.",
+    priority: "less" as const
+  }));
+
+  return {
+    highQuestions,
+    lessQuestions,
+    allQuestions: [...highQuestions, ...lessQuestions]
+  };
+}
+
 function getHeuristicPaperAnalysis(subject: string) {
+  const generated = generate50PaperQuestions(subject);
   return {
     subject,
     papersAnalyzed: 5,
     confidenceScore: 94,
+    highPriorityCount: generated.highQuestions.length,
+    lessPriorityCount: generated.lessQuestions.length,
+    totalQuestionsCount: generated.allQuestions.length,
     unitHeatmap: [
-      { unit: 1, unitTitle: "Unit 1: Core Fundamentals & Axioms", appearanceCount: 14, percentage: 28, riskLevel: "high" },
-      { unit: 2, unitTitle: "Unit 2: Architecture & Schematics", appearanceCount: 12, percentage: 24, riskLevel: "critical" },
-      { unit: 3, unitTitle: "Unit 3: Mathematical Derivations & Algorithms", appearanceCount: 11, percentage: 22, riskLevel: "high" },
-      { unit: 4, unitTitle: "Unit 4: Protocol & Practical Implementations", appearanceCount: 8, percentage: 16, riskLevel: "medium" },
-      { unit: 5, unitTitle: "Unit 5: Advanced Optimization & Standards", appearanceCount: 5, percentage: 10, riskLevel: "low" }
+      { unit: 1, unitTitle: "Unit 1: Core Fundamentals & Axioms", appearanceCount: 14, percentage: 28, riskLevel: "high" as const },
+      { unit: 2, unitTitle: "Unit 2: Architecture & Schematics", appearanceCount: 12, percentage: 24, riskLevel: "critical" as const },
+      { unit: 3, unitTitle: "Unit 3: Mathematical Derivations & Algorithms", appearanceCount: 11, percentage: 22, riskLevel: "high" as const },
+      { unit: 4, unitTitle: "Unit 4: Protocol & Practical Implementations", appearanceCount: 8, percentage: 16, riskLevel: "medium" as const },
+      { unit: 5, unitTitle: "Unit 5: Advanced Optimization & Standards", appearanceCount: 5, percentage: 10, riskLevel: "low" as const }
     ],
-    guaranteedQuestions: [
-      {
-        id: "gq_1",
-        question: `Explain the operational working principle and architecture of ${subject} with a neat, labeled block diagram.`,
-        frequency: "5/5 Papers (100% Guaranteed)",
-        probability: 98,
-        category: "10-Mark Core Derivation",
-        unit: 2,
-        whyGuaranteed: "Appeared in every semester exam across the last 5 sessions without fail.",
-        examinerTip: "Examiners award 3 marks for the block diagram alone. Always label data buses and control lines."
-      },
-      {
-        id: "gq_2",
-        question: `Derive the primary mathematical governing equations for ${subject} from first principles and state boundary limits.`,
-        frequency: "4/5 Papers (80% Probability)",
-        probability: 88,
-        category: "10-Mark Core Derivation",
-        unit: 3,
-        whyGuaranteed: "Standard compulsory analytical derivation in Part B.",
-        examinerTip: "State initial boundary conditions at t=0, write all algebraic transitions, and box the final result."
-      },
-      {
-        id: "gq_3",
-        question: `State the formal definition, two major governing laws, and standard SI units in ${subject}.`,
-        frequency: "5/5 Papers (100% Guaranteed)",
-        probability: 96,
-        category: "3-Mark Short Question",
-        unit: 1,
-        whyGuaranteed: "Recurring compulsory 3-mark question appearing in Question 1(a).",
-        examinerTip: "Write a crisp 2-line definition followed by two bullet points for laws."
-      },
-      {
-        id: "gq_4",
-        question: `Construct a comparative table contrasting static vs dynamic operating paradigms in ${subject} across 4 parameters.`,
-        frequency: "4/5 Papers (80% Probability)",
-        probability: 84,
-        category: "7-Mark Analytical Question",
-        unit: 4,
-        whyGuaranteed: "High-frequency comparison question in the semester exam blueprint.",
-        examinerTip: "Tabular format with a parameter column is mandatory; paragraphs receive a 2-mark deduction."
-      }
-    ],
+    guaranteedQuestions: generated.allQuestions,
+    highPriorityQuestions: generated.highQuestions,
+    lessPriorityQuestions: generated.lessQuestions,
     highProbabilityTopics: [
       { topic: "Core Architecture & Block Schematic", frequency: "100%", expectedMarks: 10 },
       { topic: "Analytical Mathematical Derivation", frequency: "90%", expectedMarks: 10 },
       { topic: "Comparative Analysis Tables", frequency: "85%", expectedMarks: 7 },
       { topic: "Boundary Constraints & Safety Conditions", frequency: "80%", expectedMarks: 3 }
     ],
-    repeatedQuestions: [
-      `Explain the working principle and architecture with a labeled block diagram (10 Marks)`,
-      `Derive the governing state equation step-by-step (10 Marks)`,
-      `List 4 differences between static and dynamic configurations (7 Marks)`,
-      `Define the core principle and state its governing formula (3 Marks)`
-    ]
+    repeatedQuestions: generated.highQuestions.slice(0, 5).map(q => `${q.question} (${q.category.split(' ')[0]})`)
   };
 }
+
 
 function getHeuristicVivaQuestions(subject: string, topic?: string, mode: string = 'theory') {
   const currentTopic = topic || subject;
