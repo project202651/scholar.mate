@@ -118,7 +118,7 @@ export default function DashboardView({
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               Accelerate your exam mastery with{' '}
               <span className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                Nexa 2.0
+                Nexa AI
               </span>
             </h1>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl">

@@ -7,6 +7,7 @@ import AISettingsModal from '@/components/AISettingsModal';
 import EmergencyModeModal from '@/components/EmergencyModeModal';
 import ThreeBackground from '@/components/ThreeBackground';
 import NexaFloatingButton from '@/components/NexaFloatingButton';
+import StartingAnimation from '@/components/StartingAnimation';
 
 // 9 Core Blueprint Views
 import DashboardView from '@/components/DashboardView';
@@ -19,7 +20,7 @@ import FlashcardsView from '@/components/FlashcardsView';
 import ProgressAndWeaknessView from '@/components/ProgressAndWeaknessView';
 import StudyTimerView from '@/components/StudyTimerView';
 
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
@@ -28,6 +29,7 @@ export default function Home() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
+  const [showStartingAnimation, setShowStartingAnimation] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   // Shared active focus context for inter-view transitions
@@ -47,6 +49,10 @@ export default function Home() {
 
   useEffect(() => {
     try {
+      const hasSeen = localStorage.getItem('has_seen_intro');
+      if (!hasSeen) {
+        setShowStartingAnimation(true);
+      }
       const savedTheme = localStorage.getItem('scholarmate_theme') as 'dark' | 'light' | null;
       if (savedTheme) {
         setTheme(savedTheme);
@@ -113,6 +119,13 @@ export default function Home() {
         <div className="absolute -top-40 -left-40 w-[550px] h-[550px] rounded-full blur-[140px] animate-orb-1 bg-emerald-500/10 dark:bg-emerald-500/15" />
         <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] animate-orb-2 bg-cyan-500/10 dark:bg-cyan-500/15" />
       </div>
+
+      {/* Starting Splash Animation */}
+      <AnimatePresence>
+        {showStartingAnimation && (
+          <StartingAnimation onComplete={() => setShowStartingAnimation(false)} />
+        )}
+      </AnimatePresence>
 
       {/* Navigation Header */}
       <Navbar
@@ -279,11 +292,18 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-emerald-500" />
-            <span className="font-semibold text-slate-800 dark:text-slate-300">ScholarMate 2.0</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">ScholarMate</span>
             <span>• AANM & VVRSR Polytechnic College</span>
           </div>
-          <div className="text-[11px] text-slate-400">
-            Final Year Major Project • Computer Engineering
+          <div className="flex items-center gap-4 text-[11px] text-slate-400">
+            <span>Final Year Major Project • Computer Engineering</span>
+            <button
+              onClick={() => setShowStartingAnimation(true)}
+              className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+            >
+              <Play className="h-3 w-3" />
+              <span>Replay Intro</span>
+            </button>
           </div>
         </div>
       </footer>

@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { generateExamMarkAnswer } from "@/lib/gemini";
+import { generateExamMarkAnswer, generatePracticeQuestionBank } from "@/lib/gemini";
 import { getCachedAI, setCachedAI, hashString } from "@/lib/aiCache";
 
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
     const body = await req.json();
-    let topic = (body.topic || "Normalization in DBMS").trim();
+    let topic = (body.topic || "Database Normalization").trim();
     const marks = Number(body.marks || 10) as 1 | 2 | 5 | 10;
-    let subject = (body.subject || "Database Management Systems").trim();
+    let subject = (body.subject || "Computer Engineering").trim();
     const documentId = body.documentId || null;
+    const mode = body.mode || "bank"; // "bank" | "single"
     const customKey = req.headers.get("x-gemini-key") || body.apiKey || undefined;
 
     let textbookContext = "";
@@ -36,6 +37,19 @@ export async function POST(req: Request) {
       }
     }
 
+    if (mode === "bank") {
+      const cacheKey = `practice_bank_${hashString(topic + subject + (documentId || ""))}`;
+      const cached = getCachedAI(cacheKey);
+      if (cached) {
+        return NextResponse.json({ success: true, bank: cached, cached: true });
+      }
+
+      const bank = await generatePracticeQuestionBank(topic, subject, customKey, textbookContext);
+      setCachedAI(cacheKey, bank);
+      return NextResponse.json({ success: true, bank });
+    }
+
+    // Single Question & Model Answer
     const cacheKey = `practice_${marks}m_${hashString(topic + subject + (documentId || ""))}`;
     const cached = getCachedAI(cacheKey);
     if (cached) {

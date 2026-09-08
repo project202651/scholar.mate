@@ -314,7 +314,7 @@ export default function FlashcardsView({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-extrabold tracking-tight">Spaced Repetition Flashcards 2.0</h2>
+              <h2 className="text-2xl font-extrabold tracking-tight">Active Recall Flashcards</h2>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 border border-white/20">
                 SM-2 RECALL ENGINE
               </span>

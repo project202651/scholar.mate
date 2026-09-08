@@ -81,18 +81,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      const documents = await prisma.document.findMany({
-        take: 10,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          title: true,
-          subject: true,
-          fileType: true,
-          createdAt: true,
-        },
-      });
-      return NextResponse.json({ documents });
+      return NextResponse.json({ documents: [] });
     }
 
     const documents = await prisma.document.findMany({

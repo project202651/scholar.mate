@@ -24,7 +24,7 @@ export default function NexaFloatingButton({
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
     {
       role: 'assistant',
-      text: "👋 Hi! I'm **Nexa 2.0**, your AI Exam Coach. How can I help you excel today?"
+      text: "👋 Hi! I'm **Nexa AI**, your Exam Coach. How can I help you excel today?"
     }
   ]);
   const [input, setInput] = useState('');
@@ -129,7 +129,7 @@ export default function NexaFloatingButton({
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">Nexa 2.0</h3>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">Nexa AI</h3>
                     <span className="rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
                       Active
                     </span>

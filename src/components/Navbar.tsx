@@ -69,9 +69,6 @@ export default function Navbar({
                 <span className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
                   Scholar<span className="text-emerald-500">Mate</span>
                 </span>
-                <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.2 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  2.0
-                </span>
               </div>
             </button>
           </div>

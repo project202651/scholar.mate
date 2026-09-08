@@ -351,7 +351,72 @@ Format strictly as JSON:
     } catch {}
   }
 
-  return getHeuristicMarkAnswer(topic, marks, subject);
+}
+
+export async function generatePracticeQuestionBank(
+  topic: string,
+  subject: string,
+  customKey?: string,
+  textbookContext?: string
+) {
+  const contextBlock = textbookContext
+    ? `\nReference Material / Textbook Excerpt:\n"""\n${textbookContext.slice(0, 12000)}\n"""\nGenerate questions, model answers, and rubrics strictly from this source material.\n`
+    : "";
+
+  const prompt = `You are a Senior University Examiner for "${subject}".
+Generate a comprehensive Question Bank of 15 high-yield exam questions on "${topic}".
+Include:
+- 5 Short Definition & Core Principle Questions (2-Mark each)
+- 5 Analytical & Working Principle Questions (5-Mark each)
+- 5 Comprehensive Essay / Mathematical Derivation / Architecture Problems (10-Mark each)${contextBlock}
+
+Format strictly as JSON:
+{
+  "topic": "${topic}",
+  "subject": "${subject}",
+  "totalQuestions": 15,
+  "questions": [
+    {
+      "id": "q1",
+      "marks": 2,
+      "category": "2-Mark Short Question",
+      "question": "Clear 2-mark question statement on ${topic}",
+      "idealAnswer": "Concise definition, mathematical notation, and key technical criteria...",
+      "keyPoints": ["Formal Definition", "Unit / Metric"],
+      "examinerTip": "Must state standard terminology to secure 2/2 marks."
+    },
+    {
+      "id": "q6",
+      "marks": 5,
+      "category": "5-Mark Analytical Question",
+      "question": "Analytical question with working principle or diagram on ${topic}",
+      "idealAnswer": "Structured answer with working principle, schematic diagram, and comparison...",
+      "keyPoints": ["Operational Principle", "Labeled Diagram", "Step-by-step Working"],
+      "examinerTip": "Always draw a labeled block schematic."
+    },
+    {
+      "id": "q11",
+      "marks": 10,
+      "category": "10-Mark Comprehensive Problem",
+      "question": "In-depth comprehensive derivation / algorithm / problem on ${topic}",
+      "idealAnswer": "Complete masterclass response with mathematical proof, case analysis, circuit/system diagram, and real-world industrial application...",
+      "keyPoints": ["Mathematical Foundation", "Algorithm Execution", "Fault Tolerance", "Real-world Application"],
+      "examinerTip": "Show step-by-step intermediate calculations and highlight the final boxed answer."
+    }
+  ]
+}`;
+
+  const aiRes = await executeMultiProviderPrompt(prompt, true, customKey);
+  if (aiRes) {
+    try {
+      const parsed = safeJsonParse(aiRes);
+      if (parsed && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
+        return parsed;
+      }
+    } catch {}
+  }
+
+  return getHeuristicQuestionBank(topic, subject);
 }
 
 export async function evaluateStudentAnswer(question: string, studentAnswer: string, marks: number, customKey?: string) {
@@ -1360,3 +1425,152 @@ function getHeuristicSurvivalPlan(subject: string, hoursLeft: number) {
     ]
   };
 }
+
+function getHeuristicQuestionBank(topic: string, subject: string) {
+  return {
+    topic,
+    subject,
+    totalQuestions: 15,
+    questions: [
+      // 5x 2-Mark Questions
+      {
+        id: "q1",
+        marks: 2,
+        category: "2-Mark Short Question",
+        question: `Define ${topic} and state its primary role in ${subject}.`,
+        idealAnswer: `**Definition:** ${topic} is a core operational construct in ${subject} responsible for maintaining deterministic state transitions, resource scheduling, and fault containment.\n\n**Primary Purpose:** Guarantees system consistency and maximizes execution efficiency.`,
+        keyPoints: ["Formal Definition", "Primary Operational Function"],
+        examinerTip: "Always use standard scientific keywords."
+      },
+      {
+        id: "q2",
+        marks: 2,
+        category: "2-Mark Short Question",
+        question: `List the two primary conditions or constraints required for ${topic}.`,
+        idealAnswer: `1. **Invariance Condition:** State consistency must remain valid throughout execution.\n2. **Boundary Condition:** System resources must satisfy non-negative allocation limits.`,
+        keyPoints: ["Constraint 1", "Constraint 2"],
+        examinerTip: "Present as numbered bullet points."
+      },
+      {
+        id: "q3",
+        marks: 2,
+        category: "2-Mark Short Question",
+        question: `State the standard governing formula or equation for ${topic}.`,
+        idealAnswer: `$$\\text{Efficiency}(\\eta) = \\frac{\\text{Useful Work Output}}{\\text{Total Resource Input}} \\times 100\\%$$\nEnsure all state variables are evaluated within the defined operational boundary.`,
+        keyPoints: ["Equation Notation", "Variable Definitions"],
+        examinerTip: "Write the formula before explaining terms."
+      },
+      {
+        id: "q4",
+        marks: 2,
+        category: "2-Mark Short Question",
+        question: `Give two real-world engineering applications of ${topic}.`,
+        idealAnswer: `1. High-throughput distributed cloud computing clusters.\n2. Mission-critical embedded control systems and microcontrollers.`,
+        keyPoints: ["Application 1", "Application 2"],
+        examinerTip: "Mention modern industrial domains."
+      },
+      {
+        id: "q5",
+        marks: 2,
+        category: "2-Mark Short Question",
+        question: `What is the primary operational trade-off in ${topic}?`,
+        idealAnswer: `The trade-off exists between **latency overhead** (time spent in synchronization/verification) and **system throughput / reliability**.`,
+        keyPoints: ["Latency vs Throughput", "Reliability Trade-off"],
+        examinerTip: "Identify both competing performance parameters."
+      },
+      // 5x 5-Mark Questions
+      {
+        id: "q6",
+        marks: 5,
+        category: "5-Mark Analytical Question",
+        question: `Explain the working principle and operational phases of ${topic} with a block schematic.`,
+        idealAnswer: `### 1. Working Principle\n${topic} functions by transforming input signals/requests through sequential verification and execution stages.\n\n### 2. Block Schematic\n\`\`\`\n[Input Request] ──► [Pre-Processing & Validation] ──► [Core Execution Engine] ──► [Verified Output State]\n\`\`\`\n\n### 3. Key Phases\n- **Phase 1 (Initialization):** Allocate state buffers and establish boundary checks.\n- **Phase 2 (Processing):** Execute core transformation algorithms.\n- **Phase 3 (Post-Condition):** Commit state and release resources.`,
+        keyPoints: ["Working Principle", "Labeled Block Schematic", "Operational Phases"],
+        examinerTip: "Draw a clean diagram; 2 marks are awarded for the schematic alone."
+      },
+      {
+        id: "q7",
+        marks: 5,
+        category: "5-Mark Analytical Question",
+        question: `Differentiate between static and dynamic approaches in ${topic} using a comparative table.`,
+        idealAnswer: `| Parameter | Static Approach | Dynamic Approach |\n| :--- | :--- | :--- |\n| **Allocation Time** | Compile / Design Time | Runtime Execution |\n| **Flexibility** | Fixed, deterministic | Highly adaptive to load |\n| **Overhead** | Low runtime overhead | Moderate compute overhead |\n| **Fault Recovery** | Requires reinitialization | Autonomous dynamic recovery |`,
+        keyPoints: ["4 Distinct Comparison Parameters", "Comparative Table Format"],
+        examinerTip: "Tabular comparisons score higher than paragraphs."
+      },
+      {
+        id: "q8",
+        marks: 5,
+        category: "5-Mark Analytical Question",
+        question: `Describe the error handling and boundary condition management strategies in ${topic}.`,
+        idealAnswer: `### Error Containment Strategies\n1. **Threshold Validation:** Verify inputs against maximum upper bound parameters.\n2. **Rollback & Recovery:** Revert to the previous checkpoint if an exception occurs.\n3. **Fallback Degraded Mode:** Continue partial operation without system-wide failure.`,
+        keyPoints: ["Boundary Checks", "Rollback Mechanism", "Graceful Degradation"],
+        examinerTip: "List specific mitigation steps."
+      },
+      {
+        id: "q9",
+        marks: 5,
+        category: "5-Mark Analytical Question",
+        question: `Calculate the performance metrics and time complexity for ${topic}.`,
+        idealAnswer: `### Time & Space Complexity\n- **Best Case:** $\\mathcal{O}(1)$ or $\\mathcal{O}(\\log n)$ under optimal cache alignment.\n- **Average Case:** $\\mathcal{O}(n)$ linear scaling.\n- **Worst Case:** $\\mathcal{O}(n^2)$ under extreme resource contention.\n- **Auxiliary Space:** $\\mathcal{O}(1)$ in-place execution.`,
+        keyPoints: ["Asymptotic Notation", "Best/Average/Worst Cases", "Space Complexity"],
+        examinerTip: "Clearly differentiate time vs space complexity."
+      },
+      {
+        id: "q10",
+        marks: 5,
+        category: "5-Mark Analytical Question",
+        question: `Explain the top 3 examiner traps and common student misconceptions in ${topic}.`,
+        idealAnswer: `### Common Pitfalls & Traps\n1. **Zero-Index Confusion:** Forgetting to account for base offset index in calculations.\n2. **State Assumption:** Assuming an uninitialized buffer defaults to zero without explicit clearing.\n3. **Unit Inconsistency:** Mixing millisecond vs microsecond timeframes in throughput calculations.`,
+        keyPoints: ["Trap 1: Indexing", "Trap 2: State Initialization", "Trap 3: Unit Consistency"],
+        examinerTip: "Highlight how to avoid each pitfall in exams."
+      },
+      // 5x 10-Mark Questions
+      {
+        id: "q11",
+        marks: 10,
+        category: "10-Mark Comprehensive Problem",
+        question: `Derive the comprehensive mathematical model and algorithmic proof for ${topic} with a solved numerical example.`,
+        idealAnswer: `### 1. Mathematical Formulation & Governing Equations\nLet the system state vector be denoted as $\\mathbf{S} = [s_1, s_2, \\dots, s_n]^T$.\nThe rate of change is governed by:\n$$\\frac{d\\mathbf{S}}{dt} = \\mathbf{A}\\mathbf{S}(t) + \\mathbf{B}\\mathbf{U}(t)$$\n\n### 2. Step-by-Step Derivation\n1. Define initial condition $\\mathbf{S}(0) = \\mathbf{S}_0$.\n2. Apply the Laplace / State transformation:\n$$s\\mathbf{S}(s) - \\mathbf{S}_0 = \\mathbf{A}\\mathbf{S}(s) + \\mathbf{B}\\mathbf{U}(s)$$\n3. Solve for state vector:\n$$\\mathbf{S}(s) = (s\\mathbf{I} - \\mathbf{A})^{-1}\\mathbf{S}_0 + (s\\mathbf{I} - \\mathbf{A})^{-1}\\mathbf{B}\\mathbf{U}(s)$$\n\n### 3. Solved Numerical Example\nGiven $\\mathbf{A} = \\begin{bmatrix} 2 & 1 \\\\ 0 & 3 \\end{bmatrix}$ and $\\mathbf{S}_0 = \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}$:\n$$\\det(s\\mathbf{I} - \\mathbf{A}) = (s-2)(s-3) = s^2 - 5s + 6$$\nEigenvalues are $\\lambda_1 = 2, \\lambda_2 = 3$.\n\n### 4. Examiner Scoring Checkpoints\n- **Formal Definitions & Formulation:** 2 Marks\n- **Step-by-step Mathematical Working:** 4 Marks\n- **Solved Numerical Example:** 3 Marks\n- **Final Answer in Box:** 1 Mark`,
+        keyPoints: ["Governing Equations", "Step-by-step Proof", "Solved Numerical Example", "Boxed Final Result"],
+        examinerTip: "Show every intermediate algebraic step; boxed final answers get full presentation marks."
+      },
+      {
+        id: "q12",
+        marks: 10,
+        category: "10-Mark Comprehensive Problem",
+        question: `Describe the end-to-end architectural implementation of ${topic} in enterprise systems with failure recovery mechanisms.`,
+        idealAnswer: `### 1. Enterprise Architecture Overview\nEnterprise implementation of ${topic} relies on a multi-tiered architecture featuring load-balanced ingress, stateless computation engines, and replicated persistent state stores.\n\n### 2. Fault Tolerance & High Availability\n- **Active-Active Clustering:** Automatic failover within <50ms.\n- **Write-Ahead Logging (WAL):** Ensures ACID atomicity during unexpected crashes.\n- **Heartbeat Health Monitors:** Proactively evicts degraded nodes.`,
+        keyPoints: ["Multi-Tier Architecture", "WAL Crash Recovery", "High Availability Protocol"],
+        examinerTip: "Include clear architectural block diagrams."
+      },
+      {
+        id: "q13",
+        marks: 10,
+        category: "10-Mark Comprehensive Problem",
+        question: `Compare and evaluate all major algorithmic variations of ${topic} with case studies.`,
+        idealAnswer: `### Comprehensive Algorithm Evaluation\nEvaluates Variation A (Optimistic) vs Variation B (Pessimistic) across scalability, network footprint, lock contention, and recovery latency.\n\nIncludes complete comparative performance benchmark graphs and industrial deployment recommendations.`,
+        keyPoints: ["Algorithm A vs B vs C", "Benchmark Analysis", "Industrial Case Study"],
+        examinerTip: "Use clear metrics for each algorithm evaluated."
+      },
+      {
+        id: "q14",
+        marks: 10,
+        category: "10-Mark Comprehensive Problem",
+        question: `Design an end-to-end optimized pipeline for ${topic} meeting strict latency (<10ms) and 99.999% availability SLAs.`,
+        idealAnswer: `### System Design Specification\n1. **Ingress Tier:** Edge CDN caching with eBPF kernel routing.\n2. **Compute Tier:** Lock-free ring buffer processing with SIMD vectorization.\n3. **Storage Tier:** In-memory LSM-trees with async background compaction.\n\nGuarantees deterministic $p99$ response times within $8.2\\text{ ms}$.`,
+        keyPoints: ["SLA Guarantees", "Lock-free Data Structures", "Latency Budgeting"],
+        examinerTip: "State numerical SLA benchmarks."
+      },
+      {
+        id: "q15",
+        marks: 10,
+        category: "10-Mark Comprehensive Problem",
+        question: `Formulate a complete exam revision masterclass for ${topic} covering all past 5 years university questions.`,
+        idealAnswer: `### 5-Year High-Yield Revision Matrix\nSynthesizes compulsory Part A short questions, Part B derivations, and Part C numerical problems into an examiner-proven revision blueprint.`,
+        keyPoints: ["5-Year Trend Synthesis", "Compulsory Problem Templates", "Scoring Maximizer Formula"],
+        examinerTip: "Review all 5 years recurring patterns."
+      }
+    ]
+  };
+}
+

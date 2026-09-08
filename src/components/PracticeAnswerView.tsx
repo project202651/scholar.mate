@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileCheck2, Sparkles, CheckSquare, AlertCircle, Edit3, Send, RefreshCw, 
-  HelpCircle, ChevronRight, Award, Zap, BookOpen, CheckCircle, XCircle 
+  HelpCircle, ChevronRight, Award, Zap, BookOpen, CheckCircle, XCircle,
+  ListFilter, Target, Layers, FileText
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PracticeAnswerViewProps {
   initialTopic?: string;
@@ -12,21 +14,14 @@ interface PracticeAnswerViewProps {
   initialDocumentId?: string;
 }
 
-interface ExaminerChecklistItem {
-  criterion: string;
-  marksAllocated: number;
-  description: string;
-}
-
-interface MarkAnswerData {
-  topic: string;
-  subject: string;
+interface QuestionBankItem {
+  id: string;
   marks: number;
+  category: string;
   question: string;
   idealAnswer: string;
   keyPoints: string[];
-  examinerChecklist: ExaminerChecklistItem[];
-  commonMistakes: string[];
+  examinerTip: string;
 }
 
 interface EvaluationResult {
@@ -51,25 +46,33 @@ export default function PracticeAnswerView({
 }: PracticeAnswerViewProps) {
   const [topic, setTopic] = useState(initialTopic || 'Database Normalization (1NF, 2NF, 3NF, BCNF)');
   const [subject, setSubject] = useState(initialSubject || 'Database Management Systems');
-  const [marks, setMarks] = useState<number>(10);
-  const [loadingAnswer, setLoadingAnswer] = useState(false);
-  const [answerData, setAnswerData] = useState<MarkAnswerData | null>(null);
-  const [documents, setDocuments] = useState<any[]>([]);
   const [selectedDocId, setSelectedDocId] = useState(initialDocumentId || '');
+  const [documents, setDocuments] = useState<any[]>([]);
+
+  // 15-Question Bank
+  const [questionBank, setQuestionBank] = useState<QuestionBankItem[]>([]);
+  const [loadingBank, setLoadingBank] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<'all' | '2m' | '5m' | '10m'>('all');
+  const [selectedQuestion, setSelectedQuestion] = useState<QuestionBankItem | null>(null);
 
   // Student Evaluation Sandbox
   const [studentAnswer, setStudentAnswer] = useState('');
   const [evaluating, setEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [showIdealAnswer, setShowIdealAnswer] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchDocs();
+    handleGenerateBank(topic, subject);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialDocumentId) setSelectedDocId(initialDocumentId);
     if (initialSubject) setSubject(initialSubject);
-    if (initialTopic) setTopic(initialTopic);
+    if (initialTopic) {
+      setTopic(initialTopic);
+      handleGenerateBank(initialTopic, initialSubject || subject);
+    }
   }, [initialDocumentId, initialSubject, initialTopic]);
 
   const fetchDocs = async () => {
@@ -79,13 +82,6 @@ export default function PracticeAnswerView({
         const data = await res.json();
         if (data.documents) {
           setDocuments(data.documents);
-          if (initialDocumentId) {
-            const found = data.documents.find((d: any) => d.id === initialDocumentId);
-            if (found) {
-              if (found.subject) setSubject(found.subject);
-              if (found.title && !initialTopic) setTopic(found.title);
-            }
-          }
         }
       }
     } catch (e) {
@@ -93,53 +89,76 @@ export default function PracticeAnswerView({
     }
   };
 
-  const handleGenerateQuestionAndAnswer = async () => {
-    if (!topic.trim() && !selectedDocId) return;
-    setLoadingAnswer(true);
-    setAnswerData(null);
+  const handleGenerateBank = async (customTopic?: string, customSubject?: string) => {
+    const targetTopic = (customTopic || topic).trim();
+    const targetSubject = (customSubject || subject).trim();
+    if (!targetTopic) return;
+
+    setLoadingBank(true);
     setEvaluation(null);
+    setShowIdealAnswer(false);
     setStudentAnswer('');
 
     try {
+      const customKey = typeof window !== 'undefined' ? localStorage.getItem('scholarmate_gemini_key') || '' : '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (customKey) headers['x-gemini-key'] = customKey;
+
       const res = await fetch('/api/ai/practice', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          topic,
-          subject,
-          marks,
+          topic: targetTopic,
+          subject: targetSubject,
+          mode: 'bank',
           documentId: selectedDocId || undefined,
         })
       });
-      const data = await res.json();
-      if (data.practice) {
-        setAnswerData(data.practice);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.bank && Array.isArray(data.bank.questions) && data.bank.questions.length > 0) {
+          setQuestionBank(data.bank.questions);
+          setSelectedQuestion(data.bank.questions[0]);
+          return;
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error("Failed to load question bank:", err);
     } finally {
-      setLoadingAnswer(false);
+      setLoadingBank(false);
     }
   };
 
   const handleEvaluateStudentAnswer = async () => {
-    if (!answerData || !studentAnswer.trim()) return;
+    if (!selectedQuestion || !studentAnswer.trim()) return;
     setEvaluating(true);
 
     try {
+      const customKey = typeof window !== 'undefined' ? localStorage.getItem('scholarmate_gemini_key') || '' : '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (customKey) headers['x-gemini-key'] = customKey;
+
       const res = await fetch('/api/ai/evaluate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          question: answerData.question,
+          question: selectedQuestion.question,
           studentAnswer,
-          maxMarks: answerData.marks,
-          checklist: answerData.examinerChecklist
+          maxMarks: selectedQuestion.marks,
+          checklist: [
+            { criterion: "Definition & Technical Accuracy", marksAllocated: selectedQuestion.marks * 0.3 },
+            { criterion: "Diagram / Working Formula / Step-by-Step", marksAllocated: selectedQuestion.marks * 0.5 },
+            { criterion: "Real-World Application & Summary", marksAllocated: selectedQuestion.marks * 0.2 }
+          ]
         })
       });
-      const data = await res.json();
-      if (data.evaluation) {
-        setEvaluation(data.evaluation);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.evaluation) {
+          setEvaluation(data.evaluation);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -148,333 +167,303 @@ export default function PracticeAnswerView({
     }
   };
 
+  const filteredQuestions = questionBank.filter(q => {
+    if (activeFilter === '2m') return q.marks === 2;
+    if (activeFilter === '5m') return q.marks === 5;
+    if (activeFilter === '10m') return q.marks === 10;
+    return true;
+  });
+
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-700 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 bg-white/20 backdrop-blur-md rounded-2xl border border-white/20 shadow-inner">
-              <FileCheck2 className="w-8 h-8 text-violet-100" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight">5/10-Mark Answer Engine</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-400/30 border border-violet-200/40 text-violet-100">
-                  Examiner Checklist AI
-                </span>
-              </div>
-              <p className="text-violet-100 text-sm mt-0.5">
-                Generate high-scoring exam model answers and get your own answers graded against official marking schemes.
-              </p>
-            </div>
+    <div className="max-w-6xl mx-auto space-y-8 pb-16">
+      {/* Header */}
+      <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 text-white p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-0.5 text-xs font-semibold text-emerald-100 border border-white/20">
+            <Award className="h-3.5 w-3.5" />
+            <span>Examiner Scoring & Answer Mastery Engine</span>
           </div>
-
-          {/* Mark Selector Pill */}
-          <div className="flex items-center gap-1.5 bg-black/20 backdrop-blur-md p-1.5 rounded-xl border border-white/10 self-start md:self-auto">
-            {[1, 2, 5, 10].map((m) => (
-              <button
-                key={m}
-                onClick={() => setMarks(m)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  marks === m
-                    ? 'bg-white text-violet-900 shadow-md scale-105'
-                    : 'text-white/80 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {m} Mark{m > 1 ? 's' : ''}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Textbook Selector Bar */}
-        {documents.length > 0 && (
-          <div className="mt-4 flex items-center gap-2 bg-black/20 backdrop-blur-md p-2 rounded-xl border border-white/10 text-xs">
-            <span className="font-bold text-violet-200 shrink-0">📚 Active Textbook:</span>
-            <select
-              value={selectedDocId}
-              onChange={(e) => {
-                const docId = e.target.value;
-                setSelectedDocId(docId);
-                const matched = documents.find(d => d.id === docId);
-                if (matched) {
-                  setSubject(matched.subject || matched.title);
-                  setTopic(matched.title || topic);
-                }
-              }}
-              className="bg-white/10 text-white rounded-lg px-2.5 py-1 border border-white/20 outline-none w-full sm:w-auto flex-1 text-xs truncate"
-            >
-              <option value="" className="text-slate-900">-- General Syllabus (No Textbook Selected) --</option>
-              {documents.map((doc) => (
-                <option key={doc.id} value={doc.id} className="text-slate-900">
-                  {doc.title} ({doc.subject})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Input Bar */}
-        <div className="mt-4 flex flex-col md:flex-row gap-2">
-          <input
-            type="text"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Subject (e.g. Operating Systems)"
-            className="md:w-1/4 px-4 py-2.5 bg-white/15 border border-white/20 rounded-xl text-xs text-white placeholder-violet-200 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-md"
-          />
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Enter Topic to practice (e.g., Page Replacement Algorithms, Merge Sort, Transformer Architecture)"
-            className="flex-1 px-4 py-2.5 bg-white/15 border border-white/20 rounded-xl text-sm text-white placeholder-violet-200 focus:outline-none focus:ring-2 focus:ring-white/50 backdrop-blur-md"
-          />
-          <button
-            onClick={handleGenerateQuestionAndAnswer}
-            disabled={loadingAnswer || (!topic.trim() && !selectedDocId)}
-            className="px-6 py-2.5 bg-white text-violet-900 hover:bg-violet-50 font-bold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer shrink-0 disabled:opacity-50"
-          >
-            {loadingAnswer ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin text-violet-700" />
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4 text-violet-600" />
-                <span>Generate Model Answer</span>
-              </>
-            )}
-          </button>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Practice Question Bank & AI Evaluation
+          </h1>
+          <p className="text-xs sm:text-sm text-emerald-100 max-w-2xl">
+            Access 15–20 high-yield exam questions (2M, 5M, 10M), practice writing your answers in the sandbox, and receive real-time mark evaluation and examiner scoring tips.
+          </p>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      {answerData ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Question & Model Answer (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Exam Question Card */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
-                  {answerData.subject} • Official Question Style
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300">
-                  {answerData.marks} Marks
-                </span>
-              </div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-snug">
-                {answerData.question}
-              </h2>
-            </div>
-
-            {/* Model Answer Breakdown */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
-                  <Award className="w-5 h-5 text-amber-500" />
-                  Ideal Model Answer (100% Score Standard)
-                </h3>
-              </div>
-
-              {/* Answer Content */}
-              <div className="bg-slate-50 dark:bg-slate-950/60 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                <div className="prose dark:prose-invert text-xs md:text-sm leading-relaxed whitespace-pre-line text-slate-800 dark:text-slate-200">
-                  {answerData.idealAnswer}
-                </div>
-              </div>
-
-              {/* Key Bullet Points */}
-              {answerData.keyPoints && answerData.keyPoints.length > 0 && (
-                <div className="bg-violet-50/50 dark:bg-violet-950/20 p-4 rounded-xl border border-violet-200/60 dark:border-violet-800/40">
-                  <h4 className="text-xs font-bold text-violet-800 dark:text-violet-300 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-violet-600" />
-                    Crucial Keywords & High-Yield Bullets
-                  </h4>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {answerData.keyPoints.map((kp, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-xs text-violet-900 dark:text-violet-200 bg-white dark:bg-slate-900 p-2 rounded-lg border border-violet-100 dark:border-slate-800">
-                        <span className="font-bold text-violet-600">•</span>
-                        <span>{kp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Common Pitfalls */}
-              {answerData.commonMistakes && answerData.commonMistakes.length > 0 && (
-                <div className="bg-rose-50/60 dark:bg-rose-950/20 p-4 rounded-xl border border-rose-200/60 dark:border-rose-800/40">
-                  <h4 className="text-xs font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                    Where Students Lose Marks
-                  </h4>
-                  <ul className="space-y-1">
-                    {answerData.commonMistakes.map((cm, idx) => (
-                      <li key={idx} className="text-xs text-rose-900 dark:text-rose-200 flex items-start gap-2">
-                        <span className="text-rose-500 font-bold">✗</span>
-                        <span>{cm}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+      {/* Topic & Document Selector Control Bar */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-5 backdrop-blur-xl shadow-sm">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleGenerateBank();
+          }}
+          className="grid grid-cols-1 sm:grid-cols-12 gap-3"
+        >
+          <div className="sm:col-span-3">
+            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Subject</label>
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g. Operating Systems"
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+            />
           </div>
 
-          {/* Right Column: Examiner Marking Scheme & AI Grader (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Examiner Marking Scheme Checklist */}
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
-                  <CheckSquare className="w-4 h-4 text-emerald-500" />
-                  Official Examiner Marking Scheme
-                </h3>
-                <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full">
-                  Total: {answerData.marks}M
-                </span>
-              </div>
+          <div className="sm:col-span-6">
+            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Topic / Chapter</label>
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="e.g. Deadlock Banker's Algorithm, Normalization..."
+              className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+            />
+          </div>
 
-              <div className="space-y-2">
-                {answerData.examinerChecklist?.map((item, idx) => (
-                  <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 flex items-start justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        {item.criterion}
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                        {item.description}
-                      </p>
-                    </div>
-                    <span className="shrink-0 text-xs font-black px-2 py-1 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 rounded-md">
-                      +{item.marksAllocated}M
-                    </span>
-                  </div>
-                ))}
-              </div>
+          <div className="sm:col-span-3 flex items-end">
+            <button
+              type="submit"
+              disabled={loadingBank || !topic.trim()}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white py-2 text-xs font-bold shadow-md transition-all cursor-pointer"
+            >
+              {loadingBank ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              <span>Generate 15 Questions</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Question Bank & Answer Sandbox Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: 15-Question Bank Navigation (5 cols) */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-emerald-500" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Question Bank ({questionBank.length})
+              </h3>
             </div>
 
-            {/* Student Answer & AI Evaluator Sandbox */}
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm">
-                  <Edit3 className="w-4 h-4 text-violet-500" />
-                  Test Yourself: Write & AI Grade
-                </h3>
-              </div>
-
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Write your handwritten or typed answer below. Nexa will grade it against the examiner checklist and identify your missing keywords.
-              </p>
-
-              <textarea
-                value={studentAnswer}
-                onChange={(e) => setStudentAnswer(e.target.value)}
-                placeholder="Type your exam answer here. Include your definitions, bullet points, equations, and explanations..."
-                rows={7}
-                className="w-full p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-violet-500 outline-none resize-none font-sans"
-              />
-
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 p-0.5 text-[10px] font-bold">
               <button
-                onClick={handleEvaluateStudentAnswer}
-                disabled={evaluating || !studentAnswer.trim()}
-                className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                onClick={() => setActiveFilter('all')}
+                className={`px-2 py-0.5 rounded ${activeFilter === 'all' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500'}`}
               >
-                {evaluating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Grading with Examiner AI...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-amber-300" />
-                    <span>Grade My Answer</span>
-                  </>
-                )}
+                All
               </button>
-
-              {/* Evaluation Report */}
-              {evaluation && (
-                <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-violet-200 dark:border-violet-900/60 space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                    <div className="text-xs font-bold text-slate-900 dark:text-white">
-                      Examiner Scorecard
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-base font-black text-violet-600 dark:text-violet-400">
-                        {evaluation.scoreObtained} / {evaluation.maxMarks}
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300 font-bold">
-                        {evaluation.percentage}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                    {evaluation.feedback}
-                  </p>
-
-                  {/* Criteria Breakdown */}
-                  <div className="space-y-1.5">
-                    {evaluation.checklistMatches?.map((cm, cIdx) => (
-                      <div key={cIdx} className="flex items-start justify-between text-xs p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200/60 dark:border-slate-800">
-                        <div className="flex items-start gap-2">
-                          {cm.awarded ? (
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                          ) : (
-                            <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                          )}
-                          <span className="text-slate-800 dark:text-slate-200">{cm.criterion}</span>
-                        </div>
-                        <span className={`font-bold shrink-0 text-[11px] ${cm.awarded ? 'text-emerald-600' : 'text-rose-500'}`}>
-                          {cm.marksAwarded}M
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Missing Keywords */}
-                  {evaluation.missingKeywords && evaluation.missingKeywords.length > 0 && (
-                    <div className="p-2.5 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800/40 text-[11px]">
-                      <span className="font-bold text-amber-800 dark:text-amber-300">Missing Key Terms: </span>
-                      <span className="text-amber-900 dark:text-amber-200">
-                        {evaluation.missingKeywords.join(', ')}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Pro-tip */}
-                  {evaluation.improvementTip && (
-                    <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800/40 text-[11px] text-emerald-900 dark:text-emerald-200 flex items-start gap-1.5">
-                      <Zap className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                      <span><strong>To get full marks:</strong> {evaluation.improvementTip}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              <button
+                onClick={() => setActiveFilter('2m')}
+                className={`px-2 py-0.5 rounded ${activeFilter === '2m' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs' : 'text-slate-500'}`}
+              >
+                2M
+              </button>
+              <button
+                onClick={() => setActiveFilter('5m')}
+                className={`px-2 py-0.5 rounded ${activeFilter === '5m' ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-xs' : 'text-slate-500'}`}
+              >
+                5M
+              </button>
+              <button
+                onClick={() => setActiveFilter('10m')}
+                className={`px-2 py-0.5 rounded ${activeFilter === '10m' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs' : 'text-slate-500'}`}
+              >
+                10M
+              </button>
             </div>
           </div>
+
+          {loadingBank ? (
+            <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-8 text-center space-y-3">
+              <RefreshCw className="h-6 w-6 animate-spin text-emerald-500 mx-auto" />
+              <p className="text-xs text-slate-500">Generating 15 structured exam questions...</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5 max-h-[650px] overflow-y-auto pr-1">
+              {filteredQuestions.map((q, idx) => {
+                const isSelected = selectedQuestion?.id === q.id;
+                return (
+                  <div
+                    key={q.id || idx}
+                    onClick={() => {
+                      setSelectedQuestion(q);
+                      setEvaluation(null);
+                      setShowIdealAnswer(false);
+                    }}
+                    className={`rounded-xl border p-3.5 transition-all cursor-pointer text-left space-y-2 ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 shadow-sm'
+                        : 'border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 hover:border-slate-300 dark:hover:border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className={`rounded px-1.5 py-0.2 text-[10px] font-bold ${
+                        q.marks === 2 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' :
+                        q.marks === 5 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400' :
+                        'bg-indigo-500/15 text-indigo-700 dark:text-indigo-400'
+                      }`}>
+                        {q.marks} Marks
+                      </span>
+                      <span className="text-[10px] text-slate-400">Q{idx + 1}</span>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2">
+                      {q.question}
+                    </h4>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-white/5">
+                      <span className="truncate max-w-[200px]">{q.examinerTip}</span>
+                      <ChevronRight className="h-3 w-3 shrink-0" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      ) : (
-        /* Empty State */
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center shadow-sm space-y-4">
-          <div className="w-16 h-16 bg-violet-100 dark:bg-violet-950/60 rounded-2xl flex items-center justify-center mx-auto text-violet-600 dark:text-violet-400">
-            <BookOpen className="w-8 h-8" />
-          </div>
-          <div className="max-w-md mx-auto space-y-2">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Ready to Master {marks}-Mark Questions?
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Select your marks target and click <strong>Generate Model Answer</strong> above to see full answers, marking schemes, and test your own writing against the AI examiner.
-            </p>
-          </div>
+
+        {/* Right Column: Selected Question Sandbox & Evaluation (7 cols) */}
+        <div className="lg:col-span-7 space-y-5">
+          {selectedQuestion ? (
+            <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-6 backdrop-blur-2xl shadow-xl space-y-5">
+              {/* Question Header */}
+              <div className="space-y-2 border-b border-slate-200/80 dark:border-white/10 pb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    {selectedQuestion.category}
+                  </span>
+                  <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Max Marks: {selectedQuestion.marks}
+                  </span>
+                </div>
+                <h3 className="text-base font-extrabold text-slate-900 dark:text-white leading-snug">
+                  {selectedQuestion.question}
+                </h3>
+                <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Examiner Rubric: {selectedQuestion.examinerTip}</span>
+                </div>
+              </div>
+
+              {/* Student Answer Writing Sandbox */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Edit3 className="h-3.5 w-3.5 text-emerald-500" />
+                    <span>Your Answer Sandbox</span>
+                  </label>
+                  <button
+                    onClick={() => setShowIdealAnswer(!showIdealAnswer)}
+                    className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+                  >
+                    {showIdealAnswer ? "Hide Model Answer" : "View Model Answer"}
+                  </button>
+                </div>
+
+                <textarea
+                  rows={6}
+                  value={studentAnswer}
+                  onChange={(e) => setStudentAnswer(e.target.value)}
+                  placeholder="Type your exam response here (include definitions, equations, steps)..."
+                  className="w-full p-4 rounded-2xl border border-slate-300 dark:border-white/15 bg-white dark:bg-slate-950/80 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 outline-none leading-relaxed"
+                />
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    onClick={handleEvaluateStudentAnswer}
+                    disabled={evaluating || !studentAnswer.trim()}
+                    className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white px-4 py-2 text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer"
+                  >
+                    {evaluating ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    <span>Evaluate My Answer</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Evaluation Results Feedback Box */}
+              <AnimatePresence>
+                {evaluation && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-5 space-y-4"
+                  >
+                    <div className="flex items-center justify-between border-b border-emerald-500/20 pb-3">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+                          AI Examiner Evaluation
+                        </span>
+                        <h4 className="text-sm font-extrabold text-slate-900 dark:text-white">
+                          Score: {evaluation.scoreObtained} / {evaluation.maxMarks} ({evaluation.percentage}%)
+                        </h4>
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 text-white font-bold text-sm">
+                        {evaluation.scoreObtained}M
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {evaluation.feedback}
+                    </p>
+
+                    {/* Criteria matches */}
+                    {evaluation.checklistMatches && evaluation.checklistMatches.length > 0 && (
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                          Mark Breakdown:
+                        </span>
+                        {evaluation.checklistMatches.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs rounded-lg bg-white dark:bg-slate-900 p-2 border border-slate-200/60 dark:border-white/5">
+                            <div className="flex items-center gap-2">
+                              {item.awarded ? <CheckCircle className="h-3.5 w-3.5 text-emerald-500" /> : <XCircle className="h-3.5 w-3.5 text-rose-500" />}
+                              <span className="text-slate-800 dark:text-slate-200">{item.criterion}</span>
+                            </div>
+                            <span className="font-bold text-slate-700 dark:text-slate-300">+{item.marksAwarded}M</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="text-xs text-amber-700 dark:text-amber-300 font-medium bg-amber-500/10 p-2.5 rounded-xl border border-amber-500/20">
+                      💡 <strong>Examiner Improvement Tip:</strong> {evaluation.improvementTip}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Model Ideal Answer Accordion */}
+              <AnimatePresence>
+                {showIdealAnswer && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-5 space-y-3"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400">
+                      <BookOpen className="h-4 w-4" />
+                      <span>Model Ideal Answer (Full Marks Reference)</span>
+                    </div>
+                    <div className="whitespace-pre-wrap text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-mono p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-white/5 overflow-x-auto">
+                      {selectedQuestion.idealAnswer}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 p-12 text-center text-slate-500 text-xs space-y-2">
+              <FileCheck2 className="h-8 w-8 text-slate-400 mx-auto" />
+              <p>Select a question from the bank to start your practice sandbox.</p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
