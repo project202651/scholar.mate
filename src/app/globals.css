@@ -1,52 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark Mode Default Tokens */
   --bg: #0b1220;
   --surface: #111c2e;
-  --surface-secondary: #17253a;
   --surface-raised: #17253a;
   --text: #f5f7fb;
-  --muted-text: #94a3b8;
-  --muted: #94a3b8;
+  --muted: #98a8bd;
   --primary: #54d6c7;
-  --primary-foreground: #020617;
   --warning: #f6c85f;
   --danger: #f47c7c;
   --info: #6ea8fe;
   --success: #70d6a8;
-  --card-border: rgba(255, 255, 255, 0.08);
   --border: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(84, 214, 199, 0.5);
-  --input-background: #0b1220;
-  --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-  --code-background: #060a12;
   
   --background: var(--bg);
   --foreground: var(--text);
 }
 
 .light {
-  /* Clean Light Mode Tokens */
   --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-secondary: #f1f5f9;
   --surface-raised: #f1f5f9;
   --text: #0f172a;
-  --muted-text: #64748b;
   --muted: #64748b;
   --primary: #0d9488;
-  --primary-foreground: #ffffff;
   --warning: #d97706;
   --danger: #e11d48;
   --info: #2563eb;
   --success: #16a34a;
-  --card-border: rgba(15, 23, 42, 0.08);
   --border: rgba(15, 23, 42, 0.08);
   --border-focus: rgba(13, 148, 136, 0.5);
-  --input-background: #ffffff;
-  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
-  --code-background: #f1f5f9;
   
   --background: var(--bg);
   --foreground: var(--text);
@@ -56,20 +40,14 @@
   --color-background: var(--bg);
   --color-foreground: var(--text);
   --color-surface: var(--surface);
-  --color-surface-secondary: var(--surface-secondary);
   --color-surface-raised: var(--surface-raised);
   --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-info: var(--info);
   --color-success: var(--success);
   --color-muted: var(--muted);
-  --color-muted-text: var(--muted-text);
   --color-border: var(--border);
-  --color-card-border: var(--card-border);
-  --color-input-background: var(--input-background);
-  --color-code-background: var(--code-background);
   
   --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);
   --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
@@ -88,7 +66,7 @@ body {
   color: var(--text);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   overflow-x: hidden;
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Polished Card Surface System */
@@ -97,7 +75,7 @@ body {
   border: 1px solid var(--border);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .surface-raised {
@@ -110,7 +88,7 @@ body {
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.25);
 }
 
 .glass-card {
@@ -118,7 +96,7 @@ body {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-card:hover {
@@ -137,7 +115,7 @@ button.compact-btn {
 }
 
 /* Accessible focus outlines */
-button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }

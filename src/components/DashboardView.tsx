@@ -173,40 +173,40 @@ export default function DashboardView({
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-[#0d9488] dark:text-[#54d6c7]" />
+                <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-[#54d6c7]" />
                   <span>Today’s Study Plan</span>
                 </h2>
                 {!user && (
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                     Demo Schedule
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-300">
+              <p className="text-[11px] text-slate-300">
                 Complete 3 study tasks (35 mins) + 1 review break (10 mins) = 45 mins total
               </p>
             </div>
-            <span className="rounded-full bg-emerald-50 dark:bg-[#54d6c7]/15 px-3 py-1 text-xs font-bold text-emerald-800 dark:text-[#54d6c7] border border-emerald-200 dark:border-[#54d6c7]/30">
+            <span className="rounded-full bg-[#54d6c7]/15 px-3 py-1 text-xs font-bold text-[#54d6c7] border border-[#54d6c7]/30">
               35m Tasks + 10m Break = 45m Total
             </span>
           </div>
 
           {/* Primary Task 1 Hero Card with 'Start Session' */}
-          <div className="rounded-3xl border border-emerald-200 dark:border-[#54d6c7]/30 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-[#17253a] dark:to-[#111c2e] p-6 sm:p-7 shadow-md dark:shadow-xl space-y-5 transition-colors">
+          <div className="rounded-3xl border border-[#54d6c7]/30 bg-gradient-to-br from-[#17253a] to-[#111c2e] p-6 sm:p-7 shadow-xl space-y-5">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-[#54d6c7]/15 text-emerald-800 dark:text-[#54d6c7] border border-emerald-200 dark:border-[#54d6c7]/30">
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/30">
                   Task 1 of 3 · High-Yield (10 Marks)
                 </span>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-extrabold text-white">
                   Master Banker’s Algorithm Safety Check
                 </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-200">
+                <p className="text-xs text-slate-200">
                   Operating Systems · Unit 2 Deadlocks · 15 minutes
                 </p>
               </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-[#54d6c7]/15 text-emerald-700 dark:text-[#54d6c7] shrink-0">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#54d6c7]/15 text-[#54d6c7] shrink-0">
                 <Zap className="h-5 w-5" />
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function DashboardView({
 
               <button
                 onClick={() => setActiveTab('exam_center')}
-                className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+                className="text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
                 View Syllabus Blueprint →
               </button>
@@ -237,47 +237,47 @@ export default function DashboardView({
             {/* Task 2 */}
             <div
               onClick={() => setActiveTab('flashcards')}
-              className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#111c2e] hover:bg-slate-50 dark:hover:bg-[#17253a] hover:border-[#8b5cf6]/40 transition-all cursor-pointer shadow-xs dark:shadow-none"
+              className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-[#111c2e] hover:bg-[#17253a] hover:border-[#8b5cf6]/40 transition-all cursor-pointer"
             >
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">Task 2: Review 12 Due Flashcards (Active Recall)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-purple-100 dark:bg-[#8b5cf6]/20 text-purple-700 dark:text-[#8b5cf6] font-bold">
+                  <span className="text-xs font-bold text-white">Task 2: Review 12 Due Flashcards (Active Recall)</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#8b5cf6]/20 text-[#8b5cf6] font-bold">
                     Spaced Repetition
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-300">Computer Networks · 10 minutes</p>
+                <p className="text-[11px] text-slate-300">Computer Networks · 10 minutes</p>
               </div>
               <ChevronRight className="h-4 w-4 text-slate-400" />
             </div>
 
             {/* Explicit 10-Minute Break / Consolidation Interval */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl border border-dashed border-teal-500/40 bg-teal-500/5 px-4">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl border border-dashed border-cyan-500/30 bg-cyan-500/5 px-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-teal-100 dark:bg-[#54d6c7]/15 text-teal-700 dark:text-[#54d6c7]">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#54d6c7]/15 text-[#54d6c7]">
                   <Clock className="h-3.5 w-3.5" />
                 </div>
                 <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Scheduled Spaced Review Break</span>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">10-minute memory consolidation before drilling 5-mark questions</p>
+                  <span className="text-xs font-bold text-slate-200">Scheduled Spaced Review Break</span>
+                  <p className="text-[10px] text-slate-400">10-minute memory consolidation before drilling 5-mark questions</p>
                 </div>
               </div>
-              <span className="text-[11px] font-mono font-bold text-teal-700 dark:text-[#54d6c7]">10 min break</span>
+              <span className="text-[11px] font-mono font-bold text-[#54d6c7]">10 min break</span>
             </div>
 
             {/* Task 3 */}
             <div
               onClick={() => setActiveTab('practice')}
-              className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 dark:border-white/5 bg-white dark:bg-[#111c2e] hover:bg-slate-50 dark:hover:bg-[#17253a] hover:border-[#70d6a8]/40 transition-all cursor-pointer shadow-xs dark:shadow-none"
+              className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-[#111c2e] hover:bg-[#17253a] hover:border-[#70d6a8]/40 transition-all cursor-pointer"
             >
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">Task 3: Practice Question: Gantt Chart Scheduling</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-[#70d6a8]/20 text-emerald-800 dark:text-[#70d6a8] font-bold">
+                  <span className="text-xs font-bold text-white">Task 3: Practice Question: Gantt Chart Scheduling</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#70d6a8]/20 text-[#70d6a8] font-bold">
                     5-Mark Drill
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-300">Operating Systems · 10 minutes</p>
+                <p className="text-[11px] text-slate-300">Operating Systems · 10 minutes</p>
               </div>
               <ChevronRight className="h-4 w-4 text-slate-400" />
             </div>
@@ -286,21 +286,21 @@ export default function DashboardView({
 
         {/* Section 2: Exam Readiness & Diagnostics (5 Cols) */}
         <div className="lg:col-span-5 space-y-5">
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111c2e] p-6 shadow-sm dark:shadow-xl space-y-4">
+          <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#0d9488] dark:text-[#54d6c7]" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300">
+                <Target className="h-4 w-4 text-[#54d6c7]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   Exam Readiness Breakdown
                 </h3>
               </div>
               <div className="flex items-center gap-2">
                 {!user && (
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
                     Demo Baseline
                   </span>
                 )}
-                <span className="text-sm font-black text-[#0d9488] dark:text-[#54d6c7]">78% Overall</span>
+                <span className="text-sm font-black text-[#54d6c7]">78% Overall</span>
               </div>
             </div>
 
@@ -314,10 +314,10 @@ export default function DashboardView({
               ].map((s) => (
                 <div key={s.sub} className="space-y-1">
                   <div className="flex justify-between font-semibold">
-                    <span className="text-slate-700 dark:text-slate-200">{s.sub}</span>
-                    <span className="text-slate-900 dark:text-white font-bold">{s.score}%</span>
+                    <span className="text-slate-200">{s.sub}</span>
+                    <span className="text-white font-bold">{s.score}%</span>
                   </div>
-                  <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                     <div className={`h-full rounded-full ${s.color}`} style={{ width: `${s.score}%` }} />
                   </div>
                 </div>
@@ -325,15 +325,15 @@ export default function DashboardView({
             </div>
 
             {/* Diagnostic Alert Box */}
-            <div className="rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0b1220] p-3.5 text-xs text-slate-700 dark:text-slate-200 space-y-1.5">
+            <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-3.5 text-xs text-slate-200 space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-bold">
-                <span className="text-rose-600 dark:text-[#f47c7c]">⚠️ Weakest Unit: Unit 2 Deadlocks</span>
-                <span className="text-amber-600 dark:text-[#f6c85f]">{studentPlan.daysRemaining} Days to Exam</span>
+                <span className="text-[#f47c7c]">⚠️ Weakest Unit: Unit 2 Deadlocks</span>
+                <span className="text-[#f6c85f]">{studentPlan.daysRemaining} Days to Exam</span>
               </div>
-              <p className="text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">
+              <p className="text-[11px] leading-relaxed text-slate-300">
                 You are likely ready for short-answer questions, but need more practice with long-answer questions and Operating Systems.
               </p>
-              <div className="pt-1 text-[10px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-white/5 flex items-center justify-between">
+              <div className="pt-1 text-[10px] text-slate-400 border-t border-white/5 flex items-center justify-between">
                 <span>Calculated: Quizzes (40%) + Mocks (35%) + Recall (25%)</span>
                 <span>Status: Calibrated Today</span>
               </div>
@@ -341,37 +341,37 @@ export default function DashboardView({
           </div>
 
           {/* Quick Actions Panel (Section 5) */}
-          <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111c2e] p-5 shadow-sm dark:shadow-xl space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300">
+          <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-5 shadow-xl space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
               Quick Actions
             </h3>
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setActiveTab('dochub')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
-                <UploadCloud className="h-4 w-4 text-[#0d9488] dark:text-[#54d6c7]" />
+                <UploadCloud className="h-4 w-4 text-[#54d6c7]" />
                 <span>Upload Material</span>
               </button>
               <button
                 onClick={() => setActiveTab('library')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
-                <BookOpen className="h-4 w-4 text-[#2563eb] dark:text-[#6ea8fe]" />
+                <BookOpen className="h-4 w-4 text-[#6ea8fe]" />
                 <span>Generate Notes</span>
               </button>
               <button
                 onClick={() => setActiveTab('mock_exams')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
-                <Award className="h-4 w-4 text-[#d97706] dark:text-[#f6c85f]" />
+                <Award className="h-4 w-4 text-[#f6c85f]" />
                 <span>Start Mock Test</span>
               </button>
               <button
                 onClick={() => setActiveTab('nexa')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
-                <Bot className="h-4 w-4 text-[#16a34a] dark:text-[#70d6a8]" />
+                <Bot className="h-4 w-4 text-[#70d6a8]" />
                 <span>Ask Nexa AI</span>
               </button>
             </div>
@@ -382,26 +382,26 @@ export default function DashboardView({
       {/* 3. Continue Learning & Review Due Today Row */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Continue Learning (Section 3) */}
-        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111c2e] p-6 space-y-4 shadow-sm dark:shadow-xl">
+        <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-[#0d9488] dark:text-[#54d6c7]" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Continue Learning</h3>
+              <BookOpen className="h-4 w-4 text-[#54d6c7]" />
+              <h3 className="text-sm font-bold text-white">Continue Learning</h3>
             </div>
-            <span className="text-xs text-slate-500 dark:text-slate-400">Resume Recent</span>
+            <span className="text-xs text-slate-400">Resume Recent</span>
           </div>
 
           <div
             onClick={() => setActiveTab('library')}
-            className="p-4 rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0b1220] hover:border-[#54d6c7]/40 transition-all cursor-pointer space-y-2"
+            className="p-4 rounded-2xl border border-white/5 bg-[#0b1220] hover:border-[#54d6c7]/40 transition-all cursor-pointer space-y-2"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-white">Operating Systems: Memory Management & Paging</span>
-              <span className="text-[10px] text-[#0d9488] dark:text-[#54d6c7] font-bold">In Progress</span>
+              <span className="text-xs font-bold text-white">Operating Systems: Memory Management & Paging</span>
+              <span className="text-[10px] text-[#54d6c7] font-bold">In Progress</span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">Unit 3 · 6 summary sections synthesized · 10 practice cards</p>
+            <p className="text-[11px] text-slate-400">Unit 3 · 6 summary sections synthesized · 10 practice cards</p>
             <div className="flex justify-end pt-1">
-              <span className="text-xs font-bold text-[#0d9488] dark:text-[#54d6c7] flex items-center gap-1">
+              <span className="text-xs font-bold text-[#54d6c7] flex items-center gap-1">
                 <span>Resume Note</span>
                 <ArrowRight className="h-3 w-3" />
               </span>
@@ -410,24 +410,24 @@ export default function DashboardView({
         </div>
 
         {/* Review Due Today (Section 4) */}
-        <div className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111c2e] p-6 space-y-4 shadow-sm dark:shadow-xl">
+        <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-[#8b5cf6]" />
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Review Due Today</h3>
+              <h3 className="text-sm font-bold text-white">Review Due Today</h3>
             </div>
             <span className="text-xs font-bold text-[#8b5cf6]">12 Flashcards</span>
           </div>
 
           <div
             onClick={() => setActiveTab('flashcards')}
-            className="p-4 rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0b1220] hover:border-[#8b5cf6]/40 transition-all cursor-pointer space-y-2"
+            className="p-4 rounded-2xl border border-white/5 bg-[#0b1220] hover:border-[#8b5cf6]/40 transition-all cursor-pointer space-y-2"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-white">Spaced Repetition Review Queue</span>
+              <span className="text-xs font-bold text-white">Spaced Repetition Review Queue</span>
               <span className="text-[10px] text-[#8b5cf6] font-bold">SM-2 Algorithm</span>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">Reinforce formulas and definitions before forgetfulness curve drop-off.</p>
+            <p className="text-[11px] text-slate-400">Reinforce formulas and definitions before forgetfulness curve drop-off.</p>
             <div className="flex justify-end pt-1">
               <span className="text-xs font-bold text-[#8b5cf6] flex items-center gap-1">
                 <span>Drill Flashcards</span>
@@ -441,10 +441,10 @@ export default function DashboardView({
       {/* 4. Three-Step Workflow: Upload -> Nexa AI -> Practice */}
       <section id="how-it-works-section" className="space-y-6 pt-2">
         <div className="text-center max-w-xl mx-auto space-y-1.5">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
             How ScholarMate Works
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-400">
             A 3-step academic workflow converting raw syllabus PDFs into personalized exam readiness.
           </p>
         </div>
@@ -477,17 +477,18 @@ export default function DashboardView({
             return (
               <div
                 key={s.step}
-                className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111c2e] p-6 space-y-4 relative shadow-sm dark:shadow-lg hover:border-[#54d6c7]/40 transition-all hover:-translate-y-1"
+                className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 space-y-4 relative shadow-lg hover:border-[#54d6c7]/40 transition-all hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-black text-[#0d9488] dark:text-[#54d6c7] font-mono">{s.step}</span>
-                  <div className="p-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-[#0d9488] dark:text-[#54d6c7]">
+                  <span className="text-2xl font-black text-[#54d6c7] font-mono">{s.step}</span>
+                  <div className="p-3 rounded-2xl bg-white/5 text-[#54d6c7]">
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{s.title}</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{s.desc}</p>
+
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-extrabold text-white">{s.title}</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">{s.desc}</p>
                 </div>
               </div>
             );
@@ -496,24 +497,22 @@ export default function DashboardView({
       </section>
 
       {/* 5. Sample AI-Generated Exam Answer & Marking Rubrics */}
-      <section className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111c2e] p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-white/10 pb-4">
+      <section className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 sm:p-8 space-y-6 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
-            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
+            <h3 className="text-lg font-extrabold text-white">
               Sample AI-Generated Exam Answers & Marking Rubrics
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-slate-400">
               Exam-ready model answers calibrated to university evaluation standards.
             </p>
           </div>
 
-          <div className="flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-900 p-1 text-xs font-bold">
+          <div className="flex items-center gap-1 rounded-xl bg-slate-900 p-1 text-xs font-bold">
             <button
               onClick={() => setActiveTabDemo('sampleAnswer')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTabDemo === 'sampleAnswer'
-                  ? 'bg-[#0d9488] text-white dark:bg-[#54d6c7] dark:text-slate-950 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                activeTabDemo === 'sampleAnswer' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
               }`}
             >
               10-Mark Model Answer
@@ -521,9 +520,7 @@ export default function DashboardView({
             <button
               onClick={() => setActiveTabDemo('sampleRubric')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTabDemo === 'sampleRubric'
-                  ? 'bg-[#0d9488] text-white dark:bg-[#54d6c7] dark:text-slate-950 shadow-sm'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                activeTabDemo === 'sampleRubric' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
               }`}
             >
               Examiner Marking Scheme
@@ -532,14 +529,14 @@ export default function DashboardView({
         </div>
 
         {activeTabDemo === 'sampleAnswer' && (
-          <div className="space-y-3 rounded-2xl bg-slate-50 dark:bg-[#0b1220] p-5 border border-slate-200 dark:border-white/5 font-sans text-xs sm:text-sm">
-            <div className="flex items-center justify-between text-xs border-b border-slate-200 dark:border-white/10 pb-2">
-              <span className="font-bold text-[#0d9488] dark:text-[#54d6c7]">Q: Explain Banker's Algorithm with Resource Allocation Graph & Safety Check</span>
-              <span className="rounded bg-slate-200 dark:bg-white/10 px-2 py-0.5 font-mono text-[10px] text-slate-700 dark:text-slate-300">10 Marks</span>
+          <div className="space-y-3 rounded-2xl bg-[#0b1220] p-5 border border-white/5 font-sans text-xs sm:text-sm">
+            <div className="flex items-center justify-between text-xs border-b border-white/10 pb-2">
+              <span className="font-bold text-[#54d6c7]">Q: Explain Banker's Algorithm with Resource Allocation Graph & Safety Check</span>
+              <span className="rounded bg-white/10 px-2 py-0.5 font-mono text-[10px]">10 Marks</span>
             </div>
-            <div className="space-y-2 text-slate-700 dark:text-slate-300 leading-relaxed">
+            <div className="space-y-2 text-slate-300 leading-relaxed">
               <p><strong>1. Core Principle:</strong> A deadlock avoidance algorithm testing for safe states by simulating maximum possible resource requests.</p>
-              <div className="p-3 rounded-xl bg-slate-900 text-[#70d6a8] border border-slate-800 font-mono text-[11px]">
+              <div className="p-3 rounded-xl bg-slate-900 border border-white/5 font-mono text-[11px] text-[#70d6a8]">
                 Need[i][j] = Max[i][j] - Allocation[i][j]<br />
                 Work = Available<br />
                 Safety Condition: If Need[i] &lt;= Work -&gt; Work += Allocation[i]; Finish[i] = True
@@ -557,12 +554,12 @@ export default function DashboardView({
               { criterion: "Solved Numerical Example with Matrices", marks: "3 Marks", desc: "Complete Allocation, Max, Available, and Need matrix table." },
               { criterion: "Boxed Final Safe Sequence & Presentation", marks: "1 Mark", desc: "Highlighted safe sequence box & examiner summary." }
             ].map((r, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#0b1220] border border-slate-200 dark:border-white/5">
+              <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-[#0b1220] border border-white/5">
                 <div>
-                  <span className="font-bold text-slate-900 dark:text-white">{r.criterion}</span>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400">{r.desc}</p>
+                  <span className="font-bold text-white">{r.criterion}</span>
+                  <p className="text-[11px] text-slate-400">{r.desc}</p>
                 </div>
-                <span className="font-mono font-bold text-[#0d9488] dark:text-[#54d6c7] shrink-0 ml-3">{r.marks}</span>
+                <span className="font-mono font-bold text-[#54d6c7] shrink-0 ml-3">{r.marks}</span>
               </div>
             ))}
           </div>
@@ -570,16 +567,16 @@ export default function DashboardView({
       </section>
 
       {/* 6. College Attribution & Full Team Profiles */}
-      <section className="rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#111c2e] p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-xl">
+      <section className="rounded-3xl border border-white/10 bg-[#111c2e] p-6 sm:p-8 space-y-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#0d9488] dark:text-[#54d6c7]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#54d6c7]">
             <GraduationCap className="h-4 w-4" />
             <span>Institutional Final-Year Major Project</span>
           </div>
-          <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
+          <h3 className="text-lg font-extrabold text-white">
             About ScholarMate & Project Team
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+          <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
             ScholarMate is a final-year AI and ML engineering major project developed by students of <strong>AANM & VVRSR Polytechnic College</strong> (Department of Computer Engineering).
           </p>
         </div>
@@ -593,11 +590,11 @@ export default function DashboardView({
           ].map((member) => (
             <div
               key={member.name}
-              className="rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#0b1220] p-4 space-y-1.5 hover:border-[#0d9488]/40 dark:hover:border-[#54d6c7]/30 transition-all"
+              className="rounded-2xl border border-white/5 bg-[#0b1220] p-4 space-y-1.5 hover:border-[#54d6c7]/30 transition-all"
             >
-              <div className="text-sm font-extrabold text-slate-900 dark:text-white">{member.name}</div>
-              <div className="text-xs font-bold text-[#0d9488] dark:text-[#54d6c7]">{member.role}</div>
-              <div className="text-[11px] text-slate-600 dark:text-slate-400">{member.sub}</div>
+              <div className="text-sm font-extrabold text-white">{member.name}</div>
+              <div className="text-xs font-bold text-[#54d6c7]">{member.role}</div>
+              <div className="text-[11px] text-slate-400">{member.sub}</div>
             </div>
           ))}
         </div>

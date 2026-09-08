@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { 
   GraduationCap, LogOut, User as UserIcon, 
   Cpu, Target, Bot, BookOpen, FileCheck2, Award, Layers, BarChart3, Clock,
-  Sparkles, ChevronDown, Menu, X, Sun, Moon
+  Sparkles, ChevronDown, Menu, X, Calendar, Plus, UploadCloud
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,8 +40,6 @@ export default function Navbar({
   onLogout,
   onOpenAISettings,
   onOpenOnboarding,
-  theme = 'dark',
-  onToggleTheme,
 }: NavbarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
@@ -88,15 +86,9 @@ export default function Navbar({
     return items.some(item => item.id === activeTab);
   };
 
-  const isDark = theme === 'dark';
-
   return (
     <>
-      <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-2xl transition-colors duration-200 ${
-        isDark 
-          ? 'border-white/[0.08] bg-[#0b1220]/95 text-white' 
-          : 'border-slate-200/80 bg-white/95 text-slate-900 shadow-sm'
-      }`}>
+      <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#0b1220]/95 backdrop-blur-2xl transition-colors">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
           {/* Brand Identity */}
           <div className="flex items-center gap-3">
@@ -108,31 +100,23 @@ export default function Navbar({
                 <GraduationCap className="h-5 w-5 text-slate-950 font-black" />
               </div>
               <div>
-                <span className={`text-base font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Scholar<span className="text-[#0d9488] dark:text-[#54d6c7]">Mate</span>
+                <span className="text-base font-extrabold tracking-tight text-white">
+                  Scholar<span className="text-[#54d6c7]">Mate</span>
                 </span>
-                <p className={`text-[10px] leading-none hidden sm:block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  AI Exam Preparation System
-                </p>
+                <p className="text-[10px] text-slate-400 leading-none hidden sm:block">AI Exam Preparation System</p>
               </div>
             </button>
           </div>
 
           {/* Desktop Focused Navigation (Today, Learn, Practice, Progress, Library) */}
-          <nav className={`hidden lg:flex items-center gap-1 rounded-full p-1 border transition-colors ${
-            isDark 
-              ? 'bg-[#111c2e]/90 border-white/10' 
-              : 'bg-slate-100/90 border-slate-200'
-          }`}>
+          <nav className="hidden lg:flex items-center gap-1 rounded-full bg-[#111c2e]/90 p-1 border border-white/10">
             {/* Today (Home) */}
             <button
               onClick={() => handleNavClick('dashboard')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'dashboard'
-                  ? 'bg-[#0d9488] text-white dark:bg-[#54d6c7] dark:text-slate-950 shadow-sm'
-                  : isDark
-                  ? 'text-slate-300 hover:text-white hover:bg-white/5'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-[#54d6c7] text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
             >
               Today
@@ -155,12 +139,8 @@ export default function Navbar({
                     onClick={() => setOpenDropdown(isOpen ? null : grp.id)}
                     className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                       isActive
-                        ? isDark
-                          ? 'bg-[#17253a] text-[#54d6c7] border border-[#54d6c7]/30'
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-                        : isDark
-                        ? 'text-slate-300 hover:text-white hover:bg-white/5'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                        ? 'bg-[#17253a] text-[#54d6c7] border border-[#54d6c7]/30'
+                        : 'text-slate-300 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     <GrpIcon className="w-3.5 h-3.5" />
@@ -176,11 +156,7 @@ export default function Navbar({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className={`absolute top-full left-0 mt-1.5 w-60 rounded-2xl border p-2 shadow-2xl backdrop-blur-2xl z-50 space-y-1 ${
-                          isDark 
-                            ? 'border-white/10 bg-[#111c2e]' 
-                            : 'border-slate-200 bg-white shadow-slate-300/40'
-                        }`}
+                        className="absolute top-full left-0 mt-1.5 w-60 rounded-2xl border border-white/10 bg-[#111c2e] p-2 shadow-2xl backdrop-blur-2xl z-50 space-y-1"
                       >
                         {grp.items.map((item) => {
                           const ItemIcon = item.icon;
@@ -191,24 +167,16 @@ export default function Navbar({
                               onClick={() => handleNavClick(item.id)}
                               className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl text-left transition-all cursor-pointer ${
                                 isItemActive
-                                  ? isDark
-                                    ? 'bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/20'
-                                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                  : isDark
-                                  ? 'text-slate-300 hover:bg-white/5 hover:text-white'
-                                  : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                                  ? 'bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/20'
+                                  : 'text-slate-300 hover:bg-white/5 hover:text-white'
                               }`}
                             >
-                              <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
-                                isDark ? 'bg-white/5 text-[#54d6c7]' : 'bg-emerald-100 text-emerald-700'
-                              }`}>
-                                <ItemIcon className="w-4 h-4" />
+                              <div className="p-1.5 rounded-lg bg-white/5 shrink-0 mt-0.5">
+                                <ItemIcon className="w-4 h-4 text-[#54d6c7]" />
                               </div>
                               <div>
                                 <div className="text-xs font-bold">{item.label}</div>
-                                <div className={`text-[10px] line-clamp-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                                  {item.desc}
-                                </div>
+                                <div className="text-[10px] text-slate-400 line-clamp-1">{item.desc}</div>
                               </div>
                             </button>
                           );
@@ -225,10 +193,8 @@ export default function Navbar({
               onClick={() => handleNavClick('library')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'library'
-                  ? 'bg-[#0d9488] text-white dark:bg-[#54d6c7] dark:text-slate-950 shadow-sm'
-                  : isDark
-                  ? 'text-slate-300 hover:text-white hover:bg-white/5'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  ? 'bg-[#54d6c7] text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
@@ -243,13 +209,9 @@ export default function Navbar({
               <button
                 onClick={onOpenOnboarding}
                 title="Build or Edit Your Personalized Study Plan"
-                className={`hidden sm:flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  isDark
-                    ? 'border-[#54d6c7]/30 bg-[#54d6c7]/10 text-[#54d6c7] hover:bg-[#54d6c7]/20'
-                    : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                }`}
+                className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#54d6c7]/30 bg-[#54d6c7]/10 px-3.5 py-1.5 text-xs font-bold text-[#54d6c7] hover:bg-[#54d6c7]/20 transition-all cursor-pointer"
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="h-3.5 w-3.5 text-[#54d6c7]" />
                 <span>Build Study Plan</span>
               </button>
             )}
@@ -258,42 +220,11 @@ export default function Navbar({
             <button
               onClick={onOpenAISettings}
               title="Configure AI Engine Keys"
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                isDark
-                  ? 'border-white/10 bg-[#111c2e] text-slate-300 hover:bg-white/10'
-                  : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-[#111c2e] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10 transition-all cursor-pointer"
             >
-              <Cpu className={`h-3.5 w-3.5 ${isDark ? 'text-[#54d6c7]' : 'text-emerald-600'}`} />
+              <Cpu className="h-3.5 w-3.5 text-[#54d6c7]" />
               <span className="hidden md:inline">AI Config</span>
             </button>
-
-            {/* Modern Pill Theme Toggle Switch */}
-            {onToggleTheme && (
-              <button
-                type="button"
-                onClick={onToggleTheme}
-                aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                title={isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-                className={`relative flex items-center justify-between w-14 h-8 px-1.5 rounded-full border transition-all cursor-pointer shadow-inner focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none ${
-                  isDark
-                    ? 'border-white/10 bg-[#111c2e] hover:border-[#54d6c7]/40'
-                    : 'border-slate-300 bg-slate-100 hover:border-emerald-500'
-                }`}
-              >
-                <Sun className={`w-3.5 h-3.5 transition-colors z-10 ${isDark ? 'text-slate-500' : 'text-amber-500'}`} />
-                <Moon className={`w-3.5 h-3.5 transition-colors z-10 ${isDark ? 'text-[#54d6c7]' : 'text-slate-400'}`} />
-                <motion.div
-                  layout
-                  transition={{ type: "spring", stiffness: 600, damping: 35 }}
-                  className={`absolute top-1 w-5 h-5 rounded-full shadow-md ${
-                    isDark 
-                      ? 'right-1 bg-gradient-to-tr from-[#54d6c7] to-[#2dd4bf]' 
-                      : 'left-1 bg-white border border-slate-200'
-                  }`}
-                />
-              </button>
-            )}
 
             {/* User Profile / Auth */}
             {user ? (
@@ -312,7 +243,7 @@ export default function Navbar({
             ) : (
               <button
                 onClick={onOpenAuth}
-                className="flex items-center gap-1.5 rounded-full bg-[#54d6c7] hover:bg-[#43c4b5] text-slate-950 px-4 py-1.5 text-xs font-black shadow-md shadow-[#54d6c7]/20 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 rounded-full bg-[#54d6c7] hover:bg-[#43c4b5] px-4 py-1.5 text-xs font-black text-slate-950 shadow-md shadow-[#54d6c7]/20 transition-all cursor-pointer"
               >
                 <UserIcon className="h-3.5 w-3.5" />
                 <span>Login</span>
@@ -322,11 +253,7 @@ export default function Navbar({
             {/* Mobile Drawer Toggle */}
             <button
               onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-              className={`lg:hidden p-2 rounded-xl border transition-colors ${
-                isDark 
-                  ? 'border-white/10 bg-[#111c2e] text-slate-300 hover:text-white' 
-                  : 'border-slate-200 bg-slate-100 text-slate-700 hover:text-slate-900'
-              }`}
+              className="lg:hidden p-2 rounded-xl border border-white/10 bg-[#111c2e] text-slate-300 hover:text-white"
             >
               {isMobileDrawerOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
@@ -341,38 +268,12 @@ export default function Navbar({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className={`lg:hidden fixed top-14 left-0 right-0 z-40 border-b p-4 space-y-4 shadow-2xl backdrop-blur-2xl ${
-              isDark 
-                ? 'border-white/10 bg-[#0b1220]/98 text-white' 
-                : 'border-slate-200 bg-white/98 text-slate-900'
-            }`}
+            className="lg:hidden fixed top-14 left-0 right-0 z-40 border-b border-white/10 bg-[#0b1220] p-4 space-y-4 shadow-2xl backdrop-blur-2xl"
           >
-            {/* Mobile Theme Toggle Row */}
-            {onToggleTheme && (
-              <div className={`flex items-center justify-between p-3 rounded-2xl border ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-slate-50'
-              }`}>
-                <div className="flex items-center gap-2 text-xs font-bold">
-                  {isDark ? <Moon className="w-4 h-4 text-[#54d6c7]" /> : <Sun className="w-4 h-4 text-amber-500" />}
-                  <span>{isDark ? 'Dark Theme Active' : 'Light Theme Active'}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={onToggleTheme}
-                  aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                  className="px-3 py-1 rounded-xl text-xs font-bold bg-[#54d6c7] text-slate-950 shadow-sm"
-                >
-                  Switch to {isDark ? 'Light' : 'Dark'}
-                </button>
-              </div>
-            )}
-
             <div className="space-y-3">
               {navGroups.map((grp) => (
                 <div key={grp.id} className="space-y-1.5">
-                  <div className={`text-[11px] font-bold uppercase tracking-wider px-2 ${
-                    isDark ? 'text-slate-400' : 'text-slate-500'
-                  }`}>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2">
                     {grp.label}
                   </div>
                   <div className="grid grid-cols-1 gap-1">
@@ -385,15 +286,11 @@ export default function Navbar({
                           onClick={() => handleNavClick(item.id)}
                           className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all text-left ${
                             isActive
-                              ? isDark
-                                ? 'bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/30'
-                                : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                              : isDark
-                              ? 'text-slate-300 hover:bg-white/5'
-                              : 'text-slate-700 hover:bg-slate-100'
+                              ? 'bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/30'
+                              : 'text-slate-300 hover:bg-white/5'
                           }`}
                         >
-                          <Icon className={`w-4 h-4 ${isDark ? 'text-[#54d6c7]' : 'text-emerald-600'}`} />
+                          <Icon className="w-4 h-4 text-[#54d6c7]" />
                           <span>{item.label}</span>
                         </button>
                       );
@@ -407,11 +304,7 @@ export default function Navbar({
       </AnimatePresence>
 
       {/* Mobile Bottom Navigation Bar (Today, Learn, Practice, Progress, Library) */}
-      <div className={`lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t backdrop-blur-xl px-2 py-2 flex items-center justify-around shadow-2xl transition-colors ${
-        isDark 
-          ? 'border-white/10 bg-[#0b1220]/95 text-white' 
-          : 'border-slate-200 bg-white/95 text-slate-900 shadow-slate-300/30'
-      }`}>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0b1220]/95 backdrop-blur-xl px-2 py-2 flex items-center justify-around shadow-2xl">
         {[
           { id: 'dashboard', label: 'Today', icon: GraduationCap },
           { id: 'nexa', label: 'Learn', icon: Bot },
@@ -427,12 +320,8 @@ export default function Navbar({
               onClick={() => handleNavClick(tab.id)}
               className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
                 isActive
-                  ? isDark
-                    ? 'text-[#54d6c7] font-bold'
-                    : 'text-[#0d9488] font-bold'
-                  : isDark
-                  ? 'text-slate-400 hover:text-slate-200'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-[#54d6c7] font-bold'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Icon className="h-4 w-4" />
