@@ -32,7 +32,15 @@ export default function AISettingsModal({ isOpen, onClose }: AISettingsModalProp
     } catch {}
   };
 
-  if (!isOpen) return null;
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const handleSaveAndVerify = async () => {
     if (!apiKey.trim()) {
@@ -75,12 +83,21 @@ export default function AISettingsModal({ isOpen, onClose }: AISettingsModalProp
     }
   };
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl text-slate-100">
+      <div 
+        role="dialog"
+        aria-modal="true"
+        aria-label="Google Gemini AI Engine Configuration"
+        className="relative w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/95 p-6 shadow-2xl text-slate-100"
+      >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-slate-400 hover:text-white"
+          aria-label="Close AI engine settings"
+          title="Close AI engine settings"
+          className="absolute right-4 top-4 rounded-lg p-2 text-slate-400 hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none transition-colors cursor-pointer"
         >
           <X className="h-5 w-5" />
         </button>

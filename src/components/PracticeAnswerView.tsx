@@ -268,20 +268,20 @@ Database Normalization is the systematic technique of organizing relational tabl
               <button
                 type="button"
                 onClick={() => setSelectedMarks(5)}
-                className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all ${
-                  selectedMarks === 5 ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400'
+                className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  selectedMarks === 5 ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                5M
+                5 Marks
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedMarks(10)}
-                className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all ${
-                  selectedMarks === 10 ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400'
+                className={`flex-1 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  selectedMarks === 10 ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                10M
+                10 Marks
               </button>
             </div>
           </div>

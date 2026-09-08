@@ -42,6 +42,16 @@ export default function EmergencyModeModal({
   const [loading, setLoading] = useState(false);
   const [plan, setPlan] = useState<SurvivalPlan | null>(null);
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleGenerateSurvivalPlan = async () => {
@@ -72,7 +82,12 @@ export default function EmergencyModeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fadeIn">
-      <div className="bg-slate-900 border border-rose-500/50 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative text-white">
+      <div 
+        role="dialog"
+        aria-modal="true"
+        aria-label="24-Hour Emergency Mode Survival Sprint"
+        className="bg-slate-900 border border-rose-500/50 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative text-white"
+      >
         
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-rose-700 via-red-600 to-orange-700 p-6 flex items-center justify-between relative overflow-hidden">
@@ -96,7 +111,9 @@ export default function EmergencyModeModal({
 
           <button
             onClick={onClose}
-            className="p-2 text-white/80 hover:text-white bg-black/20 hover:bg-black/40 rounded-xl transition-all z-10 cursor-pointer"
+            aria-label="Close emergency mode"
+            title="Close emergency mode"
+            className="p-2 text-white/80 hover:text-white bg-black/20 hover:bg-black/40 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none rounded-xl transition-all z-10 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

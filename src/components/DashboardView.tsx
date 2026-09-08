@@ -121,7 +121,7 @@ export default function DashboardView({
               <button
                 onClick={() => {
                   if (onOpenOnboarding) onOpenOnboarding();
-                  else setActiveTab('library');
+                  else setActiveTab('dochub');
                 }}
                 className="flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#54d6c7] to-[#2dd4bf] hover:opacity-95 text-slate-950 font-black px-7 py-3.5 text-xs sm:text-sm shadow-xl shadow-[#54d6c7]/25 hover:scale-[1.02] transition-all cursor-pointer"
               >
@@ -130,7 +130,7 @@ export default function DashboardView({
               </button>
 
               <button
-                onClick={() => setActiveTab('library')}
+                onClick={() => setActiveTab('dochub')}
                 className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-bold px-6 py-3.5 text-xs sm:text-sm transition-all cursor-pointer"
               >
                 <UploadCloud className="h-4 w-4 text-[#54d6c7]" />
@@ -147,7 +147,7 @@ export default function DashboardView({
                   value={quickPrompt}
                   onChange={(e) => setQuickPrompt(e.target.value)}
                   placeholder="Ask Nexa AI any formula, concept, or theorem..."
-                  className="w-full bg-transparent text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                  className="w-full bg-transparent text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none"
                 />
                 <button
                   type="submit"
@@ -172,14 +172,23 @@ export default function DashboardView({
         <div className="lg:col-span-7 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
-                <Clock className="h-4 w-4 text-[#54d6c7]" />
-                <span>Today’s Study Plan</span>
-              </h2>
-              <p className="text-[11px] text-slate-400">Complete 3 tasks in 45 minutes to maintain your streak</p>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-[#54d6c7]" />
+                  <span>Today’s Study Plan</span>
+                </h2>
+                {!user && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    Demo Schedule
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Complete 3 study tasks (35 mins) + 1 review break (10 mins) = 45 mins total
+              </p>
             </div>
-            <span className="rounded-full bg-[#54d6c7]/15 px-3 py-0.5 text-xs font-bold text-[#54d6c7]">
-              45 Mins Total
+            <span className="rounded-full bg-[#54d6c7]/15 px-3 py-1 text-xs font-bold text-[#54d6c7] border border-[#54d6c7]/30">
+              35m Tasks + 10m Break = 45m Total
             </span>
           </div>
 
@@ -188,12 +197,12 @@ export default function DashboardView({
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#54d6c7]/15 text-[#54d6c7] border border-[#54d6c7]/30">
-                  Task 1 of 3 · High-Yield 10M
+                  Task 1 of 3 · High-Yield (10 Marks)
                 </span>
                 <h3 className="text-lg sm:text-xl font-extrabold text-white">
                   Master Banker’s Algorithm Safety Check
                 </h3>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-slate-200">
                   Operating Systems · Unit 2 Deadlocks · 15 minutes
                 </p>
               </div>
@@ -216,45 +225,61 @@ export default function DashboardView({
 
               <button
                 onClick={() => setActiveTab('exam_center')}
-                className="text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                className="text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
               >
                 View Syllabus Blueprint →
               </button>
             </div>
           </div>
 
-          {/* Secondary Tasks (Task 2 & Task 3) */}
+          {/* Task 2, Break, and Task 3 Sequence */}
           <div className="space-y-2.5">
+            {/* Task 2 */}
             <div
               onClick={() => setActiveTab('flashcards')}
-              className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-[#111c2e] hover:bg-[#17253a] hover:border-[#54d6c7]/30 transition-all cursor-pointer"
+              className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-[#111c2e] hover:bg-[#17253a] hover:border-[#8b5cf6]/40 transition-all cursor-pointer"
             >
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-white">Task 2: Review 12 Due Flashcards (Active Recall)</span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-[#8b5cf6]/20 text-[#8b5cf6] font-bold">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#8b5cf6]/20 text-[#8b5cf6] font-bold">
                     Spaced Repetition
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">Computer Networks · 10 minutes</p>
+                <p className="text-[11px] text-slate-300">Computer Networks · 10 minutes</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-slate-500" />
+              <ChevronRight className="h-4 w-4 text-slate-400" />
             </div>
 
+            {/* Explicit 10-Minute Break / Consolidation Interval */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl border border-dashed border-cyan-500/30 bg-cyan-500/5 px-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[#54d6c7]/15 text-[#54d6c7]">
+                  <Clock className="h-3.5 w-3.5" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-200">Scheduled Spaced Review Break</span>
+                  <p className="text-[10px] text-slate-400">10-minute memory consolidation before drilling 5-mark questions</p>
+                </div>
+              </div>
+              <span className="text-[11px] font-mono font-bold text-[#54d6c7]">10 min break</span>
+            </div>
+
+            {/* Task 3 */}
             <div
               onClick={() => setActiveTab('practice')}
-              className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-[#111c2e] hover:bg-[#17253a] hover:border-[#54d6c7]/30 transition-all cursor-pointer"
+              className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-[#111c2e] hover:bg-[#17253a] hover:border-[#70d6a8]/40 transition-all cursor-pointer"
             >
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-white">Task 3: Practice Question: Gantt Chart Scheduling</span>
-                  <span className="text-[10px] px-2 py-0.2 rounded bg-[#70d6a8]/20 text-[#70d6a8] font-bold">
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-[#70d6a8]/20 text-[#70d6a8] font-bold">
                     5-Mark Drill
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400">Operating Systems · 10 minutes</p>
+                <p className="text-[11px] text-slate-300">Operating Systems · 10 minutes</p>
               </div>
-              <ChevronRight className="h-4 w-4 text-slate-500" />
+              <ChevronRight className="h-4 w-4 text-slate-400" />
             </div>
           </div>
         </div>
@@ -265,11 +290,18 @@ export default function DashboardView({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-[#54d6c7]" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   Exam Readiness Breakdown
                 </h3>
               </div>
-              <span className="text-sm font-black text-[#54d6c7]">78% Overall</span>
+              <div className="flex items-center gap-2">
+                {!user && (
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    Demo Baseline
+                  </span>
+                )}
+                <span className="text-sm font-black text-[#54d6c7]">78% Overall</span>
+              </div>
             </div>
 
             {/* Readiness by Subject */}
@@ -282,7 +314,7 @@ export default function DashboardView({
               ].map((s) => (
                 <div key={s.sub} className="space-y-1">
                   <div className="flex justify-between font-semibold">
-                    <span className="text-slate-300">{s.sub}</span>
+                    <span className="text-slate-200">{s.sub}</span>
                     <span className="text-white font-bold">{s.score}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
@@ -293,47 +325,51 @@ export default function DashboardView({
             </div>
 
             {/* Diagnostic Alert Box */}
-            <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-3.5 text-xs text-slate-300 space-y-1">
+            <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-3.5 text-xs text-slate-200 space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="text-[#f47c7c]">⚠️ Weakest Unit: Unit 2 Deadlocks</span>
                 <span className="text-[#f6c85f]">{studentPlan.daysRemaining} Days to Exam</span>
               </div>
-              <p className="text-[11px] leading-relaxed text-slate-400">
+              <p className="text-[11px] leading-relaxed text-slate-300">
                 You are likely ready for short-answer questions, but need more practice with long-answer questions and Operating Systems.
               </p>
+              <div className="pt-1 text-[10px] text-slate-400 border-t border-white/5 flex items-center justify-between">
+                <span>Calculated: Quizzes (40%) + Mocks (35%) + Recall (25%)</span>
+                <span>Status: Calibrated Today</span>
+              </div>
             </div>
           </div>
 
           {/* Quick Actions Panel (Section 5) */}
           <div className="rounded-3xl border border-white/10 bg-[#111c2e] p-5 shadow-xl space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
               Quick Actions
             </h3>
             <div className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => setActiveTab('library')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left"
+                onClick={() => setActiveTab('dochub')}
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
                 <UploadCloud className="h-4 w-4 text-[#54d6c7]" />
                 <span>Upload Material</span>
               </button>
               <button
                 onClick={() => setActiveTab('library')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
                 <BookOpen className="h-4 w-4 text-[#6ea8fe]" />
                 <span>Generate Notes</span>
               </button>
               <button
                 onClick={() => setActiveTab('mock_exams')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
                 <Award className="h-4 w-4 text-[#f6c85f]" />
                 <span>Start Mock Test</span>
               </button>
               <button
                 onClick={() => setActiveTab('nexa')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 transition-all cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none"
               >
                 <Bot className="h-4 w-4 text-[#70d6a8]" />
                 <span>Ask Nexa AI</span>

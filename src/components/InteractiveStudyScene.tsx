@@ -288,13 +288,13 @@ export default function InteractiveStudyScene({ className = "" }: InteractiveStu
           sheet3.position.y = -1.0 + Math.sin(elapsed * 1.6 + 3) * 0.08;
 
           particles.rotation.y = elapsed * 0.03;
+
+          mouseX += (targetX - mouseX) * 0.05;
+          mouseY += (targetY - mouseY) * 0.05;
+
+          studyGroup.rotation.y = mouseX;
+          studyGroup.rotation.x = -mouseY * 0.5;
         }
-
-        mouseX += (targetX - mouseX) * 0.05;
-        mouseY += (targetY - mouseY) * 0.05;
-
-        studyGroup.rotation.y = mouseX;
-        studyGroup.rotation.x = -mouseY * 0.5;
 
         if (renderer) {
           renderer.render(scene, camera);
@@ -334,8 +334,9 @@ export default function InteractiveStudyScene({ className = "" }: InteractiveStu
           <div className="absolute bottom-3 right-3 z-20">
             <button
               onClick={() => setIsPaused(!isPaused)}
+              aria-label={isPaused ? "Play 3D study animation" : "Pause 3D study animation"}
               title={isPaused ? "Resume 3D Rotation" : "Pause 3D Rotation"}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-[#111c2e]/90 text-xs font-bold text-slate-300 hover:text-white hover:border-[#54d6c7] backdrop-blur-md shadow-lg transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/10 bg-[#111c2e]/90 text-xs font-bold text-slate-300 hover:text-white hover:border-[#54d6c7] focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none backdrop-blur-md shadow-lg transition-all cursor-pointer"
             >
               {isPaused ? <Play className="w-3.5 h-3.5 text-[#54d6c7]" /> : <Pause className="w-3.5 h-3.5 text-[#54d6c7]" />}
               <span className="text-[11px]">{isPaused ? "Play 3D" : "Pause 3D"}</span>

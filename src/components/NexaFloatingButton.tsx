@@ -32,6 +32,16 @@ export default function NexaFloatingButton({
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) setIsOpen(false);
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
@@ -79,18 +89,20 @@ export default function NexaFloatingButton({
 
   return (
     <>
-      {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating Action Button - Positioned safely above mobile bottom bar */}
+      <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50">
         <AnimatePresence>
           {!isOpen && (
             <motion.button
+              aria-label="Ask Nexa AI exam coach"
+              title="Ask Nexa AI exam coach"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsOpen(true)}
-              className="relative flex items-center gap-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-3.5 sm:px-4 sm:py-3 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 cursor-pointer border border-white/20 backdrop-blur-md"
+              className="relative flex items-center gap-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 p-3.5 sm:px-4 sm:py-3 text-white shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:outline-none cursor-pointer border border-white/20 backdrop-blur-md"
             >
               <div className="relative">
                 <Bot className="h-5 w-5" />
@@ -111,6 +123,9 @@ export default function NexaFloatingButton({
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Nexa AI Exam Coach Assistant"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -118,7 +133,7 @@ export default function NexaFloatingButton({
             className={`fixed z-50 flex flex-col rounded-3xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl shadow-2xl ${
               isExpanded
                 ? 'inset-4 sm:inset-10'
-                : 'bottom-6 right-4 sm:right-6 w-[calc(100vw-32px)] sm:w-[420px] h-[580px] max-h-[85vh]'
+                : 'bottom-20 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-32px)] sm:w-[420px] h-[580px] max-h-[80vh]'
             }`}
           >
             {/* Header */}
@@ -143,13 +158,17 @@ export default function NexaFloatingButton({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  aria-label={isExpanded ? "Minimize chat drawer" : "Maximize chat drawer"}
+                  title={isExpanded ? "Minimize" : "Maximize"}
+                  className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none transition-colors cursor-pointer"
                 >
                   {isExpanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  aria-label="Close Nexa AI assistant"
+                  title="Close Nexa AI assistant"
+                  className="rounded-lg p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:outline-none transition-colors cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>

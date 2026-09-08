@@ -471,13 +471,22 @@ export default function ExamCenterView({
             {filteredSubjects.map((sub, idx) => {
               const Icon = sub.icon;
               return (
-                <motion.div
+                <motion.button
                   key={sub.id}
+                  type="button"
+                  tabIndex={0}
+                  aria-label={`Explore 5-unit syllabus blueprint for ${sub.name}`}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
                   onClick={() => setSelectedSubjectId(sub.id)}
-                  className={`group relative rounded-2xl border ${sub.border} bg-gradient-to-b ${sub.color} dark:bg-slate-900/70 p-5 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedSubjectId(sub.id);
+                    }
+                  }}
+                  className={`group relative text-left w-full rounded-2xl border ${sub.border} bg-gradient-to-b ${sub.color} dark:bg-slate-900/70 p-5 backdrop-blur-xl shadow-sm hover:shadow-lg transition-all cursor-pointer hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-white/10 shadow-sm">
@@ -501,7 +510,7 @@ export default function ExamCenterView({
                     <span>Explore Blueprint</span>
                     <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
-                </motion.div>
+                </motion.button>
               );
             })}
           </div>

@@ -48,6 +48,16 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
   const [dailyHours, setDailyHours] = useState("2.5");
   const [generating, setGenerating] = useState(false);
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const toggleSubject = (sub: string) => {
@@ -91,6 +101,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Build Study Plan and Exam Target"
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -99,7 +112,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-1 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          aria-label="Close study plan"
+          title="Close study plan"
+          className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
