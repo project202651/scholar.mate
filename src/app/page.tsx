@@ -1,85 +1,48 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
-import AuthModal from '@/components/AuthModal';
-import AISettingsModal from '@/components/AISettingsModal';
-import EmergencyModeModal from '@/components/EmergencyModeModal';
-import OnboardingModal from '@/components/OnboardingModal';
-import ThreeBackground from '@/components/ThreeBackground';
-import NexaFloatingButton from '@/components/NexaFloatingButton';
-import StartingAnimation from '@/components/StartingAnimation';
-
-// 9 Core Blueprint Views
-import DashboardView from '@/components/DashboardView';
-import ExamCenterView from '@/components/ExamCenterView';
-import NexaCoachView from '@/components/NexaCoachView';
-import DocHubView from '@/components/DocHubView';
-import StudyLibraryView from '@/components/StudyLibraryView';
-import PracticeAnswerView from '@/components/PracticeAnswerView';
-import MockExamSimulatorView from '@/components/MockExamSimulatorView';
-import FlashcardsView from '@/components/FlashcardsView';
-import ProgressAndWeaknessView from '@/components/ProgressAndWeaknessView';
-import StudyTimerView from '@/components/StudyTimerView';
-
-import { GraduationCap, Play, ShieldCheck, FileText, Lock, X } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  GraduationCap,
+  Sparkles,
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  Layers,
+  FileCheck2,
+  Zap,
+  Bot,
+  Flame,
+  ShieldCheck,
+  TrendingUp,
+  FileText,
+  Play,
+  Check,
+  ChevronRight,
+  Star,
+  Users,
+  Target,
+  Sun,
+  Moon
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ThreeBackground from '@/components/ThreeBackground';
+import InteractiveStudyScene from '@/components/InteractiveStudyScene';
 
-export default function Home() {
-  const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
-  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
-  const [infoModalTab, setInfoModalTab] = useState<'privacy' | 'terms' | 'data' | 'support'>('privacy');
-  const [showStartingAnimation, setShowStartingAnimation] = useState(false);
+export default function LandingPage() {
+  const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-
-  // Shared active focus context for inter-view transitions
-  const [selectedTopic, setSelectedTopic] = useState<string>('');
-  const [selectedSubject, setSelectedSubject] = useState<string>('');
-  const [selectedDocId, setSelectedDocId] = useState<string>('');
-  const [selectedDocTitle, setSelectedDocTitle] = useState<string>('');
-
-  const handleDocumentSelect = (docId: string, title?: string, subject?: string) => {
-    setSelectedDocId(docId);
-    if (title) {
-      setSelectedDocTitle(title);
-      setSelectedTopic(title);
-    }
-    if (subject) setSelectedSubject(subject);
-  };
+  const [activeDemoTab, setActiveDemoTab] = useState<'answer' | 'plan' | 'rubric'>('answer');
 
   useEffect(() => {
     try {
-      const hasSeen = localStorage.getItem('has_seen_intro');
-      if (!hasSeen) {
-        setShowStartingAnimation(true);
-      }
       const savedTheme = localStorage.getItem('scholarmate_theme') as 'dark' | 'light' | null;
       if (savedTheme) {
         setTheme(savedTheme);
       }
     } catch (e) {}
-
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user) {
-            setUser(data.user);
-            const hasPlan = localStorage.getItem('scholarmate_student_plan');
-            if (!hasPlan) setIsOnboardingOpen(true);
-          }
-        }
-      } catch (e) {
-        console.error('Auth check failed:', e);
-      }
-    };
-    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -103,21 +66,6 @@ export default function Home() {
     } catch (e) {}
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setUser(null);
-      setActiveTab('dashboard');
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleTopicSelect = (topic: string, subject?: string) => {
-    setSelectedTopic(topic);
-    if (subject) setSelectedSubject(subject);
-  };
-
   return (
     <div className={`relative min-h-screen font-sans antialiased selection:bg-[#54d6c7] selection:text-slate-950 ${
       theme === 'dark' ? 'bg-[#0b1220] text-[#f5f7fb]' : 'bg-[#f8fafc] text-[#0f172a]'
@@ -125,380 +73,471 @@ export default function Home() {
       {/* 3D WebGL Particle Field */}
       <ThreeBackground theme={theme} />
 
-      {/* Starting Splash Animation */}
-      <AnimatePresence>
-        {showStartingAnimation && (
-          <StartingAnimation onComplete={() => setShowStartingAnimation(false)} />
-        )}
-      </AnimatePresence>
+      {/* Marketing Header Navbar */}
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0b1220]/80 backdrop-blur-xl px-6 py-4">
+        <div className="mx-auto max-w-7xl flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#54d6c7] to-[#8b5cf6] text-slate-950 shadow-lg shadow-[#54d6c7]/20">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg font-black tracking-tight text-white">ScholarMate</span>
+                <span className="rounded-full bg-[#54d6c7]/15 px-2 py-0.5 text-[10px] font-bold text-[#54d6c7] border border-[#54d6c7]/30">
+                  AI
+                </span>
+              </div>
+              <span className="block text-[10px] text-slate-400 font-medium">Smart Exam Preparation Platform</span>
+            </div>
+          </Link>
 
-      {/* Navigation Header */}
-      <Navbar
-        user={user}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        onLogout={handleLogout}
-        onOpenAISettings={() => setIsAISettingsOpen(true)}
-        onOpenOnboarding={() => setIsOnboardingOpen(true)}
-        onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+          {/* Nav Links */}
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
+            <a href="#how-it-works" className="hover:text-[#54d6c7] transition-colors">How It Works</a>
+            <a href="#features" className="hover:text-[#54d6c7] transition-colors">Features</a>
+            <a href="#example-dashboard" className="hover:text-[#54d6c7] transition-colors">Example Dashboard</a>
+            <a href="#about" className="hover:text-[#54d6c7] transition-colors">College Project</a>
+          </nav>
 
-      {/* Main Content Workspace */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 relative z-10">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'dashboard' && (
-              <DashboardView
-                user={user}
-                setActiveTab={setActiveTab}
-                onOpenAuth={() => setIsAuthOpen(true)}
-                onOpenEmergencyModal={() => setIsEmergencyModalOpen(true)}
-                onOpenOnboarding={() => setIsOnboardingOpen(true)}
-                onSelectTopic={handleTopicSelect}
-                theme={theme}
-              />
-            )}
-
-            {activeTab === 'exam_center' && (
-              <ExamCenterView
-                onSelectTopicAction={(topic, action) => {
-                  setSelectedTopic(topic);
-                  if (action === 'study') setActiveTab('nexa');
-                  else if (action === 'practice') setActiveTab('practice');
-                  else if (action === 'test') setActiveTab('mock_exams');
-                  else if (action === 'review') setActiveTab('flashcards');
-                }}
-              />
-            )}
-
-            {activeTab === 'nexa' && (
-              <NexaCoachView
-                initialTopic={selectedTopic}
-                initialSubject={selectedSubject}
-                initialDocumentId={selectedDocId}
-                onNavigateToPractice={(topic) => {
-                  setSelectedTopic(topic);
-                  setActiveTab('practice');
-                }}
-                onNavigateToMock={() => setActiveTab('mock_exams')}
-              />
-            )}
-
-            {activeTab === 'dochub' && (
-              <DocHubView
-                setActiveTab={setActiveTab}
-                onSelectDocument={handleDocumentSelect}
-                onNavigateToNotes={() => setActiveTab('library')}
-                onNavigateToFlashcards={(docId) => {
-                  setSelectedDocId(docId);
-                  setActiveTab('flashcards');
-                }}
-                onNavigateToMock={(docId) => {
-                  setSelectedDocId(docId);
-                  setActiveTab('mock_exams');
-                }}
-              />
-            )}
-
-            {activeTab === 'library' && (
-              <StudyLibraryView
-                initialSubject={selectedSubject}
-                initialTopic={selectedTopic}
-                initialDocId={selectedDocId}
-                onSelectDocument={handleDocumentSelect}
-                setActiveMainTab={setActiveTab}
-              />
-            )}
-
-            {activeTab === 'practice' && (
-              <PracticeAnswerView
-                initialTopic={selectedTopic}
-                initialSubject={selectedSubject}
-                initialDocumentId={selectedDocId}
-              />
-            )}
-
-            {activeTab === 'mock_exams' && (
-              <MockExamSimulatorView
-                initialDocumentId={selectedDocId}
-                initialSubject={selectedSubject}
-                onNavigateToNexa={(topic) => {
-                  setSelectedTopic(topic);
-                  setActiveTab('nexa');
-                }}
-                onNavigateToPractice={(topic) => {
-                  setSelectedTopic(topic);
-                  setActiveTab('practice');
-                }}
-              />
-            )}
-
-            {activeTab === 'flashcards' && (
-              <FlashcardsView
-                initialDocumentId={selectedDocId}
-                initialSubject={selectedSubject}
-                initialTopic={selectedTopic}
-              />
-            )}
-
-            {activeTab === 'progress' && (
-              <ProgressAndWeaknessView
-                onNavigateToNexa={(topic) => {
-                  setSelectedTopic(topic);
-                  setActiveTab('nexa');
-                }}
-                onNavigateToPractice={(topic) => {
-                  setSelectedTopic(topic);
-                  setActiveTab('practice');
-                }}
-                onNavigateToFocus={(topic) => {
-                  setSelectedTopic(topic);
-                  setActiveTab('focus');
-                }}
-              />
-            )}
-
-            {activeTab === 'focus' && (
-              <StudyTimerView
-                initialTopic={selectedTopic}
-                onNavigateToPractice={(topic) => {
-                  setSelectedTopic(topic);
-                  setActiveTab('practice');
-                }}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </main>
-
-      {/* Persistent Floating Nexa AI Assistant (hidden when on full Nexa Coach view) */}
-      {activeTab !== 'nexa' && (
-        <NexaFloatingButton
-          activeTopic={selectedTopic}
-          activeSubject={selectedSubject}
-          activeDocId={selectedDocId}
-          activeDocTitle={selectedDocTitle}
-          onNavigateToTab={(tab) => setActiveTab(tab)}
-        />
-      )}
-
-      {/* Modals */}
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onSuccess={(newUser) => {
-          setUser(newUser);
-          setIsOnboardingOpen(true);
-        }}
-      />
-
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-        onComplete={(plan) => {
-          setIsOnboardingOpen(false);
-        }}
-      />
-
-      <AISettingsModal
-        isOpen={isAISettingsOpen}
-        onClose={() => setIsAISettingsOpen(false)}
-      />
-
-      <EmergencyModeModal
-        isOpen={isEmergencyModalOpen}
-        onClose={() => setIsEmergencyModalOpen(false)}
-        onStartEmergencySprint={(topic) => {
-          setSelectedTopic(topic);
-          setActiveTab('focus');
-        }}
-      />
-
-      {/* Institutional Privacy & Compliance Modal */}
-      {isInfoModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-          <div 
-            role="dialog"
-            aria-modal="true"
-            aria-label="Institutional Trust and Policy Center"
-            className="relative w-full max-w-2xl rounded-3xl border border-white/10 bg-[#0f172a] text-slate-100 shadow-2xl p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto"
-          >
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsInfoModalOpen(false)}
-              aria-label="Close institutional policy modal"
-              title="Close institutional policy modal"
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[#54d6c7] focus-visible:outline-none transition-colors cursor-pointer"
+              onClick={toggleTheme}
+              aria-label="Toggle Theme"
+              className="p-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              {theme === 'dark' ? <Sun className="h-4 w-4 text-[#54d6c7]" /> : <Moon className="h-4 w-4 text-slate-700" />}
             </button>
 
-            {/* Modal Navigation Tabs */}
-            <div className="flex items-center gap-2 border-b border-white/10 pb-3 overflow-x-auto">
-              {[
-                { id: 'privacy', label: 'Privacy Policy', icon: ShieldCheck },
-                { id: 'terms', label: 'Terms of Use', icon: FileText },
-                { id: 'data', label: 'Data Handling', icon: Lock },
-                { id: 'support', label: 'College Attribution', icon: GraduationCap },
-              ].map((t) => {
-                const Icon = t.icon;
-                const isActive = infoModalTab === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => setInfoModalTab(t.id as any)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                      isActive
-                        ? 'bg-[#54d6c7] text-slate-950 shadow-sm'
-                        : 'text-slate-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{t.label}</span>
-                  </button>
-                );
-              })}
+            <Link
+              href="/login"
+              className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold px-4 py-2 text-xs transition-all"
+            >
+              Sign In
+            </Link>
+
+            <Link
+              href="/signup"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#54d6c7] to-[#2dd4bf] hover:opacity-95 text-slate-950 font-black px-4 sm:px-5 py-2 text-xs shadow-lg shadow-[#54d6c7]/20 transition-all"
+            >
+              <span>Create My Study Plan</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* 1. HERO SECTION */}
+      <section className="relative z-10 mx-auto max-w-7xl px-4 pt-12 pb-20 sm:px-6 lg:pt-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          {/* Left Column: Messaging & Dominant CTA */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#54d6c7]/30 bg-[#54d6c7]/10 px-3.5 py-1 text-xs font-bold text-[#54d6c7]">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+              <span>AI-Powered Exam Success System</span>
             </div>
 
-            {/* Tab Contents */}
-            <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
-              {infoModalTab === 'privacy' && (
-                <div className="space-y-3">
-                  <h3 className="text-base font-extrabold text-white">Student Data Privacy Policy</h3>
-                  <p>ScholarMate is built on strict academic privacy principles. We process uploaded PDFs, notes, and study prompts solely to generate personalized study plans, 10-mark model answers, and flashcard queues.</p>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-300">
-                    <li><strong>No Data Reselling:</strong> We never sell, monetize, or transfer your academic materials to third parties.</li>
-                    <li><strong>Ephemeral Inference:</strong> Text submitted for AI analysis is sent securely to Google Gemini APIs and is not retained to train public models.</li>
-                    <li><strong>Account Isolation:</strong> Uploaded materials are linked strictly to your authenticated student account and never leaked to peers.</li>
-                  </ul>
-                </div>
-              )}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
+              Turn your syllabus into a{' '}
+              <span className="bg-gradient-to-r from-[#54d6c7] via-[#70d6a8] to-[#8b5cf6] bg-clip-text text-transparent">
+                study plan that gets you exam-ready.
+              </span>
+            </h1>
 
-              {infoModalTab === 'terms' && (
-                <div className="space-y-3">
-                  <h3 className="text-base font-extrabold text-white">Academic Terms of Use</h3>
-                  <p>ScholarMate is an academic study companion created to help engineering and diploma students master their syllabus curricula and revise efficiently.</p>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-300">
-                    <li><strong>Revision Aid:</strong> Model answers, marking rubrics, and diagnostic readiness indexes are assistive educational tools.</li>
-                    <li><strong>Institutional Integrity:</strong> Students are encouraged to use ScholarMate for conceptual mastery and ethical examination preparation.</li>
-                  </ul>
-                </div>
-              )}
+            <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
+              Upload your notes and past papers. ScholarMate teaches difficult topics, creates exam-ready answers, and tracks your preparation automatically.
+            </p>
 
-              {infoModalTab === 'data' && (
-                <div className="space-y-3">
-                  <h3 className="text-base font-extrabold text-white">Document Retention & Security</h3>
-                  <p>How ScholarMate manages documents and AI credentials:</p>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-300">
-                    <li><strong>Private Session Storage:</strong> Document indexes and user metrics are stored securely in your private SQLite database.</li>
-                    <li><strong>Client-Side AI Keys:</strong> Custom Gemini API keys entered in AI Config are saved in your local browser storage (`localStorage`).</li>
-                    <li><strong>Instant Deletion:</strong> You can delete any uploaded PDF or note at any time from the Textbook & Doc Hub.</li>
-                  </ul>
-                </div>
-              )}
-
-              {infoModalTab === 'support' && (
-                <div className="space-y-3">
-                  <h3 className="text-base font-extrabold text-white">AANM & VVRSR Polytechnic College</h3>
-                  <p><strong>Department of Computer Engineering (2026–2027)</strong></p>
-                  <p>ScholarMate is the Final Year Major Capstone Project created by:</p>
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    {["Vastav", "Vishnu", "Nikhileswar", "Sathvik"].map((dev) => (
-                      <div key={dev} className="p-2.5 rounded-xl border border-white/10 bg-white/5 font-semibold text-white text-xs">
-                        🚀 {dev} · Core Architect
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-white/10">
-              <button
-                onClick={() => setIsInfoModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-all cursor-pointer"
+            {/* Dominant Primary CTA + Clean Secondary Action */}
+            <div className="flex flex-wrap items-center gap-4 pt-2">
+              <Link
+                href="/signup"
+                className="flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#54d6c7] to-[#2dd4bf] hover:opacity-95 text-slate-950 font-black px-8 py-4 text-xs sm:text-sm shadow-xl shadow-[#54d6c7]/25 hover:scale-[1.02] transition-all cursor-pointer"
               >
-                Close Window
-              </button>
+                <Sparkles className="h-4 w-4" />
+                <span>Create My Study Plan</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <Link
+                href="/app?demo=true"
+                className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-bold px-7 py-4 text-xs sm:text-sm transition-all cursor-pointer"
+              >
+                <Play className="h-4 w-4 text-[#54d6c7]" />
+                <span>Try a Demo</span>
+              </Link>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center gap-6 pt-4 text-xs text-slate-400">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-[#54d6c7]" />
+                <span>3-Mark, 7-Mark &amp; 10-Mark Rubrics</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-[#70d6a8]" />
+                <span>Active Recall Spaced Repetition</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-[#8b5cf6]" />
+                <span>Instant Diagnostic Scoring</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: 3D Interactive Study Scene */}
+          <div className="lg:col-span-5 flex items-center justify-center">
+            <InteractiveStudyScene />
+          </div>
+        </div>
+      </section>
+
+      {/* 2. HOW IT WORKS (3-Step Roadmap) */}
+      <section id="how-it-works" className="relative z-10 border-y border-white/5 bg-[#0b1220]/60 py-20 px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-wider text-[#54d6c7]">Simple 3-Step Process</span>
+            <h2 className="text-2xl sm:text-4xl font-black text-white">
+              From Raw Syllabus to Top Exam Marks in 3 Steps
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Stop guessing what to study. ScholarMate structures your revision timeline automatically.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#54d6c7]/15 text-[#54d6c7] font-black text-lg">
+                1
+              </div>
+              <h3 className="text-lg font-bold text-white">Upload Your Syllabus &amp; Notes</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Provide your subject list, lecture slides, or past question papers. ScholarMate maps out all units and high-weightage topics.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#8b5cf6]/15 text-[#8b5cf6] font-black text-lg">
+                2
+              </div>
+              <h3 className="text-lg font-bold text-white">Nexa AI Teaches Difficult Concepts</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Receive plain-English conceptual analogies, step-by-step mathematical proofs, ASCII architecture diagrams, and examiner tips.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#70d6a8]/15 text-[#70d6a8] font-black text-lg">
+                3
+              </div>
+              <h3 className="text-lg font-bold text-white">Practice 3M, 7M &amp; 10M Questions</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Drill authentic university exam questions, submit your written answers, and receive instant rubric breakdown and scoring.
+              </p>
             </div>
           </div>
         </div>
-      )}
+      </section>
 
-      {/* Institutional Expanded Footer with Compliance & Support Links */}
-      <footer className="relative z-10 border-t border-white/[0.08] bg-[#0b1220] py-8 text-xs text-slate-400">
-        <div className="mx-auto max-w-7xl px-4 space-y-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-tr from-[#54d6c7] to-[#8b5cf6] text-slate-950">
-                <GraduationCap className="h-4 w-4" />
+      {/* 3. EXAMPLE DASHBOARD (Clearly Labeled Demo Preview) */}
+      <section id="example-dashboard" className="relative z-10 mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="space-y-8">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 text-xs font-bold text-amber-300">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Live Interactive Demo Preview</span>
               </div>
-              <span className="font-black text-white text-sm">ScholarMate</span>
-              <span className="text-slate-400">• AANM & VVRSR Polytechnic College</span>
+              <h2 className="text-2xl sm:text-4xl font-black text-white">
+                Example Dashboard
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 max-w-xl">
+                Here is what a student workspace looks like once a study plan is generated. You can test the interactive tabs below.
+              </p>
             </div>
 
-            {/* Compliance & Policy Links */}
-            <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] text-slate-300">
-              <button
-                onClick={() => {
-                  setInfoModalTab('privacy');
-                  setIsInfoModalOpen(true);
-                }}
-                className="hover:text-[#54d6c7] transition-colors cursor-pointer"
-              >
-                Privacy Policy
-              </button>
-              <span>·</span>
-              <button
-                onClick={() => {
-                  setInfoModalTab('terms');
-                  setIsInfoModalOpen(true);
-                }}
-                className="hover:text-[#54d6c7] transition-colors cursor-pointer"
-              >
-                Terms of Use
-              </button>
-              <span>·</span>
-              <button
-                onClick={() => {
-                  setInfoModalTab('data');
-                  setIsInfoModalOpen(true);
-                }}
-                className="hover:text-[#54d6c7] transition-colors cursor-pointer"
-              >
-                Data Handling
-              </button>
-              <span>·</span>
-              <button
-                onClick={() => {
-                  setInfoModalTab('support');
-                  setIsInfoModalOpen(true);
-                }}
-                className="hover:text-[#54d6c7] transition-colors cursor-pointer"
-              >
-                Project Architects
-              </button>
-              <span>·</span>
-              <button
-                onClick={() => setShowStartingAnimation(true)}
-                className="flex items-center gap-1 text-[#54d6c7] hover:underline cursor-pointer"
-              >
-                <Play className="h-3 w-3" />
-                <span>Replay Intro</span>
-              </button>
-            </div>
+            <Link
+              href="/app?demo=true"
+              className="flex items-center gap-2 rounded-xl bg-[#54d6c7] hover:bg-[#43c4b5] text-slate-950 font-bold px-5 py-2.5 text-xs shadow-lg shadow-[#54d6c7]/20 transition-all cursor-pointer shrink-0"
+            >
+              <span>Launch Full App Demo</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
 
-          <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-white/5">
-            Final Year Major Project · Developed by Vastav, Vishnu, Nikhileswar, Sathvik · Computer Engineering
+          {/* Example Dashboard Frame */}
+          <div className="rounded-3xl border border-white/15 bg-gradient-to-br from-[#111c2e] via-[#0b1220] to-[#17253a] p-6 sm:p-8 shadow-2xl space-y-6">
+            {/* Top Bar Preview */}
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#54d6c7]">Example Student Track</span>
+                <h3 className="text-lg font-black text-white">Operating Systems &amp; System Software (6th Sem)</h3>
+                <span className="text-xs text-slate-400">Exam Date: Oct 15, 2026 • 18 Days Remaining • Target Score: 90%</span>
+              </div>
+
+              {/* Demo Mode Tabs */}
+              <div className="flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-white/10">
+                <button
+                  onClick={() => setActiveDemoTab('answer')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    activeDemoTab === 'answer' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Exam Answer Drill
+                </button>
+                <button
+                  onClick={() => setActiveDemoTab('plan')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    activeDemoTab === 'plan' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Actionable Tasks
+                </button>
+                <button
+                  onClick={() => setActiveDemoTab('rubric')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    activeDemoTab === 'rubric' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Marking Rubric
+                </button>
+              </div>
+            </div>
+
+            {/* Tab 1: Exam Answer Drill */}
+            {activeDemoTab === 'answer' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#54d6c7]/20 text-[#54d6c7] border border-[#54d6c7]/30">
+                      7-Mark Question Drill
+                    </span>
+                    <span className="text-xs text-slate-400">Unit 2: Deadlocks</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 font-bold">100% University Exam Match</span>
+                </div>
+
+                <div className="p-4 rounded-2xl border border-white/10 bg-[#0b1220] space-y-3">
+                  <p className="text-xs sm:text-sm font-bold text-white">
+                    Q: Explain the 4 necessary conditions for Deadlock occurrence and demonstrate Banker&apos;s algorithm safety verification.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-xs">
+                    <div className="p-3 rounded-xl border border-white/5 bg-slate-900/80 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-[#54d6c7]">1. Plain Intuition</span>
+                      <p className="text-slate-300 text-[11px]">Two cars facing each other on a narrow one-lane bridge: neither can reverse!</p>
+                    </div>
+                    <div className="p-3 rounded-xl border border-white/5 bg-slate-900/80 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-[#70d6a8]">2. 4 Conditions</span>
+                      <p className="text-slate-300 text-[11px]">Mutual Exclusion, Hold &amp; Wait, No Preemption, Circular Wait.</p>
+                    </div>
+                    <div className="p-3 rounded-xl border border-white/5 bg-slate-900/80 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-[#8b5cf6]">3. Examiner Tip</span>
+                      <p className="text-slate-300 text-[11px]">Always write the Need Matrix formula: Need[i][j] = Max[i][j] - Alloc[i][j].</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 2: Actionable Tasks */}
+            {activeDemoTab === 'plan' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-white">Today&apos;s Actionable Schedule (Example)</span>
+                  <span className="text-[#54d6c7] font-mono font-bold">3/4 Completed (75%)</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Start 15-Minute Banker&apos;s Drill</span>
+                      <span className="text-[10px] text-slate-400">10-Mark Core Derivation</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300">
+                      Completed
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-white block">Review 12 Cards: Paging &amp; TLB</span>
+                      <span className="text-[10px] text-slate-400">Active Recall</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300">
+                      In Progress
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tab 3: Marking Rubric */}
+            {activeDemoTab === 'rubric' && (
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl border border-white/10 bg-[#0b1220] space-y-2 text-xs">
+                  <h4 className="font-bold text-white flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-[#54d6c7]" />
+                    <span>Official 10-Mark University Rubric Breakdown</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-2 text-[11px]">
+                    <div className="p-2.5 rounded-xl border border-white/5 bg-slate-900/60">
+                      <span className="text-[#54d6c7] font-bold block">Axioms &amp; Defs (2M)</span>
+                      <span className="text-slate-400">Full marks for precise standard definitions</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl border border-white/5 bg-slate-900/60">
+                      <span className="text-[#70d6a8] font-bold block">Architecture (3M)</span>
+                      <span className="text-slate-400">Labeled block diagram with signal flow</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl border border-white/5 bg-slate-900/60">
+                      <span className="text-[#8b5cf6] font-bold block">Derivation (3M)</span>
+                      <span className="text-slate-400">Step-by-step mathematical sequence</span>
+                    </div>
+                    <div className="p-2.5 rounded-xl border border-white/5 bg-slate-900/60">
+                      <span className="text-cyan-400 font-bold block">Applications (2M)</span>
+                      <span className="text-slate-400">Real-world engineering use cases</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. CORE FEATURES BREAKDOWN */}
+      <section id="features" className="relative z-10 border-t border-white/5 bg-[#0b1220]/70 py-20 px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-wider text-[#54d6c7]">Built For Engineering Students</span>
+            <h2 className="text-2xl sm:text-4xl font-black text-white">
+              Everything You Need to Pass with Distinction
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Integrated study coaching that turns weeks of stress into organized, confident preparation.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#54d6c7]/15 text-[#54d6c7]">
+                <Bot className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Nexa AI Concept Coach</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Break down complex algorithms and derivations with 8-step pedagogical lessons, analogies, and examiner trap alerts.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#70d6a8]/15 text-[#70d6a8]">
+                <FileText className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">3M, 7M &amp; 10M Question Banks</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Generate 15 to 20 exam-exact questions per topic with full model answers, ASCII schematics, and rubric criteria.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#8b5cf6]/15 text-[#8b5cf6]">
+                <FileCheck2 className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Timed Mock Exam Simulator</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Simulate real board and university test environments with automatic timekeeping and comprehensive post-exam reports.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#6ea8fe]/15 text-[#6ea8fe]">
+                <Layers className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Spaced Flashcards &amp; Active Recall</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Consolidate definitions, formulas, and diagrams using automated spaced intervals so you never blank out in the exam.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#f6c85f]/15 text-[#f6c85f]">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Smart Notes &amp; Summaries</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Auto-extract 10-section deep analytical summaries, bullet cheat sheets, and high-frequency question patterns from your notes.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-3xl border border-white/10 bg-[#111c2e]/80 space-y-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-400">
+                <Flame className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-bold text-white">Weakness Diagnostic Engine</h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Detect your lowest-scoring topics and schedule immediate targeted repair sessions before exam day.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. FINAL CALL TO ACTION */}
+      <section className="relative z-10 mx-auto max-w-5xl px-4 py-20 sm:px-6 text-center">
+        <div className="rounded-3xl border border-[#54d6c7]/30 bg-gradient-to-br from-[#17253a] via-[#111c2e] to-[#0b1220] p-8 sm:p-12 shadow-2xl space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#54d6c7]/15 px-4 py-1 text-xs font-bold text-[#54d6c7]">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Ready in under 1 minute</span>
+          </div>
+
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
+            Start Your Personalized Exam Preparation Today
+          </h2>
+
+          <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
+            Input your subjects, set your target grade, and let ScholarMate generate your personalized day-by-day path to exam readiness.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <Link
+              href="/signup"
+              className="flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#54d6c7] to-[#2dd4bf] hover:opacity-95 text-slate-950 font-black px-8 py-4 text-xs sm:text-sm shadow-xl shadow-[#54d6c7]/25 hover:scale-[1.02] transition-all cursor-pointer"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Create My Study Plan</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+
+            <Link
+              href="/login"
+              className="rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-bold px-7 py-4 text-xs sm:text-sm transition-all cursor-pointer"
+            >
+              Student Portal Sign In
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. FOOTER & ACADEMIC PROJECT ATTRIBUTION */}
+      <footer id="about" className="relative z-10 border-t border-white/5 bg-[#0b1220]/90 py-12 px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="space-y-1 text-center sm:text-left">
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              <GraduationCap className="h-5 w-5 text-[#54d6c7]" />
+              <span className="text-sm font-extrabold text-white">ScholarMate</span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Department of Artificial Intelligence &amp; Machine Learning (2026-2027)
+            </p>
+            <p className="text-xs text-slate-400">
+              AANM &amp; VVRSR Polytechnic College
+            </p>
+          </div>
+
+          <div className="text-center sm:text-right text-xs text-slate-400 space-y-1">
+            <p className="font-bold text-slate-300">Project Development Team:</p>
+            <p>Vastav • Vishnu • Nikhileswar • Sathvik</p>
+            <p className="text-[10px] text-slate-500 pt-1">© 2026 ScholarMate. All rights reserved.</p>
           </div>
         </div>
       </footer>
