@@ -37,10 +37,12 @@ export async function POST(req: Request) {
       });
     }
 
+    const mode = body.mode || undefined;
+    const subject = body.subject || undefined;
     const customKey = req.headers.get("x-gemini-key") || body.apiKey || undefined;
 
-    // Get response from Gemini
-    const aiAnswer = await askGemini(question, docContext, customKey);
+    // Get response from Nexa AI
+    const aiAnswer = await askGemini(question, docContext, customKey, mode, subject);
 
     // Save assistant response if logged in
     let assistantMsgId = `guest_${Date.now()}`;
@@ -65,6 +67,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       answer: aiAnswer,
+      reply: aiAnswer,
+      response: aiAnswer,
       messageId: assistantMsgId,
     });
   } catch (err: any) {

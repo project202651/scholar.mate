@@ -24,7 +24,7 @@ export default function NexaFloatingButton({
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
     {
       role: 'assistant',
-      text: "👋 Hi! I'm **Nexa AI**, your Exam Coach. How can I help you excel today?"
+      text: "👋 Hi! I'm **Nexa AI**, your personal study assistant and exam coach.\n\nTell me what you need help with:\n• 📖 *Need an intuitive explanation of any concept?*\n• ⚡ *Want a quick 60-second revision summary?*\n• 📝 *Need 3-mark, 7-mark, or 10-mark exam questions and answers?*\n• ❓ *Have a specific doubt or problem to solve?*"
     }
   ]);
   const [input, setInput] = useState('');
@@ -47,21 +47,26 @@ export default function NexaFloatingButton({
     }
   }, [messages, isOpen]);
 
-  const handleSend = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!input.trim() || loading) return;
+  const handleSendQuery = async (queryText: string, mode?: string) => {
+    const textToSend = queryText.trim();
+    if (!textToSend || loading) return;
 
-    const userText = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: userText }]);
+    setMessages(prev => [...prev, { role: 'user', text: textToSend }]);
     setLoading(true);
 
     try {
+      const customKey = typeof window !== 'undefined' ? localStorage.getItem('scholarmate_gemini_key') || '' : '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (customKey) headers['x-gemini-key'] = customKey;
+
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
-          message: userText,
+          message: textToSend,
+          question: textToSend,
+          mode: mode || undefined,
           documentId: activeDocId || undefined,
           subject: activeSubject || 'General',
           topic: activeTopic || undefined
@@ -70,11 +75,13 @@ export default function NexaFloatingButton({
 
       if (res.ok) {
         const data = await res.json();
-        setMessages(prev => [...prev, { role: 'assistant', text: data.reply || data.response || 'Answer generated.' }]);
+        const finalAnswer = data.answer || data.reply || data.response || data.text || "Here is the explanation for your query.";
+        setMessages(prev => [...prev, { role: 'assistant', text: finalAnswer }]);
       } else {
+        const errData = await res.json().catch(() => ({}));
         setMessages(prev => [
           ...prev,
-          { role: 'assistant', text: "I couldn't complete that response right now. Please check your AI connection or API key in AI Config." }
+          { role: 'assistant', text: errData.error || "I couldn't complete that response right now. Please verify your connection or AI key." }
         ]);
       }
     } catch {
@@ -85,6 +92,11 @@ export default function NexaFloatingButton({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSend = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    handleSendQuery(input);
   };
 
   return (
@@ -210,6 +222,39 @@ export default function NexaFloatingButton({
                 </div>
               )}
               <div ref={messagesEndRef} />
+            </div>
+
+            {/* Quick Action Suggestion Chips */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 overflow-x-auto border-t border-slate-200/60 dark:border-white/5 bg-slate-50/70 dark:bg-slate-900/60 text-[11px] no-scrollbar">
+              <span className="text-slate-400 dark:text-slate-500 shrink-0 font-medium">Quick:</span>
+              <button
+                type="button"
+                onClick={() => handleSendQuery(activeTopic ? `Explain ${activeTopic} in simple terms with an everyday analogy` : "Explain this in simple terms with an analogy", 'explain')}
+                className="shrink-0 px-2.5 py-0.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 transition-all cursor-pointer font-medium"
+              >
+                📖 Explain simply
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendQuery(activeTopic ? `Give me a 60-second summary and formula cheat-sheet for ${activeTopic}` : "Give me a 60-second summary and formula cheat-sheet", 'summary')}
+                className="shrink-0 px-2.5 py-0.5 rounded-full bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/20 transition-all cursor-pointer font-medium"
+              >
+                ⚡ 60s Summary
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendQuery(activeTopic ? `What are the top 3-mark and 7-mark university exam questions for ${activeTopic}?` : "Give me top 3-mark and 7-mark exam questions with model answers", 'questions')}
+                className="shrink-0 px-2.5 py-0.5 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/20 transition-all cursor-pointer font-medium"
+              >
+                📝 Exam Questions
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSendQuery(activeTopic ? `What are the top examiner traps and common student mistakes in ${activeTopic}?` : "What are the common examiner traps and mistakes to avoid?", 'general')}
+                className="shrink-0 px-2.5 py-0.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/20 transition-all cursor-pointer font-medium"
+              >
+                ⚠️ Examiner Traps
+              </button>
             </div>
 
             {/* Input Bar */}

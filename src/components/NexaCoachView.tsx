@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Bot, Send, Sparkles, AlertTriangle, Lightbulb, 
   BookOpen, HelpCircle, ArrowRight, RefreshCw, 
-  Target, CheckCircle, Clock, Zap
+  Target, CheckCircle, Clock, Zap, MessageSquare, FileText, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,6 +33,7 @@ interface Message {
   text?: string;
   lesson?: TeachingLesson;
   timestamp: string;
+  suggestedPrompts?: string[];
 }
 
 interface NexaCoachViewProps {
@@ -41,47 +42,6 @@ interface NexaCoachViewProps {
   initialDocumentId?: string;
   onNavigateToPractice?: (topic: string) => void;
   onNavigateToMock?: () => void;
-}
-
-function getFallbackLesson(topic: string, subject: string): TeachingLesson {
-  return {
-    topic: topic || "Core Engineering Principles",
-    subject: subject || "Engineering & Technology",
-    coreConcept: `**${topic}** represents a fundamental foundational principle in ${subject}. It governs the structured flow of processes, resource management, and state transformations in standard system architectures.`,
-    intuitiveAnalogy: `Think of ${topic} like an automated airport air traffic control tower: every process or packet must receive explicit scheduling clearance, state allocation, and validation before executing to prevent collision or deadlocks.`,
-    realWorldApplication: `Widely utilized in high-concurrency cloud microservices, low-latency operating system kernels, distributed consensus networks, and embedded automotive ECUs.`,
-    formulaOrRule: `State Transition Matrix / Governing Rule:
-∑ Resources(Allocated) + Resources(Available) = Resources(Total)
-Ensure: SafetyCondition(S_i) <= Available(State) ∀ i ∈ [0, N-1]`,
-    stepByStepDerivation: `1. Initialize the system state vectors [Available, Max, Allocation, Need].
-2. Calculate Need[i, j] = Max[i, j] - Allocation[i, j].
-3. Search for index 'i' satisfying Need[i] <= Available and Finish[i] == False.
-4. If found, simulate process completion: Available += Allocation[i]; Finish[i] = True.
-5. Repeat iteratively until all processes satisfy the execution criteria.`,
-    examinerTraps: [
-      "Failing to explicitly define base boundary cases and zero-index conditions.",
-      "Confusing safety states with immediate deadlock prevention states.",
-      "Omitting standard SI units and dimensional sanity checks in final numerical answers."
-    ],
-    sixtySecondSummary: `Master the state definition, memorize the four necessary Coffman/system criteria, always show the formula before substituting values, and highlight your final result with an examiner-friendly answer box.`,
-    practiceQuestions: [
-      {
-        marks: 2,
-        question: `Define ${topic} and state its primary engineering purpose.`,
-        answerHint: "State the formal definition, primary system function, and one real-world use case."
-      },
-      {
-        marks: 5,
-        question: `Explain the working principle of ${topic} with a clean state-transition diagram.`,
-        answerHint: "Draw clear block diagrams, label all inputs/outputs, and detail the 4 operational phases."
-      },
-      {
-        marks: 10,
-        question: `Derive the comprehensive mathematical model / algorithmic proof for ${topic} with a solved numerical example.`,
-        answerHint: "Show initial conditions, step-by-step state matrices, safety verification, and examiner scoring checkpoints."
-      }
-    ]
-  };
 }
 
 export default function NexaCoachView({
@@ -93,25 +53,29 @@ export default function NexaCoachView({
 }: NexaCoachViewProps) {
   const [topicInput, setTopicInput] = useState('');
   const [subjectInput, setSubjectInput] = useState(initialSubject || '');
+  const [activeMode, setActiveMode] = useState<'chat' | 'explain' | 'summary' | 'questions' | 'solve'>('chat');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeLesson, setActiveLesson] = useState<TeachingLesson | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       sender: 'nexa',
-      text: `👋 Greetings! I am **Nexa 2.0**, your elite Academic Exam Coach.
+      text: `👋 Hi! I am **Nexa AI**, your personal study tutor and academic exam coach inside ScholarMate.
 
-Enter any syllabus topic or question below, and I will generate an **8-part mastery lesson** with:
-1. Plain-English Intuitive Core Concept
-2. Memorable Real-World Analogy
-3. Practical Application
-4. Key Formula / Law / Rule
-5. Step-by-Step Derivation & Solved Proof
-6. Top Deadly Examiner Traps
-7. 60-Second High-Yield Revision Summary
-8. 3-Mark, 7-Mark & 10-Mark Practice Exam Questions`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+I'm here to give you exactly what you need for your exams:
+• 📖 **Intuitive Explanations**: Ask any concept or doubt to have it broken down simply with real-world examples.
+• ⚡ **High-Yield Summaries**: Get a quick 60-second revision cheat-sheet with key takeaways and formulas.
+• 📝 **Exam Questions & Solutions**: Get 3-mark, 7-mark, and 10-mark questions with model answers and examiner scoring criteria.
+• 🔢 **Problem Solving**: Walk step-by-step through any mathematical derivation or numerical.
+
+What topic or question would you like to work on right now?`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      suggestedPrompts: [
+        'Explain Deadlock Avoidance simply',
+        'Summarize Cache Memory hierarchy in 3 bullets',
+        'Give me 3-mark and 7-mark questions on Fourier Transform',
+        'What are the top examiner traps in Database Normalization?'
+      ]
     }
   ]);
 
@@ -121,7 +85,7 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
     if (initialTopic) {
       setTopicInput(initialTopic);
       if (initialSubject) setSubjectInput(initialSubject);
-      handleTeachTopic(initialTopic, initialSubject || 'Engineering');
+      handleSendMessage(`Explain ${initialTopic} in ${initialSubject || 'Engineering'} with key concepts and exam points.`, 'explain');
     }
   }, [initialTopic, initialSubject]);
 
@@ -129,141 +93,94 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  const handleTeachTopic = async (topicToTeach?: string, subjectToTeach?: string) => {
-    const topic = (topicToTeach || topicInput).trim();
-    const subject = (subjectToTeach || subjectInput).trim() || 'General';
-    if (!topic) return;
+  const handleSendMessage = async (customPrompt?: string, modeOverride?: string) => {
+    const textToSend = (customPrompt || topicInput).trim();
+    if (!textToSend || isLoading) return;
 
+    const mode = modeOverride || activeMode;
     const userMsg: Message = {
       id: Date.now().toString(),
       sender: 'user',
-      text: `Teach me "${topic}" (${subject}) using the 8-part mastery framework.`,
+      text: textToSend,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
+    setTopicInput('');
 
     try {
       const customKey = typeof window !== 'undefined' ? localStorage.getItem('scholarmate_gemini_key') || '' : '';
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (customKey) headers['x-gemini-key'] = customKey;
 
-      const res = await fetch('/api/ai/teaching', {
+      const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ 
-          topic, 
-          subject, 
-          apiKey: customKey || undefined,
-          examType: 'University Semester & Competitive' 
+        body: JSON.stringify({
+          message: textToSend,
+          question: textToSend,
+          mode: mode,
+          subject: subjectInput || 'Engineering',
+          documentId: initialDocumentId || undefined,
+          apiKey: customKey || undefined
         })
       });
 
-      let lessonData: TeachingLesson;
       if (res.ok) {
         const data = await res.json();
-        lessonData = data.lesson || getFallbackLesson(topic, subject);
+        const answerText = data.answer || data.reply || data.response || data.text || "Here is the explanation for your query.";
+        
+        const botMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          sender: 'nexa',
+          text: answerText,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          suggestedPrompts: [
+            `Explain this in even simpler terms`,
+            `Give me a 60-second summary and formula sheet`,
+            `Show 3-mark, 7-mark, and 10-mark exam questions`,
+            `What are the deadly examiner traps to avoid?`
+          ]
+        };
+        setMessages(prev => [...prev, botMsg]);
       } else {
-        lessonData = getFallbackLesson(topic, subject);
+        const errData = await res.json().catch(() => ({}));
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          sender: 'nexa',
+          text: errData.error || "I encountered an issue generating that response. Please try asking again in a moment.",
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
       }
-
-      setActiveLesson(lessonData);
-      const botMsg: Message = {
+    } catch {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         sender: 'nexa',
-        lesson: lessonData,
+        text: "Connection error. Please check your network or AI key in configuration and try again.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => [...prev, botMsg]);
-    } catch (err) {
-      console.warn("Nexa teaching network fallback:", err);
-      const fallback = getFallbackLesson(topic, subject);
-      setActiveLesson(fallback);
-      const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'nexa',
-        lesson: fallback,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      setMessages(prev => [...prev, errorMsg]);
+      }]);
     } finally {
       setIsLoading(false);
-      setTopicInput('');
     }
   };
 
   const handleQuickChip = (chipType: string) => {
-    const targetTopic = topicInput.trim() || activeLesson?.topic || 'Operating Systems: Deadlock Handling';
-    if (chipType === '8part') {
-      handleTeachTopic(targetTopic, subjectInput);
-    } else if (chipType === 'traps') {
-      handleCustomPrompt(`What are the top 5 deadliest examiner traps and trick questions for "${targetTopic}"?`);
-    } else if (chipType === 'analogy') {
-      handleCustomPrompt(`Explain "${targetTopic}" using a funny, unforgettable real-world analogy.`);
+    const currentTopic = topicInput.trim() || initialTopic || 'Operating Systems: Deadlocks';
+    if (chipType === 'explain') {
+      setActiveMode('explain');
+      handleSendMessage(`Explain "${currentTopic}" intuitively with clear real-world examples and core principles.`, 'explain');
     } else if (chipType === 'summary') {
-      handleCustomPrompt(`Give me a 60-second high-yield revision summary and cheat sheet for "${targetTopic}".`);
-    } else if (chipType === 'derivation') {
-      handleCustomPrompt(`Walk me step-by-step through the standard proof or derivation for "${targetTopic}".`);
-    }
-  };
-
-  const handleCustomPrompt = async (promptText: string) => {
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      text: promptText,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setMessages(prev => [...prev, userMsg]);
-    setIsLoading(true);
-
-    try {
-      const customKey = typeof window !== 'undefined' ? localStorage.getItem('scholarmate_gemini_key') || '' : '';
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (customKey) headers['x-gemini-key'] = customKey;
-
-      const res = await fetch('/api/ai/teaching', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ 
-          topic: promptText, 
-          subject: subjectInput || 'Engineering',
-          apiKey: customKey || undefined,
-          examType: 'University'
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.lesson) {
-          setMessages(prev => [...prev, {
-            id: (Date.now() + 1).toString(),
-            sender: 'nexa',
-            lesson: data.lesson,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }]);
-          return;
-        }
-      }
-      
-      const fallback = getFallbackLesson(promptText, subjectInput || 'Engineering');
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        sender: 'nexa',
-        lesson: fallback,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    } catch {
-      const fallback = getFallbackLesson(promptText, subjectInput || 'Engineering');
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        sender: 'nexa',
-        lesson: fallback,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    } finally {
-      setIsLoading(false);
+      setActiveMode('summary');
+      handleSendMessage(`Give me a high-yield 60-second summary and formula cheat-sheet for "${currentTopic}".`, 'summary');
+    } else if (chipType === 'questions') {
+      setActiveMode('questions');
+      handleSendMessage(`Provide the top 3-mark, 7-mark, and 10-mark university exam questions with model answers for "${currentTopic}".`, 'questions');
+    } else if (chipType === 'traps') {
+      handleSendMessage(`What are the top 5 deadliest examiner traps and student mistakes for "${currentTopic}"?`, 'general');
+    } else if (chipType === 'solve') {
+      setActiveMode('solve');
+      handleSendMessage(`Walk me step-by-step through the mathematical derivation or solved problem for "${currentTopic}".`, 'solve');
     }
   };
 
@@ -279,45 +196,62 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight">Nexa 2.0 AI Coach</h1>
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight">Nexa AI Tutor & Exam Coach</h1>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 border border-white/30 text-white">
-                  8-Part Blueprint
+                  Interactive Mode
                 </span>
               </div>
               <p className="text-emerald-100 text-xs sm:text-sm mt-0.5">
-                Proactive syllabus teaching, examiner traps, analogies, and derivations.
+                Personalized explanations, quick summaries, exam questions, and problem solving.
               </p>
             </div>
           </div>
 
-          {activeLesson && (
-            <div className="flex items-center gap-2 bg-black/25 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/15 text-xs">
-              <span className="text-emerald-300 font-medium">Currently Teaching:</span>
-              <span className="font-bold text-white max-w-[180px] truncate">{activeLesson.topic}</span>
-            </div>
-          )}
+          {/* Mode Selector */}
+          <div className="flex flex-wrap items-center gap-1.5 bg-black/25 backdrop-blur-md p-1.5 rounded-2xl border border-white/15">
+            <button
+              onClick={() => setActiveMode('chat')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeMode === 'chat' ? 'bg-white text-slate-900 shadow-sm' : 'text-emerald-100 hover:bg-white/10'
+              }`}
+            >
+              💬 Ask Anything
+            </button>
+            <button
+              onClick={() => setActiveMode('explain')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeMode === 'explain' ? 'bg-white text-slate-900 shadow-sm' : 'text-emerald-100 hover:bg-white/10'
+              }`}
+            >
+              📖 Explanation
+            </button>
+            <button
+              onClick={() => setActiveMode('summary')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeMode === 'summary' ? 'bg-white text-slate-900 shadow-sm' : 'text-emerald-100 hover:bg-white/10'
+              }`}
+            >
+              ⚡ Summary
+            </button>
+            <button
+              onClick={() => setActiveMode('questions')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeMode === 'questions' ? 'bg-white text-slate-900 shadow-sm' : 'text-emerald-100 hover:bg-white/10'
+              }`}
+            >
+              📝 Exam Questions
+            </button>
+          </div>
         </div>
 
         {/* Quick Action Chips */}
         <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t border-white/15">
-          <span className="text-xs text-emerald-100 self-center font-medium mr-1">Quick Coach:</span>
+          <span className="text-xs text-emerald-100 self-center font-medium mr-1">Quick Actions:</span>
           <button 
-            onClick={() => handleQuickChip('8part')}
+            onClick={() => handleQuickChip('explain')}
             className="text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1 rounded-full border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Sparkles className="w-3 h-3 text-amber-300" /> 8-Part Deep Lesson
-          </button>
-          <button 
-            onClick={() => handleQuickChip('traps')}
-            className="text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1 rounded-full border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <AlertTriangle className="w-3 h-3 text-rose-300" /> Examiner Traps
-          </button>
-          <button 
-            onClick={() => handleQuickChip('analogy')}
-            className="text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1 rounded-full border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <Lightbulb className="w-3 h-3 text-cyan-300" /> Real-World Analogy
+            <Lightbulb className="w-3 h-3 text-cyan-300" /> Intuitive Explanation
           </button>
           <button 
             onClick={() => handleQuickChip('summary')}
@@ -326,7 +260,19 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
             <Clock className="w-3 h-3 text-emerald-300" /> 60s Summary
           </button>
           <button 
-            onClick={() => handleQuickChip('derivation')}
+            onClick={() => handleQuickChip('questions')}
+            className="text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1 rounded-full border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Sparkles className="w-3 h-3 text-amber-300" /> 3M, 7M & 10M Questions
+          </button>
+          <button 
+            onClick={() => handleQuickChip('traps')}
+            className="text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1 rounded-full border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <AlertTriangle className="w-3 h-3 text-rose-300" /> Examiner Traps
+          </button>
+          <button 
+            onClick={() => handleQuickChip('solve')}
             className="text-xs bg-white/15 hover:bg-white/25 text-white px-3 py-1 rounded-full border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Zap className="w-3 h-3 text-indigo-300" /> Step-by-Step Proof
@@ -334,7 +280,7 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
         </div>
       </div>
 
-      {/* Main Conversation & Lesson Flow */}
+      {/* Main Conversation Flow */}
       <div className="rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl shadow-xl flex flex-col overflow-hidden min-h-[550px]">
         {/* Chat History */}
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 max-h-[700px]">
@@ -352,139 +298,33 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
                   : 'bg-slate-50 dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-white/5 rounded-tl-xs'
               }`}>
                 {msg.text && (
-                  <div className="whitespace-pre-wrap font-sans space-y-2">{msg.text}</div>
-                )}
-
-                {/* 8-Part Structured Lesson Card */}
-                {msg.lesson && (
-                  <div className="space-y-4 text-slate-800 dark:text-slate-100">
-                    <div className="border-b border-slate-200/80 dark:border-white/10 pb-3">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                        {msg.lesson.subject}
-                      </span>
-                      <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white">
-                        {msg.lesson.topic}
-                      </h2>
-                    </div>
-
-                    {/* 1. Core Concept */}
-                    <div className="rounded-xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-slate-900/60 p-3.5 space-y-1">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
-                        <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>1. Core Concept (Plain English)</span>
-                      </div>
-                      <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed">
-                        {msg.lesson.coreConcept}
-                      </p>
-                    </div>
-
-                    {/* 2 & 3: Analogy & Application Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 space-y-1">
-                        <div className="flex items-center gap-2 font-bold text-amber-600 dark:text-amber-400 text-xs">
-                          <Lightbulb className="w-3.5 h-3.5" />
-                          <span>2. Intuitive Analogy</span>
-                        </div>
-                        <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
-                          {msg.lesson.intuitiveAnalogy}
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3.5 space-y-1">
-                        <div className="flex items-center gap-2 font-bold text-cyan-600 dark:text-cyan-400 text-xs">
-                          <Target className="w-3.5 h-3.5" />
-                          <span>3. Real-World Application</span>
-                        </div>
-                        <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
-                          {msg.lesson.realWorldApplication}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 4. Formula / Rule */}
-                    <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3.5 space-y-1 font-mono text-xs">
-                      <div className="flex items-center gap-2 font-sans font-bold text-indigo-600 dark:text-indigo-400 text-xs">
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>4. Governing Formula / Law</span>
-                      </div>
-                      <pre className="whitespace-pre-wrap p-2.5 rounded-lg bg-white/80 dark:bg-slate-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 overflow-x-auto text-xs">
-                        {msg.lesson.formulaOrRule}
-                      </pre>
-                    </div>
-
-                    {/* 5. Derivation */}
-                    <div className="rounded-xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-slate-900/60 p-3.5 space-y-1">
-                      <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
-                        <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>5. Step-by-Step Proof / Derivation</span>
-                      </div>
-                      <div className="whitespace-pre-wrap text-slate-600 dark:text-slate-300 text-xs leading-relaxed space-y-1 font-mono">
-                        {msg.lesson.stepByStepDerivation}
-                      </div>
-                    </div>
-
-                    {/* 6. Examiner Traps */}
-                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-3.5 space-y-2">
-                      <div className="flex items-center gap-2 font-bold text-rose-600 dark:text-rose-400 text-xs">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        <span>6. Top Deadly Examiner Traps to Avoid</span>
-                      </div>
-                      <ul className="list-disc pl-4 space-y-1 text-xs text-slate-700 dark:text-slate-300">
-                        {msg.lesson.examinerTraps.map((trap, tIdx) => (
-                          <li key={tIdx}>{trap}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {/* 7. 60-Second Summary */}
-                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 space-y-1">
-                      <div className="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-400 text-xs">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>7. 60-Second High-Yield Summary</span>
-                      </div>
-                      <p className="text-slate-700 dark:text-slate-300 text-xs leading-relaxed">
-                        {msg.lesson.sixtySecondSummary}
-                      </p>
-                    </div>
-
-                    {/* 8. Practice Exam Questions */}
-                    {msg.lesson.practiceQuestions && msg.lesson.practiceQuestions.length > 0 && (
-                      <div className="rounded-xl border border-slate-200/60 dark:border-white/5 bg-slate-100/60 dark:bg-slate-950/40 p-3.5 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-xs">
-                            <HelpCircle className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>8. Practice Exam Questions (2M / 5M / 10M)</span>
-                          </div>
-                          {onNavigateToPractice && (
-                            <button
-                              onClick={() => onNavigateToPractice(msg.lesson?.topic || '')}
-                              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                            >
-                              <span>Practice in Arena</span>
-                              <ArrowRight className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          {msg.lesson.practiceQuestions.map((pq, qIdx) => (
-                            <div key={qIdx} className="bg-white dark:bg-slate-900 p-3 rounded-lg border border-slate-200/60 dark:border-white/5 text-xs flex items-start justify-between gap-3">
-                              <div>
-                                <span className="font-semibold text-slate-900 dark:text-white">Q{qIdx + 1}: {pq.question}</span>
-                                <p className="text-slate-500 dark:text-slate-400 mt-0.5 italic">Scoring Tip: {pq.answerHint}</p>
-                              </div>
-                              <span className="shrink-0 font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                                {pq.marks}M
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="whitespace-pre-wrap font-sans space-y-3 leading-relaxed">
+                    {msg.text}
                   </div>
                 )}
 
-                <div className={`text-[10px] mt-2 ${msg.sender === 'user' ? 'text-emerald-200 text-right' : 'text-slate-400'}`}>
+                {/* Interactive Suggested Follow-Up Prompts */}
+                {msg.sender === 'nexa' && msg.suggestedPrompts && msg.suggestedPrompts.length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-white/10">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-2">
+                      Suggested Next Steps:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {msg.suggestedPrompts.map((promptText, pIdx) => (
+                        <button
+                          key={pIdx}
+                          onClick={() => handleSendMessage(promptText)}
+                          className="text-[11px] font-medium bg-white dark:bg-slate-700/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-white/10 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <span>{promptText}</span>
+                          <ChevronRight className="w-3 h-3 text-emerald-500" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className={`text-[10px] mt-2.5 ${msg.sender === 'user' ? 'text-emerald-200 text-right' : 'text-slate-400'}`}>
                   {msg.timestamp}
                 </div>
               </div>
@@ -498,7 +338,7 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
               </div>
               <div className="bg-slate-50 dark:bg-slate-800/90 border border-slate-200/60 dark:border-white/5 p-4 rounded-2xl rounded-tl-xs text-xs text-slate-600 dark:text-slate-300 flex items-center gap-3">
                 <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" />
-                <span>Nexa is structuring your 8-part breakdown with examiner traps...</span>
+                <span>Nexa is analyzing and formulating your answer...</span>
               </div>
             </div>
           )}
@@ -510,7 +350,7 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
           <form 
             onSubmit={(e) => {
               e.preventDefault();
-              handleTeachTopic();
+              handleSendMessage();
             }}
             className="flex items-center gap-2"
           >
@@ -525,7 +365,15 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
               type="text"
               value={topicInput}
               onChange={(e) => setTopicInput(e.target.value)}
-              placeholder="What topic do you want to master today? (e.g., Deadlock Avoidance, Fourier Transform)"
+              placeholder={
+                activeMode === 'summary' 
+                  ? "What topic do you want summarized? (e.g., Deadlock Avoidance, Fourier Transform)"
+                  : activeMode === 'questions'
+                  ? "What topic do you want 3M, 7M & 10M questions for?"
+                  : activeMode === 'explain'
+                  ? "What concept do you want explained simply?"
+                  : "Ask Nexa AI anything... (doubt, concept, summary, or exam question)"
+              }
               disabled={isLoading}
               className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-slate-900 dark:text-white placeholder-slate-400"
             />
@@ -534,7 +382,7 @@ Enter any syllabus topic or question below, and I will generate an **8-part mast
               disabled={isLoading || !topicInput.trim()}
               className="px-4 sm:px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 shadow-md transition-all shrink-0 cursor-pointer"
             >
-              <span>Teach</span>
+              <span>Ask Nexa</span>
               <Send className="w-4 h-4" />
             </button>
           </form>

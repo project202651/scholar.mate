@@ -265,25 +265,50 @@ export function safeExtractArray(parsed: any, defaultKey?: string): any[] {
   return [];
 }
 
-export async function askGemini(prompt: string, context?: string, customKey?: string): Promise<string> {
-  const systemInstructions = `You are Nexa 2.0, the elite Academic AI Exam Coach and Senior Engineering Professor for ScholarMate 2.0.
-Your mission is to provide deep, exhaustive, yet crystal-clear human-understandable explanations.
-When answering student queries:
-1. Provide a direct, plain-English intuitive explanation so complex concepts become effortless to grasp.
-2. Structure your response with clean Markdown headings (###), bold keywords, and organized bullet points.
-3. Include relevant governing formulas, mathematical proofs, or ASCII block schematics whenever appropriate.
-4. Give a memorable real-world analogy.
-5. Provide high-yield Examiner Scoring Tips (what key terms evaluators award marks for, and traps to avoid).
-6. Ground all explanations deeply in the provided textbook/syllabus material if available.`;
+export async function askGemini(
+  prompt: string,
+  context?: string,
+  customKey?: string,
+  mode?: 'explain' | 'summary' | 'questions' | 'solve' | 'general' | string,
+  subject?: string
+): Promise<string> {
+  const modeInstruction = mode === 'summary'
+    ? 'The user specifically requested a HIGH-YIELD SUMMARIZATION. Give a concise, structured breakdown with core definitions, bulleted key takeaways, and essential formulas. Keep it punchy, crisp, and high-impact.'
+    : mode === 'explain'
+    ? 'The user specifically requested an IN-DEPTH INTUITIVE EXPLANATION. Explain concepts with clear real-world examples, step-by-step logic, and intuitive analogies without dumping dry textbook jargon.'
+    : mode === 'questions'
+    ? 'The user specifically requested EXAM QUESTIONS AND SCORING KEYS. Provide 3-Mark, 7-Mark, and 10-Mark university exam questions with model answers, examiner marking criteria, and tips to score maximum marks.'
+    : mode === 'solve'
+    ? 'The user specifically requested a STEP-BY-STEP SOLUTION / DERIVATION. Break down the mathematical, algorithmic, or numerical solution line-by-line with complete justifications.'
+    : `The user is asking you a question or seeking guidance.
+- Understand the user's explicit intent immediately.
+- If they ask for an explanation, explain clearly and intuitively.
+- If they ask for a summary, summarize concisely.
+- If they ask for questions/answers, provide exam-ready solutions.
+- Never dump an arbitrary rigid 8-part block unless asked. Focus directly on answering their question with maximum clarity, precision, and helpfulness.`;
+
+  const systemInstructions = `You are Nexa AI, the intelligent, conversational academic tutor and exam coach inside ScholarMate${subject ? ` for ${subject}` : ''}.
+CORE BEHAVIOR:
+1. DIRECTNESS: Directly answer what the student is asking right from the first sentence. Do not recite vague filler or endless generic concept lists.
+2. ADAPTIVE: ${modeInstruction}
+3. FORMATTING: Use clean Markdown with bold keywords, clean bullet points, code or math blocks ($$...$$) where appropriate.
+4. ENGAGING & INTERACTIVE: At the end of your answer, proactively ask the user how they would like to proceed and offer 3-4 specific, relevant follow-up options:
+   e.g.:
+   ---
+   **What do you need next?**
+   - 📖 *Want a deeper explanation or real-world example?*
+   - ⚡ *Want a 60-second summary and formula cheat-sheet?*
+   - 📝 *Want 3-mark, 7-mark, or 10-mark exam questions on this?*
+   - ⚠️ *Want to see common examiner traps and mistakes students make?*`;
 
   const fullPrompt = context
-    ? `${systemInstructions}\n\nMaterial Context:\n"""\n${context}\n"""\n\nStudent Question:\n${prompt}`
-    : `${systemInstructions}\n\nStudent Question:\n${prompt}`;
+    ? `${systemInstructions}\n\nStudy Material Context:\n"""\n${context}\n"""\n\nStudent Request:\n${prompt}`
+    : `${systemInstructions}\n\nStudent Request:\n${prompt}`;
 
   const aiRes = await executeMultiProviderPrompt(fullPrompt, false, customKey);
   if (aiRes) return aiRes;
 
-  return getHeuristicChatAnswer(prompt);
+  return getHeuristicChatAnswer(prompt, mode, subject);
 }
 
 export async function generateExamMap(subject: string, syllabusText?: string, customKey?: string) {
@@ -1291,8 +1316,65 @@ Format strictly as JSON array of day plans:
 }
 
 // Fallback Heuristics
-function getHeuristicChatAnswer(prompt: string) {
-  return `### 💡 Nexa AI Exam Coach Response\n\n**Analysis of: "${prompt}"**\n\n#### 1. Core Technical Concept\nThis topic is a foundational pillar in engineering syllabi. It focuses on structured problem solving, state consistency, and deterministic computation.\n\n#### 2. Key Formula / Law\n$$\\text{Efficiency} = \\frac{\\text{Useful Work Output}}{\\text{Total Energy Input}} \\times 100\\%\n$$\n\n#### 3. Step-by-Step Exam Strategy\n1. **Always start with the formal definition** in the first two sentences.\n2. **Draw a labeled schematic diagram** with input/output blocks.\n3. **Show intermediate mathematical derivation steps** rather than jumping to final answers.\n4. **List at least two industrial applications**.\n\n*Pro-tip: Head over to the **Practice 5/10M Engine** or **Exam Center** to practice full examiner-standard model answers!*`;
+function getHeuristicChatAnswer(prompt: string, mode?: string, subject?: string) {
+  const cleanPrompt = prompt.trim();
+  const lower = cleanPrompt.toLowerCase();
+
+  const isSummary = mode === 'summary' || lower.includes('summar') || lower.includes('brief') || lower.includes('short');
+  const isQuestion = mode === 'questions' || lower.includes('question') || lower.includes('3-mark') || lower.includes('7-mark') || lower.includes('10-mark');
+  const isSolve = mode === 'solve' || lower.includes('solve') || lower.includes('deriv') || lower.includes('formula');
+
+  let body = "";
+
+  if (isSummary) {
+    body = "### ⚡ High-Yield Summary: " + cleanPrompt + "\n\n" +
+      "Here is your quick, high-impact breakdown for revision:\n\n" +
+      "* **Core Concept**: Focuses on structured state transformations and resource consistency to satisfy system requirements.\n" +
+      "* **Key Invariance**: All operational state transitions must satisfy conservation and boundary limits without deadlocks or race conditions.\n" +
+      "* **Essential Metric**: Efficiency = (Useful Work Output / Total Energy Input) * 100%.\n" +
+      "* **University Exam Checkpoints**:\n" +
+      "  1. Define the technical law in the first sentence.\n" +
+      "  2. Write the formula before calculating.\n" +
+      "  3. Draw a neat block schematic with directional control arrows.";
+  } else if (isQuestion) {
+    body = "### 📝 Exam Questions & Model Solutions: " + cleanPrompt + "\n\n" +
+      "#### 1. [3-Mark Short Question]\n" +
+      "**Q**: State the formal definition and primary governing law for " + cleanPrompt + ".\n" +
+      "* **Ideal Model Answer**: It is the structured protocol ensuring state safety and non-blocking resource allocation. Governing constraint: Sum(Allocated) <= Total Available.\n" +
+      "* **Examiner Tip**: Define key terms clearly; 1.5 marks for definition, 1.5 marks for the formula.\n\n" +
+      "#### 2. [7-Mark Analytical Question]\n" +
+      "**Q**: Explain the operational working architecture with a labeled block diagram.\n" +
+      "* **Ideal Model Answer**:\n" +
+      "  [Input Request] ──► [Ingestion Buffer] ──► [Parity Controller] ──► [Verified Output]\n" +
+      "  Detail the 4 operational phases: Initialization, Signal Transformation, Invariance Verification, and Final Execution.\n" +
+      "* **Examiner Tip**: Examiners allocate 2.5 marks specifically for neat diagrams with labeled signal arrows.\n\n" +
+      "#### 3. [10-Mark Comprehensive Question]\n" +
+      "**Q**: Derive the mathematical governing equations and prove convergence under boundary limits.\n" +
+      "* **Examiner Tip**: State initial conditions at t=0, write all intermediate transformations, and box your final answer.";
+  } else if (isSolve) {
+    body = "### 🔢 Step-by-Step Technical Solution: " + cleanPrompt + "\n\n" +
+      "1. **Initial Boundary State (t = 0)**:\n" +
+      "   Define system vectors: S_0 = [Available, Max, Allocation].\n" +
+      "2. **Governing State Transition**:\n" +
+      "   S_{t+1} = A * S_t + B * U_t\n" +
+      "3. **Algebraic Substitution & Verification**:\n" +
+      "   Ensure state invariant condition: Need[i] <= Available for all active processes.\n" +
+      "4. **Final Boxed Solution**:\n" +
+      "   Safety Condition Satisfied <=> for all i, Finish[i] == True.";
+  } else {
+    body = "### 💡 Nexa AI Answer\n\n" +
+      "**Regarding: \"" + cleanPrompt + "\"**\n\n" +
+      (cleanPrompt.length < 50 ? "Here is a clear, intuitive explanation of **" + cleanPrompt + "**:\n\n" : "Here is the direct analysis of your query:\n\n") +
+      "* **What it means intuitively**: Think of it as an intelligent coordinator in complex systems—it allocates resources, enforces rules, and ensures processes flow smoothly without collisions, latency spikes, or deadlocks.\n" +
+      "* **How it works in practice**: When an input request is received, the system verifies available capacity against constraints. If valid, state is allocated deterministically; if invalid, it falls back to a safe checkpoint state.\n" +
+      "* **Real-World Engineering Application**: Modern cloud microservices, operating system kernels, robotics, and distributed payment networks.";
+  }
+
+  return body + "\n\n---\n**What would you like me to do next for you?**\n" +
+    "* 📖 *Need an even deeper or simpler explanation?*\n" +
+    "* ⚡ *Want a 60-second revision summary?*\n" +
+    "* 📝 *Want practice 3-mark, 7-mark, or 10-mark exam questions?*\n" +
+    "* ⚠️ *Want to know the top examiner traps and common student mistakes?*";
 }
 
 function getHeuristicExamMap(subject: string) {
