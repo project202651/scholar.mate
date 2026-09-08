@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { 
   GraduationCap, LogOut, User as UserIcon, 
-  Cpu, Sun, Moon, Target, Bot, BookOpen, FileCheck2, Award, Layers, BarChart3, Clock,
-  Sparkles, ChevronDown, Menu, X, Calendar, Settings, Compass, ShieldAlert, Check
+  Cpu, Target, Bot, BookOpen, FileCheck2, Award, Layers, BarChart3, Clock,
+  Sparkles, ChevronDown, Menu, X, Calendar, Plus, UploadCloud
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,22 +40,19 @@ export default function Navbar({
   onLogout,
   onOpenAISettings,
   onOpenOnboarding,
-  theme = 'dark',
-  onToggleTheme,
 }: NavbarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
-  // Grouped Navigation Architecture
+  // 5 Core Focused Navigation Groups
   const navGroups = [
     {
       id: 'learn',
       label: 'Learn',
       icon: BookOpen,
       items: [
-        { id: 'nexa', label: 'Nexa AI Coach', desc: 'Ask doubts & concept breakdowns', icon: Bot },
-        { id: 'library', label: 'Study Library', desc: 'Synthesized textbook notes & docs', icon: BookOpen },
-        { id: 'exam_center', label: 'Syllabus & Blueprint', desc: '5-unit mark weightage maps', icon: Target },
+        { id: 'nexa', label: 'Nexa AI Tutor', desc: 'Ask doubts & concept breakdowns', icon: Bot },
+        { id: 'exam_center', label: 'Syllabus Blueprint', desc: '5-unit mark weightage maps', icon: Target },
       ]
     },
     {
@@ -64,17 +61,17 @@ export default function Navbar({
       icon: FileCheck2,
       items: [
         { id: 'practice', label: 'Practice Questions', desc: '15-question bank with AI scoring', icon: FileCheck2 },
-        { id: 'mock_exams', label: 'Mock Exam Simulator', desc: 'Full-length timed examinations', icon: Award },
-        { id: 'flashcards', label: 'Active Recall Flashcards', desc: 'Spaced repetition memory deck', icon: Layers },
+        { id: 'mock_exams', label: 'Mock Simulator', desc: 'Full-length timed examinations', icon: Award },
+        { id: 'flashcards', label: 'Active Recall', desc: 'Spaced repetition memory deck', icon: Layers },
       ]
     },
     {
-      id: 'improve',
-      label: 'Improve',
+      id: 'progress',
+      label: 'Progress',
       icon: BarChart3,
       items: [
-        { id: 'progress', label: 'Progress & Analytics', desc: 'Study streak & readiness breakdown', icon: BarChart3 },
-        { id: 'focus', label: 'Focus Timer', desc: 'Custom Pomodoro study blocks', icon: Clock },
+        { id: 'progress', label: 'Exam Readiness', desc: 'Study streak & score breakdown', icon: BarChart3 },
+        { id: 'focus', label: 'Focus Timer', desc: 'Custom Pomodoro study intervals', icon: Clock },
       ]
     }
   ];
@@ -91,7 +88,7 @@ export default function Navbar({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] dark:border-white/[0.08] bg-[#0b1220]/90 dark:bg-[#0b1220]/90 backdrop-blur-2xl transition-colors">
+      <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#0b1220]/95 backdrop-blur-2xl transition-colors">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
           {/* Brand Identity */}
           <div className="flex items-center gap-3">
@@ -99,7 +96,7 @@ export default function Navbar({
               onClick={() => handleNavClick('dashboard')}
               className="flex items-center gap-2.5 text-left group cursor-pointer focus:outline-none"
             >
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#54d6c7] via-[#2dd4bf] to-[#06b6d4] shadow-md shadow-[#54d6c7]/20">
+              <div className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#54d6c7] via-[#2dd4bf] to-[#8b5cf6] shadow-md shadow-[#54d6c7]/20">
                 <GraduationCap className="h-5 w-5 text-slate-950 font-black" />
               </div>
               <div>
@@ -111,9 +108,9 @@ export default function Navbar({
             </button>
           </div>
 
-          {/* Desktop Grouped Navigation */}
-          <nav className="hidden lg:flex items-center gap-1.5 rounded-full bg-[#111c2e]/90 p-1 border border-white/10">
-            {/* Dashboard Link */}
+          {/* Desktop Focused Navigation (Today, Learn, Practice, Progress, Library) */}
+          <nav className="hidden lg:flex items-center gap-1 rounded-full bg-[#111c2e]/90 p-1 border border-white/10">
+            {/* Today (Home) */}
             <button
               onClick={() => handleNavClick('dashboard')}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
@@ -122,10 +119,10 @@ export default function Navbar({
                   : 'text-slate-300 hover:text-white hover:bg-white/5'
               }`}
             >
-              Home
+              Today
             </button>
 
-            {/* Dropdown Groups: Learn, Practice, Improve */}
+            {/* Dropdown Groups: Learn, Practice, Progress */}
             {navGroups.map((grp) => {
               const isActive = isCurrentGroupActive(grp.items);
               const isOpen = openDropdown === grp.id;
@@ -159,7 +156,7 @@ export default function Navbar({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 mt-1.5 w-64 rounded-2xl border border-white/10 bg-[#111c2e] p-2 shadow-2xl backdrop-blur-2xl z-50 space-y-1"
+                        className="absolute top-full left-0 mt-1.5 w-60 rounded-2xl border border-white/10 bg-[#111c2e] p-2 shadow-2xl backdrop-blur-2xl z-50 space-y-1"
                       >
                         {grp.items.map((item) => {
                           const ItemIcon = item.icon;
@@ -190,26 +187,39 @@ export default function Navbar({
                 </div>
               );
             })}
+
+            {/* Library direct link */}
+            <button
+              onClick={() => handleNavClick('library')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'library'
+                  ? 'bg-[#54d6c7] text-slate-950 shadow-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Library</span>
+            </button>
           </nav>
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2">
-            {/* Onboarding / Study Plan Setup */}
+            {/* Build / Edit Study Plan Trigger */}
             {onOpenOnboarding && (
               <button
                 onClick={onOpenOnboarding}
-                title="Setup Study Plan & Exam Target"
-                className="hidden sm:flex items-center gap-1.5 rounded-full border border-white/10 bg-[#17253a] px-3 py-1.5 text-xs font-bold text-[#54d6c7] hover:bg-white/10 transition-all cursor-pointer"
+                title="Build or Edit Your Personalized Study Plan"
+                className="hidden sm:flex items-center gap-1.5 rounded-full border border-[#54d6c7]/30 bg-[#54d6c7]/10 px-3.5 py-1.5 text-xs font-bold text-[#54d6c7] hover:bg-[#54d6c7]/20 transition-all cursor-pointer"
               >
                 <Sparkles className="h-3.5 w-3.5 text-[#54d6c7]" />
-                <span>My Exam Plan</span>
+                <span>Build Study Plan</span>
               </button>
             )}
 
             {/* AI Config */}
             <button
               onClick={onOpenAISettings}
-              title="Configure AI Engine"
+              title="Configure AI Engine Keys"
               className="flex items-center gap-1.5 rounded-full border border-white/10 bg-[#111c2e] px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-white/10 transition-all cursor-pointer"
             >
               <Cpu className="h-3.5 w-3.5 text-[#54d6c7]" />
@@ -219,7 +229,7 @@ export default function Navbar({
             {/* User Profile / Auth */}
             {user ? (
               <div className="flex items-center gap-2 pl-1">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-[#54d6c7] to-[#06b6d4] text-xs font-black text-slate-950 shadow-sm">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-[#54d6c7] to-[#8b5cf6] text-xs font-black text-slate-950 shadow-sm">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <button
@@ -293,13 +303,14 @@ export default function Navbar({
         )}
       </AnimatePresence>
 
-      {/* Mobile Bottom Navigation Bar (Home, Learn, Practice, Progress) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0b1220]/95 backdrop-blur-xl px-4 py-2 flex items-center justify-around shadow-2xl">
+      {/* Mobile Bottom Navigation Bar (Today, Learn, Practice, Progress, Library) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0b1220]/95 backdrop-blur-xl px-2 py-2 flex items-center justify-around shadow-2xl">
         {[
-          { id: 'dashboard', label: 'Home', icon: GraduationCap },
+          { id: 'dashboard', label: 'Today', icon: GraduationCap },
           { id: 'nexa', label: 'Learn', icon: Bot },
           { id: 'practice', label: 'Practice', icon: FileCheck2 },
-          { id: 'progress', label: 'Progress', icon: BarChart3 }
+          { id: 'progress', label: 'Progress', icon: BarChart3 },
+          { id: 'library', label: 'Library', icon: BookOpen }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -307,7 +318,7 @@ export default function Navbar({
             <button
               key={tab.id}
               onClick={() => handleNavClick(tab.id)}
-              className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all cursor-pointer ${
+              className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
                 isActive
                   ? 'text-[#54d6c7] font-bold'
                   : 'text-slate-400 hover:text-slate-200'

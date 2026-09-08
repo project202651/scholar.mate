@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -12,9 +12,21 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#0b1220",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "ScholarMate | AI Study Companion - AANM & VVRSR Polytechnic",
-  description: "AI-Powered Study Platform with 3D Visuals, Auto Notes, Doubt Solver, Flashcards, and Quizzes for Polytechnic Students.",
+  title: "ScholarMate | AI Exam Preparation System",
+  description: "An AI-powered exam preparation system that converts your syllabus, notes, and past papers into a personalized path to exam readiness.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ScholarMate",
+  },
 };
 
 export default function RootLayout({

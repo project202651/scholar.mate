@@ -1,0 +1,16 @@
+{
+  "name": "ScholarMate AI Exam Preparation",
+  "short_name": "ScholarMate",
+  "description": "AI-powered exam preparation system that converts your syllabus, notes, and past papers into a personalized path to exam readiness.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
