@@ -7,6 +7,7 @@ import AISettingsModal from '@/components/AISettingsModal';
 import EmergencyModeModal from '@/components/EmergencyModeModal';
 import OnboardingModal from '@/components/OnboardingModal';
 import ThreeBackground from '@/components/ThreeBackground';
+import CustomPointer from '@/components/CustomPointer';
 import NexaFloatingButton from '@/components/NexaFloatingButton';
 import StartingAnimation from '@/components/StartingAnimation';
 
@@ -122,6 +123,9 @@ export default function Home() {
     <div className={`relative min-h-screen font-sans antialiased selection:bg-[#54d6c7] selection:text-slate-950 ${
       theme === 'dark' ? 'bg-[#0b1220] text-[#f5f7fb]' : 'bg-[#f8fafc] text-[#0f172a]'
     }`}>
+      {/* Modern Interactive Custom Mouse Pointer */}
+      <CustomPointer theme={theme} />
+
       {/* 3D WebGL Particle Field */}
       <ThreeBackground theme={theme} />
 
