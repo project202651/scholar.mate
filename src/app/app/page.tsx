@@ -300,9 +300,10 @@ function StudentWorkspaceContent() {
               />
             )}
 
-            {activeTab === 'timer' && (
+            {(activeTab === 'timer' || activeTab === 'focus') && (
               <StudyTimerView
                 initialTopic={selectedTopic}
+                initialSubject={selectedSubject}
                 onNavigateToPractice={(topic: string) => {
                   setSelectedTopic(topic);
                   setActiveTab('practice');

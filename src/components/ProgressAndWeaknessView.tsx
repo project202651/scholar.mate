@@ -207,6 +207,42 @@ Verified via ScholarMate AI Exam System (AANM & VVRSR Polytechnic)`;
         </div>
       </div>
 
+      {/* Focus Timer & Study Process Engine Banner */}
+      <div className="rounded-3xl border border-[#54d6c7]/20 bg-gradient-to-r from-[#17253a] via-[#111c2e] to-[#0c1a2d] p-6 sm:p-7 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="flex items-start gap-4">
+          <div className="p-3.5 rounded-2xl bg-[#54d6c7]/15 border border-[#54d6c7]/30 text-[#54d6c7] shrink-0">
+            <Clock className="h-6 w-6" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black uppercase tracking-wider text-[#54d6c7]">
+                Smart Process Focus Timer
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                Active
+              </span>
+            </div>
+            <h3 className="text-lg font-bold text-white">
+              Convert Study Processes into Scientifically Optimized Time Limits
+            </h3>
+            <p className="text-xs text-slate-300 max-w-xl">
+              Eliminate guesswork: convert 10-mark derivations (45m), 7-mark schemas (25m), 3-mark sprints (15m), and eating/meal rest periods (30m) with full history tracking.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            if (onNavigateToFocus) onNavigateToFocus("Operating Systems: Banker's Algorithm");
+          }}
+          className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#54d6c7] to-[#2dd4bf] hover:opacity-95 text-slate-950 font-black px-6 py-3.5 text-xs shadow-lg shadow-[#54d6c7]/25 transition-all cursor-pointer shrink-0 hover:scale-105"
+        >
+          <Zap className="h-4 w-4 fill-slate-950" />
+          <span>Launch Focus Timer</span>
+          <ArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+
       {/* Weekly Study Time Chart & Subject Comparison Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Weekly Study Time Bar Visualization (7 cols) */}
@@ -302,7 +338,7 @@ Verified via ScholarMate AI Exam System (AANM & VVRSR Polytechnic)`;
                 <p className="text-[10px] text-slate-400 mt-0.5">{item.category}</p>
               </div>
 
-              <div className="pt-2 border-t border-white/5">
+              <div className="pt-2 border-t border-white/5 space-y-2">
                 <button
                   onClick={() => {
                     if (onNavigateToNexa) onNavigateToNexa(item.topic);
@@ -313,6 +349,18 @@ Verified via ScholarMate AI Exam System (AANM & VVRSR Polytechnic)`;
                   <span className="line-clamp-1 text-[11px]">{item.action}</span>
                   <ArrowRight className="h-3.5 w-3.5 shrink-0 ml-1" />
                 </button>
+                {onNavigateToFocus && (
+                  <button
+                    onClick={() => onNavigateToFocus(item.topic)}
+                    className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-white/10 hover:border-[#54d6c7]/40 bg-slate-900/60 hover:bg-[#54d6c7]/10 text-slate-300 hover:text-[#54d6c7] text-[11px] font-bold transition-all cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-[#54d6c7]" />
+                      <span>Start 45m Focus Block</span>
+                    </span>
+                    <ArrowRight className="h-3 w-3 shrink-0" />
+                  </button>
+                )}
               </div>
             </div>
           ))}

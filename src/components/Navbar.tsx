@@ -86,7 +86,7 @@ export default function Navbar({
       icon: BarChart3,
       items: [
         { id: 'progress', label: 'Exam Readiness', desc: 'Study streak & score breakdown', icon: BarChart3 },
-        { id: 'focus', label: 'Focus Timer', desc: 'Custom Pomodoro study intervals', icon: Clock },
+        { id: 'timer', label: 'Focus Timer', desc: 'Pomodoro & best time suggestions', icon: Clock },
       ]
     }
   ];
@@ -104,13 +104,14 @@ export default function Navbar({
       setIsMobileDrawerOpen(false);
       return;
     }
-    setActiveTab(tabId);
+    const resolvedTab = tabId === 'focus' ? 'timer' : tabId;
+    setActiveTab(resolvedTab);
     setOpenDropdown(null);
     setIsMobileDrawerOpen(false);
   };
 
   const isCurrentGroupActive = (items: { id: string }[]) => {
-    return items.some(item => item.id === activeTab);
+    return items.some(item => item.id === activeTab || (item.id === 'timer' && (activeTab === 'timer' || activeTab === 'focus')));
   };
 
   return (
