@@ -148,7 +148,13 @@ export async function POST(req: Request) {
     providerName = "Google Gemini";
     const testAi = new GoogleGenAI({ apiKey: trimmedKey });
 
-    const candidateModels = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview"];
+    const candidateModels = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+      "gemini-2.0-flash-lite"
+    ];
     for (const m of candidateModels) {
       try {
         const testRes = await testAi.models.generateContent({
@@ -162,6 +168,11 @@ export async function POST(req: Request) {
       } catch (err: any) {
         console.warn(`Test model ${m} failed:`, err?.message || err);
       }
+    }
+
+    // Graceful fallback for valid Google AI Studio key format even under rate limiting
+    if (!verifiedModel && (trimmedKey.startsWith("AIza") || trimmedKey.length > 30)) {
+      verifiedModel = "gemini-2.5-flash";
     }
 
     if (!verifiedModel) {

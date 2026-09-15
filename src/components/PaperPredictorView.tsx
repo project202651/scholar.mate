@@ -64,7 +64,11 @@ export default function PaperPredictorView({
   const [copiedAll, setCopiedAll] = useState(false);
 
   useEffect(() => {
-    if (initialSubject && !subject) setSubject(initialSubject);
+    const target = initialSubject || subject || 'Operating Systems';
+    if (!subject) setSubject(target);
+    if (!analysis) {
+      handleAnalyzePapers(target);
+    }
   }, [initialSubject]);
 
   const handleAnalyzePapers = async (overrideSubject?: string) => {

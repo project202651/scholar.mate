@@ -8,7 +8,13 @@ function getGenAIClient(customApiKey?: string) {
   return null;
 }
 
-const CANDIDATE_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite"];
+const CANDIDATE_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+  "gemini-2.0-flash-lite"
+];
 
 // High-speed in-memory response cache (TTL: 30 minutes)
 const memoryCache = new Map<string, { result: string; expiresAt: number }>();

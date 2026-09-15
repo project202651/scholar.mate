@@ -9,25 +9,25 @@ interface ThreeBackgroundProps {
 
 export default function ThreeBackground({ theme = "dark" }: ThreeBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDisabled, setIsDisabled] = useState(false);
-
-  useEffect(() => {
-    // Check user preference or OS reduced motion
+  const [isDisabled, setIsDisabled] = useState(() => {
+    if (typeof window === "undefined") return false;
     try {
       const stored = localStorage.getItem("scholarmate_disable_3d");
       const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (stored === "true" || prefersReduced) {
-        setIsDisabled(true);
-      }
-    } catch (e) {}
+      return stored === "true" || prefersReduced;
+    } catch {
+      return false;
+    }
+  });
 
-    const handleToggle = (e: any) => {
+  useEffect(() => {
+    const handleToggle = (e: CustomEvent<{ disabled: boolean }>) => {
       if (e.detail && typeof e.detail.disabled === "boolean") {
         setIsDisabled(e.detail.disabled);
       }
     };
-    window.addEventListener("scholarmate:toggle-3d", handleToggle);
-    return () => window.removeEventListener("scholarmate:toggle-3d", handleToggle);
+    window.addEventListener("scholarmate:toggle-3d", handleToggle as EventListener);
+    return () => window.removeEventListener("scholarmate:toggle-3d", handleToggle as EventListener);
   }, []);
 
   useEffect(() => {
