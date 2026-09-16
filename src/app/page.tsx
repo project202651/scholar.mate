@@ -25,7 +25,9 @@ import {
   Users,
   Target,
   Sun,
-  Moon
+  Moon,
+  Menu,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThreeBackground from '@/components/ThreeBackground';
@@ -35,6 +37,7 @@ export default function LandingPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [activeDemoTab, setActiveDemoTab] = useState<'answer' | 'plan' | 'rubric'>('answer');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -95,6 +98,10 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
             <a href="#how-it-works" className="hover:text-[#54d6c7] transition-colors">How It Works</a>
             <a href="#features" className="hover:text-[#54d6c7] transition-colors">Features</a>
+            <Link href="/plan" className="hover:text-[#54d6c7] transition-colors flex items-center gap-1">
+              <span>Study Plan</span>
+              <span className="rounded-full bg-[#54d6c7]/20 px-1.5 py-0.2 text-[9px] text-[#54d6c7] font-bold">New</span>
+            </Link>
             <a href="#example-dashboard" className="hover:text-[#54d6c7] transition-colors">Example Dashboard</a>
             <a href="#about" className="hover:text-[#54d6c7] transition-colors">College Project</a>
           </nav>
@@ -127,20 +134,94 @@ export default function LandingPage() {
 
             <Link
               href="/login"
-              className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold px-4 py-2 text-xs transition-all"
+              className="hidden sm:inline-flex rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-bold px-4 py-2 text-xs transition-all"
             >
               Sign In
             </Link>
 
             <Link
               href="/signup"
-              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#54d6c7] to-[#2dd4bf] hover:opacity-95 text-slate-950 font-black px-4 sm:px-5 py-2 text-xs shadow-lg shadow-[#54d6c7]/20 transition-all"
+              className="hidden sm:flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#54d6c7] to-[#2dd4bf] hover:opacity-95 text-slate-950 font-black px-4 sm:px-5 py-2 text-xs shadow-lg shadow-[#54d6c7]/20 transition-all"
             >
               <span>Create My Study Plan</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
+
+            {/* Mobile Menu Hamburger Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle Navigation Menu"
+              className="md:hidden p-2 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            >
+              {isMobileMenuOpen ? <X className="h-5 w-5 text-[#54d6c7]" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Dropdown Drawer */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-white/10 mt-3 pt-3 pb-2 space-y-2"
+            >
+              <a
+                href="#how-it-works"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5"
+              >
+                How It Works
+              </a>
+              <a
+                href="#features"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5"
+              >
+                Features
+              </a>
+              <Link
+                href="/plan"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold text-[#54d6c7] hover:bg-[#54d6c7]/10"
+              >
+                <span>Study Plan &amp; Roadmap</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <a
+                href="#example-dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5"
+              >
+                Example Dashboard
+              </a>
+              <a
+                href="#about"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-xl text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5"
+              >
+                College Project
+              </a>
+              <div className="pt-2 grid grid-cols-2 gap-2">
+                <Link
+                  href="/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-xl border border-white/10 bg-white/5 text-white font-bold text-xs"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-xl bg-[#54d6c7] text-slate-950 font-black text-xs shadow-md shadow-[#54d6c7]/20"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* 1. HERO SECTION */}

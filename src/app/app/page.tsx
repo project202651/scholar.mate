@@ -70,6 +70,19 @@ function StudentWorkspaceContent() {
       if (stored3D) setIs3DDisabled(true);
     } catch (e) {}
 
+    const requestedTab = searchParams.get('tab');
+    if (requestedTab) {
+      setActiveTab(requestedTab);
+    }
+    const requestedTopic = searchParams.get('topic');
+    if (requestedTopic) {
+      setSelectedTopic(requestedTopic);
+    }
+    const requestedSubject = searchParams.get('subject');
+    if (requestedSubject) {
+      setSelectedSubject(requestedSubject);
+    }
+
     const shouldOnboard = searchParams.get('onboarding') === 'true';
     if (shouldOnboard) {
       setIsOnboardingOpen(true);

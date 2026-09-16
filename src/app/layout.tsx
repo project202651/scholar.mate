@@ -51,12 +51,21 @@ export const metadata: Metadata = {
     description:
       "Transform syllabus notes and past question papers into actionable study roadmaps, 3M/7M/10M marking rubrics, and diagnostic mock exams.",
     siteName: "ScholarMate",
+    images: [
+      {
+        url: "/images/scholarmate-3d-core.jpg",
+        width: 1200,
+        height: 630,
+        alt: "ScholarMate AI Exam Preparation",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "ScholarMate | AI Exam Preparation System",
     description:
       "Transform syllabus notes and past question papers into actionable study roadmaps, 3M/7M/10M marking rubrics, and diagnostic mock exams.",
+    images: ["/images/scholarmate-3d-core.jpg"],
     creator: "@scholarmate_ai",
   },
   robots: {
