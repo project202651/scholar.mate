@@ -82,6 +82,17 @@ function StudentWorkspaceContent() {
           const data = await res.json();
           if (data.user) {
             setUser(data.user);
+            // Sync database study plan if available
+            try {
+              const planRes = await fetch('/api/user/plan');
+              if (planRes.ok) {
+                const planData = await planRes.json();
+                if (planData && planData.plan) {
+                  localStorage.setItem('scholarmate_student_plan', JSON.stringify(planData.plan));
+                }
+              }
+            } catch {}
+
             const hasPlan = localStorage.getItem('scholarmate_student_plan');
             if (!hasPlan && !shouldOnboard) setIsOnboardingOpen(true);
           }

@@ -22,7 +22,7 @@ export async function GET() {
     let masteredCards = 0;
     decks.forEach((d) => {
       try {
-        const cards = JSON.parse(d.cards || "[]");
+        const cards = typeof d.cards === "string" ? JSON.parse(d.cards || "[]") : (d.cards || []);
         totalCards += cards.length;
         masteredCards += cards.filter((c: { mastered?: boolean }) => c.mastered).length;
       } catch {}

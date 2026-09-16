@@ -104,8 +104,8 @@ export async function GET() {
       title: n.title,
       subject: n.subject,
       summary: n.summary,
-      bulletPoints: JSON.parse(n.bulletPoints || "[]"),
-      importantQuestions: JSON.parse(n.importantQuestions || "[]"),
+      bulletPoints: typeof n.bulletPoints === "string" ? JSON.parse(n.bulletPoints || "[]") : (n.bulletPoints || []),
+      importantQuestions: typeof n.importantQuestions === "string" ? JSON.parse(n.importantQuestions || "[]") : (n.importantQuestions || []),
       createdAt: n.createdAt,
     }));
 

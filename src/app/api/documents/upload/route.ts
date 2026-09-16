@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { uploadToCloudStorage } from "@/lib/supabase";
 
 export async function POST(req: Request) {
   try {
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
 
     let extractedContent = "";
     let fileType = "text";
+    let cloudFileUrl: string | null = null;
 
     if (rawText && rawText.trim().length > 0) {
       extractedContent = rawText.trim();
@@ -25,11 +27,21 @@ export async function POST(req: Request) {
       fileType = file.type.includes("pdf") ? "pdf" : file.type.includes("image") ? "image" : "document";
       const buffer = Buffer.from(await file.arrayBuffer());
 
+      // 1. Upload binary file to Cloud Object Storage (Supabase Storage / Cloud Bucket)
+      const safeFileName = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const uploadResult = await uploadToCloudStorage(
+        "syllabus-documents",
+        safeFileName,
+        buffer,
+        file.type || "application/pdf"
+      );
+      cloudFileUrl = uploadResult.url;
+
+      // 2. Extract text for the Nexa AI engine without storing heavy binary blobs in SQL
       if (file.name.endsWith(".txt") || file.name.endsWith(".md") || file.name.endsWith(".json")) {
         extractedContent = buffer.toString("utf-8");
       } else if (file.type.includes("pdf") || file.name.endsWith(".pdf")) {
         try {
-          // Dynamic import to avoid SSR bundle issues
           // eslint-disable-next-line @typescript-eslint/no-require-imports
           const pdfParse = require("pdf-parse");
           const pdfData = await pdfParse(buffer);
@@ -39,7 +51,6 @@ export async function POST(req: Request) {
           extractedContent = `[Textbook Section: ${file.name}]\nExtracted content from document for ${subject}. Covers syllabus modules, engineering theory, exam questions, and practical lab applications.`;
         }
       } else {
-        // Image or other document
         extractedContent = `[Study Material Image: ${file.name}]\nStudent notes for ${subject}. Contains handwritten diagrams, formula derivations, and chapter highlights.`;
       }
     } else {
@@ -50,13 +61,15 @@ export async function POST(req: Request) {
       extractedContent = `Study materials for ${subject} titled ${title}. Encompasses standard university and polytechnic syllabus units, technical terminologies, and sample questions.`;
     }
 
+    // Save only the public Cloud Storage URL and bounded syllabus text to PostgreSQL
     const document = await prisma.document.create({
       data: {
         userId: user.id,
         title: title || (file ? file.name : "Study Material"),
         subject: subject,
         fileType: fileType,
-        extractedText: extractedContent,
+        extractedText: extractedContent.slice(0, 16000), // Protect database rows from excessive bloat
+        fileUrl: cloudFileUrl,
       },
     });
 
@@ -67,6 +80,7 @@ export async function POST(req: Request) {
         title: document.title,
         subject: document.subject,
         fileType: document.fileType,
+        fileUrl: document.fileUrl,
         textPreview: document.extractedText.slice(0, 300) + "...",
         createdAt: document.createdAt,
       },
@@ -92,6 +106,7 @@ export async function GET() {
         title: true,
         subject: true,
         fileType: true,
+        fileUrl: true,
         createdAt: true,
       },
     });

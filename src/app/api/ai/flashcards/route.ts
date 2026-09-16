@@ -109,7 +109,7 @@ export async function GET() {
       id: d.id,
       title: d.title,
       subject: d.subject,
-      cards: JSON.parse(d.cards || "[]"),
+      cards: typeof d.cards === "string" ? JSON.parse(d.cards || "[]") : (d.cards || []),
       createdAt: d.createdAt,
     }));
 

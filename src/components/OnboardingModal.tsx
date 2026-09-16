@@ -130,6 +130,11 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
 
       try {
         localStorage.setItem('scholarmate_student_plan', JSON.stringify(plan));
+        fetch('/api/user/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(plan)
+        }).catch((err) => console.warn('Database plan sync notice:', err));
       } catch (e) {}
 
       setGenerating(false);

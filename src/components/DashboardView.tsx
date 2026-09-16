@@ -197,6 +197,37 @@ export default function DashboardView({
           lastStudiedTopic: parsed.lastStudiedTopic || prev.lastStudiedTopic
         }));
       }
+
+      // Also fetch persistent study plan from PostgreSQL database
+      fetch('/api/user/plan')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.plan) {
+            const p = data.plan;
+            let days = 18;
+            if (p.examDate) {
+              const examTime = new Date(p.examDate).getTime();
+              const nowTime = new Date().getTime();
+              const diff = Math.ceil((examTime - nowTime) / (1000 * 60 * 60 * 24));
+              days = diff > 0 ? diff : 7;
+            }
+            setStudentPlan(prev => ({
+              ...prev,
+              branch: p.branch || prev.branch,
+              examName: p.examName || prev.examName,
+              subjects: p.subjects && p.subjects.length > 0 ? p.subjects : prev.subjects,
+              subject: p.subjects && p.subjects.length > 0 ? p.subjects[0] : prev.subject,
+              examDate: p.examDate || prev.examDate,
+              daysRemaining: days,
+              targetGrade: p.targetGrade || prev.targetGrade,
+              targetScore: p.targetScore || prev.targetScore,
+              dailyHours: p.dailyHours || prev.dailyHours,
+              recommendedHoursPerDay: p.recommendedHoursPerDay || prev.recommendedHoursPerDay,
+              confidenceMap: p.confidenceMap || prev.confidenceMap,
+            }));
+          }
+        })
+        .catch(() => {});
     } catch (e) {}
   }, []);
 

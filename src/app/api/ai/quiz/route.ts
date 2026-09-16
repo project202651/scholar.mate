@@ -129,7 +129,7 @@ export async function GET() {
       subject: q.subject,
       score: q.score,
       completed: q.completed,
-      questions: JSON.parse(q.questions || "[]"),
+      questions: typeof q.questions === "string" ? JSON.parse(q.questions || "[]") : (q.questions || []),
       createdAt: q.createdAt,
     }));
 

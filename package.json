@@ -12,6 +12,7 @@
   "dependencies": {
     "@google/genai": "^2.21.0",
     "@prisma/client": "^6.4.1",
+    "@supabase/supabase-js": "^2.116.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/canvas-confetti": "^1.9.0",
     "@types/pdf-parse": "^1.1.5",
