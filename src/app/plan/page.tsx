@@ -292,6 +292,37 @@ export default function StudyPlanPage() {
 
       {/* Main Roadmap Cockpit */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8 pb-24">
+        {/* Sample Plan Notice & Auth CTA Banner */}
+        <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-[#111c2e] to-[#54d6c7]/10 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs shadow-lg">
+          <div className="flex items-center gap-3 text-slate-200">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 shrink-0 border border-amber-500/30">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="font-bold text-white">Sample University Study Plan (Guest Preview)</p>
+              <p className="text-slate-300 text-[11px]">
+                Viewing calibrated 6th Sem curriculum. Click below to calibrate your own subjects or save progress to an account.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => setIsOnboardingOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-bold px-3.5 py-2 text-xs transition-all cursor-pointer"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-[#54d6c7]" />
+              <span>Calibrate My Subjects</span>
+            </button>
+            <Link
+              href="/signup"
+              className="flex items-center gap-1.5 rounded-xl bg-[#54d6c7] hover:bg-[#43c4b5] text-slate-950 font-black px-4 py-2 text-xs shadow-md shadow-[#54d6c7]/20 transition-all cursor-pointer"
+            >
+              <span>Save &amp; Sign Up</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+
         {/* Top Summary Banner */}
         <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111c2e] via-[#0b1220] to-[#17253a] p-6 sm:p-8 shadow-2xl space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">

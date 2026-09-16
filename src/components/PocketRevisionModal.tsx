@@ -367,9 +367,24 @@ ${sheet.examinerTraps.map(t => `• Trap: ${t.trap}\n  Common Error: ${t.whatStu
                     {sheet.coreDiagrams?.map((diag, i) => (
                       <div key={i} className="p-2.5 bg-white border border-slate-200 rounded-lg space-y-1.5">
                         <span className="font-bold text-slate-900 text-[11px] block">{diag.title}</span>
-                        <pre className="text-[9px] bg-slate-900 text-slate-100 p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap">
-                          {diag.diagramAscii}
-                        </pre>
+                        {diag.diagramAscii && (diag.diagramAscii.includes('──►') || diag.diagramAscii.includes('->')) ? (
+                          <div className="flex flex-wrap items-center gap-1.5 p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs">
+                            {(diag.diagramAscii.includes('──►') ? diag.diagramAscii.split('──►') : diag.diagramAscii.split('->')).map((step, sIdx, arr) => (
+                              <React.Fragment key={sIdx}>
+                                <span className="px-2.5 py-1 rounded-md bg-[#54d6c7]/15 text-[#54d6c7] font-mono text-[10px] font-bold border border-[#54d6c7]/30 whitespace-nowrap">
+                                  {step.replace(/[\[\]]/g, '').trim()}
+                                </span>
+                                {sIdx < arr.length - 1 && (
+                                  <span className="text-slate-400 font-bold text-xs">→</span>
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        ) : (
+                          <pre className="text-xs bg-slate-900 text-[#54d6c7] p-2.5 rounded-lg overflow-x-auto font-mono whitespace-pre border border-slate-800">
+                            {diag.diagramAscii}
+                          </pre>
+                        )}
                         <p className="text-[10px] text-purple-900 italic font-medium">Tip: {diag.tips}</p>
                       </div>
                     ))}

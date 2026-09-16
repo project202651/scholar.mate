@@ -44,6 +44,7 @@ function StudentWorkspaceContent() {
   const [isPocketSheetOpen, setIsPocketSheetOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [is3DDisabled, setIs3DDisabled] = useState(false);
+  const [isDemoBannerDismissed, setIsDemoBannerDismissed] = useState(false);
 
   // Shared active focus context for inter-view transitions (user-driven, no forced defaults)
   const [selectedTopic, setSelectedTopic] = useState<string>('');
@@ -196,6 +197,36 @@ function StudentWorkspaceContent() {
         is3DDisabled={is3DDisabled}
         onToggle3D={toggle3D}
       />
+
+      {/* Guest Demo Mode Notification Banner */}
+      {!user && !isDemoBannerDismissed && (
+        <div className="relative z-30 border-b border-amber-500/20 bg-gradient-to-r from-amber-500/15 via-[#111c2e] to-[#54d6c7]/10 px-4 py-2.5 text-xs text-slate-200 shadow-md">
+          <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+              <span className="font-bold text-amber-300">Guest Demo Environment:</span>
+              <span className="text-slate-300">
+                You are exploring ScholarMate with preloaded university sample tracks. Changes are stored locally in your browser.
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setIsAuthOpen(true)}
+                className="rounded-lg bg-[#54d6c7] hover:bg-[#43c4b5] text-slate-950 font-black px-3.5 py-1 text-[11px] shadow-sm transition-all cursor-pointer"
+              >
+                Sign Up to Sync Across Devices
+              </button>
+              <button
+                onClick={() => setIsDemoBannerDismissed(true)}
+                aria-label="Dismiss banner"
+                className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 rounded hover:bg-white/10 transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content Workspace */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 relative z-10 pb-28 lg:pb-12">

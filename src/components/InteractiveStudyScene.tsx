@@ -20,9 +20,14 @@ export default function InteractiveStudyScene({ className = "" }: InteractiveStu
   }, [isPaused]);
 
   useEffect(() => {
-    // Respect user's reduced-motion preference
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setIsPaused(true);
+    // Check for mobile or reduced-motion to conserve GPU and battery
+    if (typeof window !== 'undefined') {
+      const isMobile = window.innerWidth < 768;
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (isMobile || prefersReduced) {
+        setHasWebGL(false);
+        return;
+      }
     }
 
     const canvas = canvasRef.current;

@@ -1086,8 +1086,32 @@ export default function PracticeAnswerView({
 
         {/* Tab 4: Diagram */}
         {activeTab === 'diagram' && (
-          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-3">
-            <h3 className="text-xs font-bold text-[#6ea8fe] uppercase">Architectural Schematic Diagram</h3>
+          <div className="rounded-2xl border border-white/5 bg-[#0b1220] p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-[#6ea8fe] uppercase">Architectural Schematic Diagram</h3>
+              <span className="text-[10px] text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                Responsive Exam Schematic
+              </span>
+            </div>
+
+            {currentQuestion.diagramText && (currentQuestion.diagramText.includes('──►') || currentQuestion.diagramText.includes('->')) && (
+              <div className="flex flex-wrap items-center gap-2 p-3.5 rounded-xl bg-slate-900/90 border border-white/10 text-xs">
+                {(currentQuestion.diagramText.includes('──►')
+                  ? currentQuestion.diagramText.split(/──►|──\(.+?\)──►/)
+                  : currentQuestion.diagramText.split('->')
+                ).filter(s => s.trim()).map((step, sIdx, arr) => (
+                  <React.Fragment key={sIdx}>
+                    <span className="px-3 py-1.5 rounded-lg bg-[#54d6c7]/15 text-[#54d6c7] font-mono text-xs font-bold border border-[#54d6c7]/30 whitespace-nowrap shadow-sm">
+                      {step.replace(/[\[\]\n\r]/g, '').trim()}
+                    </span>
+                    {sIdx < arr.length - 1 && (
+                      <span className="text-slate-400 font-bold text-sm">→</span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+
             <pre className="p-4 rounded-xl bg-slate-950 border border-white/10 font-mono text-xs text-[#54d6c7] overflow-x-auto whitespace-pre leading-relaxed">
               {currentQuestion.diagramText}
             </pre>

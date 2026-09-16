@@ -14,7 +14,8 @@ export default function ThreeBackground({ theme = "dark" }: ThreeBackgroundProps
     try {
       const stored = localStorage.getItem("scholarmate_disable_3d");
       const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      return stored === "true" || prefersReduced;
+      const isMobile = window.innerWidth < 768;
+      return stored === "true" || prefersReduced || isMobile;
     } catch {
       return false;
     }

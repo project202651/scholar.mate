@@ -87,10 +87,10 @@ export default function LandingPage() {
               <div className="flex items-center gap-1.5">
                 <span className="text-lg font-black tracking-tight text-white">ScholarMate</span>
                 <span className="rounded-full bg-[#54d6c7]/15 px-2 py-0.5 text-[10px] font-bold text-[#54d6c7] border border-[#54d6c7]/30">
-                  AI
+                  AIML
                 </span>
               </div>
-              <span className="block text-[10px] text-slate-400 font-medium">Smart Exam Preparation Platform</span>
+              <span className="block text-[10px] text-slate-300 font-medium">AIML Dept. Capstone • Open-Source</span>
             </div>
           </Link>
 
@@ -229,9 +229,15 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           {/* Left Column: Messaging & Dominant CTA */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#54d6c7]/30 bg-[#54d6c7]/10 px-3.5 py-1 text-xs font-bold text-[#54d6c7]">
-              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-              <span>AI-Powered Exam Success System</span>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
+                <GraduationCap className="h-3.5 w-3.5" />
+                <span>AIML Dept. Capstone • AANM &amp; VVRSR Polytechnic</span>
+              </div>
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#54d6c7]/30 bg-[#54d6c7]/10 px-3 py-1 text-xs font-bold text-[#54d6c7]">
+                <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                <span>AI Exam Preparation Workspace</span>
+              </div>
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.12]">
@@ -345,7 +351,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-lg font-bold text-white">Nexa AI Teaches Difficult Concepts</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Receive plain-English conceptual analogies, step-by-step mathematical proofs, ASCII architecture diagrams, and examiner tips.
+                Receive plain-English conceptual analogies, step-by-step mathematical derivations, responsive visual architecture schematics, and examiner tips.
               </p>
             </div>
 
@@ -393,33 +399,39 @@ export default function LandingPage() {
             {/* Top Bar Preview */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#54d6c7]">Example Student Track</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[#54d6c7]">Example Student Track</span>
                 <h3 className="text-lg font-black text-white">Operating Systems &amp; System Software (6th Sem)</h3>
-                <span className="text-xs text-slate-400">Exam Date: Oct 15, 2026 • 18 Days Remaining • Target Score: 90%</span>
+                <span className="text-xs text-slate-300">Exam Date: Oct 15, 2026 • 18 Days Remaining • Target Score: 90%</span>
               </div>
 
-              {/* Demo Mode Tabs */}
-              <div className="flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-white/10">
+              {/* Demo Mode Tabs with ARIA accessibility */}
+              <div role="tablist" aria-label="Interactive Preview Tabs" className="flex items-center gap-1 rounded-xl bg-slate-900/90 p-1 border border-white/10">
                 <button
+                  role="tab"
+                  aria-selected={activeDemoTab === 'answer'}
                   onClick={() => setActiveDemoTab('answer')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeDemoTab === 'answer' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
+                    activeDemoTab === 'answer' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   Exam Answer Drill
                 </button>
                 <button
+                  role="tab"
+                  aria-selected={activeDemoTab === 'plan'}
                   onClick={() => setActiveDemoTab('plan')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeDemoTab === 'plan' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
+                    activeDemoTab === 'plan' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   Actionable Tasks
                 </button>
                 <button
+                  role="tab"
+                  aria-selected={activeDemoTab === 'rubric'}
                   onClick={() => setActiveDemoTab('rubric')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    activeDemoTab === 'rubric' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-400 hover:text-white'
+                    activeDemoTab === 'rubric' ? 'bg-[#54d6c7] text-slate-950' : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   Marking Rubric
@@ -558,7 +570,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-base font-bold text-white">3M, 7M &amp; 10M Question Banks</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Generate 15 to 20 exam-exact questions per topic with full model answers, ASCII schematics, and rubric criteria.
+                Generate 15 to 20 exam-exact questions per topic with full model answers, rubric-calibrated visual schematics, and criteria.
               </p>
             </div>
 
