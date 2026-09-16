@@ -19,9 +19,50 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ScholarMate | AI Exam Preparation System",
-  description: "An AI-powered exam preparation system that converts your syllabus, notes, and past papers into a personalized path to exam readiness.",
+  metadataBase: new URL("https://scholarmate-beryl.vercel.app"),
+  title: {
+    default: "ScholarMate | AI Exam Preparation & Syllabus Intelligence",
+    template: "%s | ScholarMate",
+  },
+  description:
+    "AI-powered exam preparation workspace for university and engineering students. Master 3-Mark, 7-Mark, and 10-Mark questions with Nexa AI tutor, active recall flashcards, and simulated mock exams.",
+  keywords: [
+    "ScholarMate",
+    "Nexa AI",
+    "Exam Preparation",
+    "Engineering Exam Prep",
+    "Active Recall",
+    "Spaced Repetition",
+    "3-Mark questions",
+    "7-Mark questions",
+    "10-Mark derivations",
+    "Mock Exam Simulator",
+    "Syllabus Intelligence",
+  ],
+  authors: [{ name: "ScholarMate Team (AANM & VVRSR Polytechnic)" }],
+  creator: "ScholarMate AI",
+  publisher: "ScholarMate",
   manifest: "/manifest.json",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://scholarmate-beryl.vercel.app",
+    title: "ScholarMate | AI Exam Preparation System",
+    description:
+      "Transform syllabus notes and past question papers into actionable study roadmaps, 3M/7M/10M marking rubrics, and diagnostic mock exams.",
+    siteName: "ScholarMate",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ScholarMate | AI Exam Preparation System",
+    description:
+      "Transform syllabus notes and past question papers into actionable study roadmaps, 3M/7M/10M marking rubrics, and diagnostic mock exams.",
+    creator: "@scholarmate_ai",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
