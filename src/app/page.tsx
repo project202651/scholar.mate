@@ -74,16 +74,6 @@ export default function LandingPage() {
       {/* 3D WebGL Particle Field (Ambient & Unlabeled) */}
       <ThreeBackground theme={theme} />
 
-      {/* Persistent Capstone Attribution Top Bar (Requirement 5) */}
-      <aside aria-label="Project Attribution" className="relative z-50 border-b border-white/10 bg-[#0e1726] px-4 py-2 text-center text-xs font-semibold text-slate-200">
-        <div className="mx-auto max-w-7xl flex items-center justify-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-emerald-400"></span>
-          <span className="text-emerald-400 font-bold">AIML Dept. Capstone Project</span>
-          <span className="text-slate-500">—</span>
-          <span>AANM &amp; VVRSR Polytechnic</span>
-        </div>
-      </aside>
-
       {/* Marketing Header Navbar */}
       <header className="sticky top-0 z-40 border-b border-white/5 bg-[#0b1220]/80 backdrop-blur-xl px-4 sm:px-6 py-3.5">
         <div className="mx-auto max-w-7xl flex items-center justify-between">
